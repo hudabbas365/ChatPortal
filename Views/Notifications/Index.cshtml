@@ -1,0 +1,142 @@
+@using ChatPortal.Services
+@{
+    ViewData["Title"] = "Notifications";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var notifications = (List<NotificationDto>)ViewBag.Notifications;
+    var announcements = (List<AnnouncementDto>)ViewBag.Announcements;
+
+    string PriorityBadge(string p) => p switch {
+        "Urgent" => "danger",
+        "Warning" => "warning",
+        _ => "primary"
+    };
+    string PriorityIcon(string p) => p switch {
+        "Urgent" => "bi-exclamation-triangle-fill text-danger",
+        "Warning" => "bi-exclamation-circle-fill text-warning",
+        _ => "bi-info-circle-fill text-primary"
+    };
+}
+
+<div class="container-fluid py-4" style="padding-top:76px!important;">
+    <div class="row">
+        <div class="col-lg-2 d-none d-lg-block">
+            <partial name="_Sidebar" />
+        </div>
+        <div class="col-lg-10">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h3 class="fw-bold mb-0">Notifications</h3>
+                    <p class="text-muted small mb-0">Your alerts, announcements, and updates</p>
+                </div>
+                @if (notifications.Any(n => !n.IsRead))
+                {
+                    <form asp-action="MarkAllAsRead" method="post">
+                        @Html.AntiForgeryToken()
+                        <button class="btn btn-outline-primary btn-sm"><i class="bi bi-check2-all me-1"></i>Mark all as read</button>
+                    </form>
+                }
+            </div>
+
+            @if (announcements.Any())
+            {
+                <div class="mb-4">
+                    <h6 class="fw-semibold text-muted text-uppercase small mb-3">Global Announcements</h6>
+                    @foreach (var ann in announcements)
+                    {
+                        <div class="card border-0 shadow-sm rounded-4 mb-3 border-start border-@PriorityBadge(ann.Priority) border-4">
+                            <div class="card-body p-4">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="d-flex gap-3 align-items-start">
+                                        <i class="bi @PriorityIcon(ann.Priority) fs-4 mt-1"></i>
+                                        <div>
+                                            <div class="d-flex align-items-center gap-2 mb-1">
+                                                <h6 class="mb-0 fw-semibold">@ann.Title</h6>
+                                                <span class="badge bg-@PriorityBadge(ann.Priority) bg-opacity-10 text-@PriorityBadge(ann.Priority) rounded-pill">@ann.Priority</span>
+                                                @if (!ann.IsRead)
+                                                {
+                                                    <span class="badge bg-primary rounded-pill" style="font-size:0.65rem;">New</span>
+                                                }
+                                            </div>
+                                            <p class="mb-1 small text-muted">@ann.Content</p>
+                                            <span class="text-muted" style="font-size:0.75rem;">@ann.CreatedAt.ToLocalTime().ToString("MMMM d, yyyy h:mm tt")</span>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex gap-2">
+                                        @if (!ann.IsRead)
+                                        {
+                                            <form asp-action="MarkAnnouncementAsRead" method="post" class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="id" value="@ann.Id" />
+                                                <button type="submit" class="btn btn-sm btn-outline-secondary"><i class="bi bi-check me-1"></i>Mark read</button>
+                                            </form>
+                                        }
+                                        <form asp-action="DismissAnnouncement" method="post" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@ann.Id" />
+                                            <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-x me-1"></i>Dismiss</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+
+            <div>
+                <h6 class="fw-semibold text-muted text-uppercase small mb-3">Your Notifications</h6>
+                @if (!notifications.Any())
+                {
+                    <div class="card border-0 shadow-sm rounded-4">
+                        <div class="card-body text-center py-5">
+                            <i class="bi bi-bell-slash fs-1 text-muted d-block mb-3"></i>
+                            <p class="text-muted mb-0">You have no notifications.</p>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    foreach (var n in notifications)
+                    {
+                        <div class="card border-0 shadow-sm rounded-4 mb-3 @(n.IsRead ? "" : "border-start border-primary border-3")">
+                            <div class="card-body p-4">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="d-flex gap-3 align-items-start">
+                                        <i class="bi @PriorityIcon(n.Priority) fs-5 mt-1"></i>
+                                        <div>
+                                            <div class="d-flex align-items-center gap-2 mb-1">
+                                                <h6 class="mb-0 @(n.IsRead ? "fw-normal" : "fw-semibold")">@n.Title</h6>
+                                                <span class="badge bg-@PriorityBadge(n.Priority) bg-opacity-10 text-@PriorityBadge(n.Priority) rounded-pill">@n.Priority</span>
+                                                @if (!n.IsRead)
+                                                {
+                                                    <span class="badge bg-primary rounded-pill" style="font-size:0.65rem;">Unread</span>
+                                                }
+                                            </div>
+                                            <p class="mb-1 small text-muted">@n.Content</p>
+                                            <span class="text-muted" style="font-size:0.75rem;">@n.CreatedAt.ToLocalTime().ToString("MMMM d, yyyy h:mm tt")</span>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex gap-2">
+                                        @if (!n.IsRead)
+                                        {
+                                            <form asp-action="MarkAsRead" method="post" class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="id" value="@n.Id" />
+                                                <button type="submit" class="btn btn-sm btn-outline-secondary"><i class="bi bi-check me-1"></i>Mark read</button>
+                                            </form>
+                                        }
+                                        <form asp-action="Dismiss" method="post" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@n.Id" />
+                                            <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-x me-1"></i>Dismiss</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+</div>

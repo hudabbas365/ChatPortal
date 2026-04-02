@@ -46,6 +46,10 @@ public class AppDbContext : DbContext
     public DbSet<CreditPackage> CreditPackages { get; set; }
     public DbSet<PaymentTransaction> PaymentTransactions { get; set; }
 
+    // Announcement system
+    public DbSet<Announcement> Announcements { get; set; }
+    public DbSet<AnnouncementReadStatus> AnnouncementReadStatuses { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -90,10 +94,46 @@ public class AppDbContext : DbContext
             .HasForeignKey(i => i.InvitedById)
             .OnDelete(DeleteBehavior.Restrict);
 
+        modelBuilder.Entity<AnnouncementReadStatus>()
+            .HasOne(a => a.User)
+            .WithMany()
+            .HasForeignKey(a => a.UserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<Announcement>()
+            .HasOne(a => a.CreatedByAdmin)
+            .WithMany()
+            .HasForeignKey(a => a.CreatedByAdminId)
+            .OnDelete(DeleteBehavior.SetNull);
+
         modelBuilder.Entity<CreditPackage>().HasData(
             new CreditPackage { Id = 1, Name = "Starter", Description = "100 AI query credits", Credits = 100, Price = 4.99m, IsActive = true },
             new CreditPackage { Id = 2, Name = "Standard", Description = "500 AI query credits", Credits = 500, Price = 19.99m, IsActive = true },
             new CreditPackage { Id = 3, Name = "Professional", Description = "2000 AI query credits", Credits = 2000, Price = 59.99m, IsActive = true }
+        );
+
+        // Demo users – IDs must match the in-memory UserService store (Id 1=Admin, Id 2=Demo)
+        // Passwords hashed with SHA256 + static salt "ChatPortalSalt" (demo only)
+        var seedDate = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        modelBuilder.Entity<User>().HasData(
+            new User { Id = 1, FirstName = "Admin", LastName = "User", Email = "admin@chatportal.com", PasswordHash = "6F9C5BA6C2BBA8C601EC59FDE264D5D8245793A209E1034DA9D6BA9E35B11882", RoleId = 1, IsEmailVerified = true, IsActive = true, CreatedAt = seedDate, UpdatedAt = seedDate },
+            new User { Id = 2, FirstName = "Demo", LastName = "User", Email = "demo@chatportal.com", PasswordHash = "8EA9D894B93D6524C104DB00772D3F87AC40E55D958B37099C65036689F2E48D", RoleId = 2, IsEmailVerified = true, IsActive = true, CreatedAt = seedDate, UpdatedAt = seedDate },
+            new User { Id = 3, FirstName = "Alice", LastName = "Smith", Email = "alice@chatportal.com", PasswordHash = "1E80C5CB637E5E70B39D790F5C5BEFFD9F340C645342FD14DB3DCD06DC5468C5", RoleId = 2, IsEmailVerified = true, IsActive = true, CreatedAt = seedDate, UpdatedAt = seedDate },
+            new User { Id = 4, FirstName = "Bob", LastName = "Jones", Email = "bob@chatportal.com", PasswordHash = "1E80C5CB637E5E70B39D790F5C5BEFFD9F340C645342FD14DB3DCD06DC5468C5", RoleId = 2, IsEmailVerified = true, IsActive = true, CreatedAt = seedDate, UpdatedAt = seedDate }
+        );
+
+        // Sample global announcements
+        modelBuilder.Entity<Announcement>().HasData(
+            new Announcement { Id = 1, Title = "Welcome to ChatPortal!", Content = "We're excited to have you on board. Explore AI-powered chat, data insights, and more.", Priority = AnnouncementPriority.Informational, CreatedByAdminId = 1, IsActive = true, CreatedAt = seedDate },
+            new Announcement { Id = 2, Title = "Scheduled Maintenance – Jan 15", Content = "ChatPortal will be unavailable on January 15 from 02:00–04:00 UTC for scheduled maintenance.", Priority = AnnouncementPriority.Warning, CreatedByAdminId = 1, IsActive = true, CreatedAt = seedDate },
+            new Announcement { Id = 3, Title = "Security Alert: Please Update Your Password", Content = "As part of our security improvements, we recommend updating your password immediately.", Priority = AnnouncementPriority.Urgent, CreatedByAdminId = 1, IsActive = true, CreatedAt = seedDate }
+        );
+
+        // Sample notifications for demo users
+        modelBuilder.Entity<Notification>().HasData(
+            new Notification { Id = 1, UserId = 2, Title = "Welcome to ChatPortal!", Content = "Your account is ready. Start chatting with AI models today.", Priority = NotificationPriority.Informational, IsRead = false, IsDismissed = false, CreatedAt = seedDate },
+            new Notification { Id = 2, UserId = 2, Title = "Try the Data Insights feature", Content = "Connect your CSV or database and ask AI questions about your data.", Priority = NotificationPriority.Informational, IsRead = false, IsDismissed = false, CreatedAt = seedDate },
+            new Notification { Id = 3, UserId = 1, Title = "Admin: New user registered", Content = "Demo User (demo@chatportal.com) has joined ChatPortal.", Priority = NotificationPriority.Informational, IsRead = false, IsDismissed = false, CreatedAt = seedDate }
         );
     }
 }
