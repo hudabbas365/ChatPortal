@@ -349,7 +349,7 @@ function initPendingCharts() {
                 }
             });
             canvas.removeAttribute('data-chart');
-        } catch { /* ignore malformed chart data */ }
+        } catch (err) { console.warn('Failed to initialize chart:', err); }
     });
 }
 

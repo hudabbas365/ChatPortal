@@ -9,11 +9,13 @@ public class AccountController : Controller
 {
     private readonly IUserService _userService;
     private readonly IJwtService _jwtService;
+    private readonly ILogger<AccountController> _logger;
 
-    public AccountController(IUserService userService, IJwtService jwtService)
+    public AccountController(IUserService userService, IJwtService jwtService, ILogger<AccountController> logger)
     {
         _userService = userService;
         _jwtService = jwtService;
+        _logger = logger;
     }
 
     [HttpGet]
@@ -124,8 +126,9 @@ public class AccountController : Controller
             var token = _jwtService.GenerateAccessToken(userId, email, role);
             return Json(new { success = true, token });
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            _logger.LogError(ex, "Failed to generate embed token for user {UserId}", userId);
             return StatusCode(500, new { success = false, error = "Failed to generate embed token. Please try again." });
         }
     }
