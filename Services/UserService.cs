@@ -55,6 +55,8 @@ public class UserService : IUserService
         return Task.FromResult<UserDto?>(new UserDto(u.Id, u.FirstName, u.LastName, u.Email, u.Role, null));
     }
 
+    // NOTE: SHA256 with a static salt is used here for demo purposes only.
+    // In production, use a proper adaptive hashing algorithm such as BCrypt or Argon2.
     private static string HashPassword(string password)
     {
         using var sha = SHA256.Create();

@@ -28,7 +28,7 @@ public class ChatController : Controller
         return View(vm);
     }
 
-    [HttpPost]
+    [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> Send([FromBody] SendMessageRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.Message))

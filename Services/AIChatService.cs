@@ -26,7 +26,9 @@ public class AIChatService : IAIChatService
             {
                 // Return stub response for demo
                 await Task.Delay(500);
-                return new ChatResponse(true, $"This is a demo response to: \"{request.Messages.LastOrDefault().Content}\". Configure your OpenAI API key to get real AI responses.", 42, null);
+                var lastMessage = request.Messages.LastOrDefault();
+                var userContent = lastMessage != default ? lastMessage.Content : "your message";
+                return new ChatResponse(true, $"This is a demo response to: \"{userContent}\". Configure your OpenAI API key to get real AI responses.", 42, null);
             }
 
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);

@@ -89,6 +89,7 @@
         <!-- Input Area -->
         <div class="chat-input-area p-3 border-top bg-body shadow-sm">
             <div class="container-lg">
+                @Html.AntiForgeryToken()
                 <div class="input-group shadow-sm rounded-3 overflow-hidden border">
                     <textarea id="messageInput" class="form-control border-0 shadow-none"
                               placeholder="Message ChatPortal AI..." rows="1"
