@@ -1,22 +1,69 @@
+@using ChatPortal.Models.Entities
+@{
+    var notifications = ViewBag.UserNotifications as List<Notification> ?? new List<Notification>();
+    var unreadCount = notifications.Count(n => !n.IsRead);
+}
 <div class="dropdown">
-    <button class="btn btn-link text-white p-0 position-relative" data-bs-toggle="dropdown">
+    <button class="btn btn-link text-white p-0 position-relative" data-bs-toggle="dropdown" aria-expanded="false" title="Notifications">
         <i class="bi bi-bell fs-5"></i>
-        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size:0.6rem;">3</span>
+        @if (unreadCount > 0)
+        {
+            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size:0.6rem;">@(unreadCount > 9 ? "9+" : unreadCount.ToString())</span>
+        }
     </button>
-    <ul class="dropdown-menu dropdown-menu-end shadow" style="width:320px;">
-        <li><h6 class="dropdown-header">Notifications</h6></li>
-        <li>
-            <a class="dropdown-item py-3" href="#">
-                <div class="d-flex gap-2">
-                    <i class="bi bi-info-circle text-primary mt-1"></i>
-                    <div>
-                        <div class="fw-medium small">Welcome to ChatPortal!</div>
-                        <div class="text-muted" style="font-size:0.75rem;">Just now</div>
-                    </div>
-                </div>
-            </a>
+    <ul class="dropdown-menu dropdown-menu-end shadow" style="width:340px;max-height:420px;overflow-y:auto;">
+        <li class="d-flex justify-content-between align-items-center px-3 pt-2 pb-1">
+            <h6 class="mb-0 fw-bold">Notifications</h6>
+            @if (unreadCount > 0)
+            {
+                <span class="badge bg-danger rounded-pill">@unreadCount unread</span>
+            }
         </li>
-        <li><hr class="dropdown-divider"></li>
-        <li><a class="dropdown-item text-center text-primary small" href="#">View all notifications</a></li>
+        <li><hr class="dropdown-divider my-1"></li>
+        @if (!notifications.Any())
+        {
+            <li><span class="dropdown-item text-muted small py-3 text-center">No notifications</span></li>
+        }
+        else
+        {
+            @foreach (var n in notifications.Take(5))
+            {
+                var iconClass = n.Priority switch
+                {
+                    "urgent" => "bi-exclamation-triangle-fill text-danger",
+                    "warning" => "bi-exclamation-circle-fill text-warning",
+                    _ => "bi-info-circle-fill text-primary"
+                };
+                <li>
+                    <div class="dropdown-item py-2 @(!n.IsRead ? "bg-light" : "")">
+                        <div class="d-flex gap-2 align-items-start">
+                            <i class="bi @iconClass mt-1 flex-shrink-0"></i>
+                            <div class="flex-grow-1 min-width-0">
+                                <div class="fw-medium small text-truncate">@n.Title</div>
+                                <div class="text-muted" style="font-size:0.75rem;">@n.CreatedAt.ToString("MMM d, HH:mm")</div>
+                            </div>
+                            <div class="d-flex gap-1">
+                                @if (!n.IsRead)
+                                {
+                                    <form asp-controller="Notifications" asp-action="MarkAsRead" method="post" class="d-inline">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@n.Id" />
+                                        <button type="submit" class="btn btn-link btn-sm p-0 text-success" title="Mark as read"><i class="bi bi-check2"></i></button>
+                                    </form>
+                                }
+                                <form asp-controller="Notifications" asp-action="Dismiss" method="post" class="d-inline">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@n.Id" />
+                                    <button type="submit" class="btn btn-link btn-sm p-0 text-secondary" title="Dismiss"><i class="bi bi-x"></i></button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </li>
+            }
+        }
+        <li><hr class="dropdown-divider my-1"></li>
+        <li><a class="dropdown-item text-center text-primary small py-2" asp-controller="Notifications" asp-action="Index">View all notifications</a></li>
     </ul>
 </div>
+

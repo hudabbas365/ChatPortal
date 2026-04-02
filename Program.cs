@@ -49,11 +49,13 @@ builder.Services.AddScoped<IDataConnectionService, DataConnectionService>();
 builder.Services.AddScoped<ICreditService, CreditService>();
 builder.Services.AddScoped<IPaymentService, PaymentService>();
 builder.Services.AddScoped<IDataChatService, DataChatService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddHttpClient<IAIChatService, AIChatService>();
 builder.Services.AddHttpClient<IDataChatService, DataChatService>();
 builder.Services.AddControllersWithViews(options =>
 {
     options.Filters.Add<GlobalExceptionFilter>();
+    options.Filters.Add<NotificationViewDataFilter>();
 });
 builder.Services.AddSignalR();
 builder.Services.AddEndpointsApiExplorer();
