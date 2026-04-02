@@ -11,14 +11,17 @@ namespace ChatPortal.Controllers;
 public class ChatController : Controller
 {
     private readonly IAIChatService _aiChatService;
+    private readonly ILogger<ChatController> _logger;
 
     /// <summary>
     /// Initialises a new instance of <see cref="ChatController"/>.
     /// </summary>
     /// <param name="aiChatService">Service used to query available AI models and send messages.</param>
-    public ChatController(IAIChatService aiChatService)
+    /// <param name="logger">Logger for recording errors.</param>
+    public ChatController(IAIChatService aiChatService, ILogger<ChatController> logger)
     {
         _aiChatService = aiChatService;
+        _logger = logger;
     }
 
     /// <summary>
@@ -28,10 +31,21 @@ public class ChatController : Controller
     /// <returns>The Chat/Index Razor view pre-populated with <see cref="ChatViewModel"/>.</returns>
     public async Task<IActionResult> Index()
     {
-        var models = await _aiChatService.GetAvailableModelsAsync();
+        List<string> models;
+        try
+        {
+            models = (await _aiChatService.GetAvailableModelsAsync()).ToList();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to retrieve available AI models");
+            models = new List<string> { "gpt-3.5-turbo" };
+            TempData["Error"] = "Could not load AI model list. A default model has been selected.";
+        }
+
         var vm = new ChatViewModel
         {
-            AvailableModels = models.ToList(),
+            AvailableModels = models,
             Sessions = new List<ChatSessionViewModel>
             {
                 new() { Id = 1, Title = "Getting Started", CreatedAt = DateTime.UtcNow.AddDays(-1) },
@@ -60,17 +74,25 @@ public class ChatController : Controller
         if (string.IsNullOrWhiteSpace(request.Message))
             return BadRequest(new { error = "Message is required." });
 
-        var chatRequest = new ChatRequest(
-            Model: request.Model ?? "gpt-3.5-turbo",
-            SystemPrompt: "You are a helpful AI assistant.",
-            Messages: new List<(string Role, string Content)> { ("user", request.Message) }
-        );
+        try
+        {
+            var chatRequest = new ChatRequest(
+                Model: request.Model ?? "gpt-3.5-turbo",
+                SystemPrompt: "You are a helpful AI assistant.",
+                Messages: new List<(string Role, string Content)> { ("user", request.Message) }
+            );
 
-        var response = await _aiChatService.SendMessageAsync(chatRequest);
-        if (!response.Success)
-            return BadRequest(new { error = response.Error });
+            var response = await _aiChatService.SendMessageAsync(chatRequest);
+            if (!response.Success)
+                return BadRequest(new { error = response.Error ?? "The AI service was unable to process your request." });
 
-        return Json(new { content = response.Content, tokensUsed = response.TokensUsed });
+            return Json(new { content = response.Content, tokensUsed = response.TokensUsed });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error while sending chat message");
+            return StatusCode(500, new { error = "An unexpected error occurred. Please try again." });
+        }
     }
 }
 

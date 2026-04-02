@@ -1,16 +1,21 @@
 using ChatPortal.Services;
 using ChatPortal.ViewModels;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace ChatPortal.Controllers;
 
 public class AccountController : Controller
 {
     private readonly IUserService _userService;
+    private readonly IJwtService _jwtService;
+    private readonly ILogger<AccountController> _logger;
 
-    public AccountController(IUserService userService)
+    public AccountController(IUserService userService, IJwtService jwtService, ILogger<AccountController> logger)
     {
         _userService = userService;
+        _jwtService = jwtService;
+        _logger = logger;
     }
 
     [HttpGet]
@@ -87,6 +92,7 @@ public class AccountController : Controller
             LastName = "User",
             Email = "demo@chatportal.com"
         };
+        ViewBag.IsAgent = User.IsInRole("Agent");
         return View(vm);
     }
 
@@ -96,5 +102,34 @@ public class AccountController : Controller
         if (!ModelState.IsValid) return View(model);
         TempData["Success"] = "Profile updated successfully.";
         return View(model);
+    }
+
+    /// <summary>
+    /// Generates a short-lived JWT embed token for the authenticated user so they
+    /// can publish their chat interface as an iframe on external websites.
+    /// </summary>
+    [HttpPost, ValidateAntiForgeryToken]
+    public IActionResult GenerateEmbedToken()
+    {
+        if (User.Identity?.IsAuthenticated != true)
+            return Unauthorized(new { success = false, error = "You must be logged in to generate an embed token." });
+
+        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var email = User.FindFirstValue(ClaimTypes.Email) ?? string.Empty;
+        var role = User.FindFirstValue(ClaimTypes.Role) ?? "User";
+
+        if (!int.TryParse(userIdStr, out var userId))
+            return BadRequest(new { success = false, error = "Invalid user identity." });
+
+        try
+        {
+            var token = _jwtService.GenerateAccessToken(userId, email, role);
+            return Json(new { success = true, token });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to generate embed token for user {UserId}", userId);
+            return StatusCode(500, new { success = false, error = "Failed to generate embed token. Please try again." });
+        }
     }
 }
