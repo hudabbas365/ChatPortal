@@ -124,52 +124,63 @@
 
     <!-- Packages -->
     <div class="row g-4 justify-content-center mb-5">
-        @for (int i = 0; i < Model.Packages.Count; i++)
+        @if (Model.Packages.Any())
         {
-            var pkg = Model.Packages[i];
-            var isFeatured = i == 1;
-            var iconBg = i == 0 ? "#E8F0FE" : i == 1 ? "#F3E8FF" : "#E6F9E8";
-            var iconColor = i == 0 ? "#1565c0" : i == 1 ? "#7c4dff" : "#2e7d32";
-            var iconName = i == 0 ? "bi-rocket" : i == 1 ? "bi-stars" : "bi-gem";
+            @for (int i = 0; i < Model.Packages.Count; i++)
+            {
+                var pkg = Model.Packages[i];
+                var isFeatured = i == 1;
+                var iconBg = i == 0 ? "#E8F0FE" : i == 1 ? "#F3E8FF" : "#E6F9E8";
+                var iconColor = i == 0 ? "#1565c0" : i == 1 ? "#7c4dff" : "#2e7d32";
+                var iconName = i == 0 ? "bi-rocket" : i == 1 ? "bi-stars" : "bi-gem";
 
-            <div class="col-md-4">
-                <div class="plan-card @(isFeatured ? "featured" : "")">
-                    @if (isFeatured)
-                    {
-                        <div class="mb-2">
-                            <span style="background:#F3E8FF;color:#7c4dff;font-size:0.72rem;font-weight:700;padding:0.25em 0.8em;border-radius:100px;">Most Popular</span>
+                <div class="col-md-4">
+                    <div class="plan-card @(isFeatured ? "featured" : "")">
+                        @if (isFeatured)
+                        {
+                            <div class="mb-2">
+                                <span style="background:#F3E8FF;color:#7c4dff;font-size:0.72rem;font-weight:700;padding:0.25em 0.8em;border-radius:100px;">Most Popular</span>
+                            </div>
+                        }
+
+                        <div class="plan-icon" style="background:@iconBg;color:@iconColor;">
+                            <i class="bi @iconName"></i>
                         </div>
-                    }
 
-                    <div class="plan-icon" style="background:@iconBg;color:@iconColor;">
-                        <i class="bi @iconName"></i>
-                    </div>
+                        <h4 class="fw-bold mb-1">@pkg.Name</h4>
+                        <p class="text-muted small mb-3">@pkg.Description</p>
 
-                    <h4 class="fw-bold mb-1">@pkg.Name</h4>
-                    <p class="text-muted small mb-3">@pkg.Description</p>
+                        <div class="credits-badge"><i class="bi bi-coin me-1"></i>@pkg.Credits credits</div>
 
-                    <div class="credits-badge"><i class="bi bi-coin me-1"></i>@pkg.Credits credits</div>
+                        <div class="price-tag mb-3">
+                            <sup>$</sup>@pkg.Price.ToString("0.00")<small>/one-time</small>
+                        </div>
 
-                    <div class="price-tag mb-3">
-                        <sup>$</sup>@pkg.Price.ToString("0.00")<small>/one-time</small>
-                    </div>
+                        <div class="d-flex flex-column gap-2">
+                            <!-- Stripe Pay -->
+                            <form asp-action="ProcessStripePayment" method="post">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="packageId" value="@pkg.Id" />
+                                <button type="submit" class="btn-pay btn-stripe">
+                                    <i class="bi bi-credit-card me-2"></i>Pay with Card
+                                </button>
+                            </form>
 
-                    <div class="d-flex flex-column gap-2">
-                        <!-- Stripe Pay -->
-                        <form asp-action="ProcessStripePayment" method="post">
-                            @Html.AntiForgeryToken()
-                            <input type="hidden" name="packageId" value="@pkg.Id" />
-                            <button type="submit" class="btn-pay btn-stripe">
-                                <i class="bi bi-credit-card me-2"></i>Pay with Card
+                            <!-- PayPal Pay -->
+                            <button class="btn-pay btn-paypal paypal-btn" data-package-id="@pkg.Id" data-price="@pkg.Price.ToString("0.00")">
+                                <i class="bi bi-paypal me-2"></i>Pay with PayPal
                             </button>
-                        </form>
-
-                        <!-- PayPal Pay -->
-                        <button class="btn-pay btn-paypal paypal-btn" data-package-id="@pkg.Id" data-price="@pkg.Price.ToString("0.00")">
-                            <i class="bi bi-paypal me-2"></i>Pay with PayPal
-                        </button>
+                        </div>
                     </div>
                 </div>
+            }
+        }
+        else
+        {
+            <div class="col-12 text-center py-5 text-muted">
+                <i class="bi bi-bag-x fs-1 d-block mb-3 opacity-50"></i>
+                <h5>No credit packages available</h5>
+                <p class="small">Credit packages are not available at this time. Please check back later.</p>
             </div>
         }
     </div>

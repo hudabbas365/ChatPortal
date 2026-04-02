@@ -6,7 +6,7 @@
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<div class="chat-layout d-flex position-relative" style="height:calc(100vh - 56px);padding-top:56px;overflow:hidden;">
+<div class="chat-layout d-flex position-relative" style="height:calc(100vh - 56px);overflow:hidden;">
 
     <!-- ── Left Sidebar: Conversation History ── -->
     <div class="chat-sidebar bg-dark text-white d-flex flex-column border-end border-secondary border-opacity-25" style="width:280px;flex-shrink:0;">
@@ -69,6 +69,14 @@
                 <button class="btn btn-sm btn-outline-secondary" id="togglePanelBtn" title="Source references" onclick="toggleRightPanel()">
                     <i class="bi bi-layout-sidebar-reverse"></i>
                 </button>
+                <!-- Publish as iframe (agents only) -->
+                @if (User.IsInRole("Agent") || User.Identity?.IsAuthenticated == true)
+                {
+                    <button class="btn btn-sm btn-outline-primary" title="Publish conversation as iframe"
+                            data-bs-toggle="modal" data-bs-target="#embedModal">
+                        <i class="bi bi-code-slash"></i>
+                    </button>
+                }
                 <!-- Clear Chat -->
                 <button class="btn btn-sm btn-outline-secondary" title="Clear chat" onclick="clearChat()">
                     <i class="bi bi-trash3"></i>
@@ -134,7 +142,54 @@
     </div>
 </div>
 
+<!-- ── Embed / Publish as iframe Modal ── -->
+<div class="modal fade" id="embedModal" tabindex="-1" aria-labelledby="embedModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold" id="embedModalLabel">
+                    <i class="bi bi-code-slash me-2 text-primary"></i>Publish Conversation as iFrame
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body pt-3">
+                <p class="text-muted small mb-3">
+                    Generate an embed token and copy the snippet below into any webpage to embed this chat interface.
+                </p>
+                <div class="d-flex gap-2 mb-3">
+                    <button class="btn btn-primary btn-sm" id="generateEmbedTokenBtn" onclick="generateEmbedToken()">
+                        <i class="bi bi-key me-1"></i>Generate Embed Token
+                    </button>
+                    <span id="embedTokenStatus" class="small text-muted align-self-center"></span>
+                </div>
+                <div id="embedCodeSection" class="d-none">
+                    <label class="form-label fw-semibold small">Embed Token</label>
+                    <div class="input-group input-group-sm mb-3">
+                        <input type="text" id="embedTokenDisplay" class="form-control font-monospace small" readonly />
+                        <button class="btn btn-outline-secondary" type="button" onclick="copyEmbedToken()">
+                            <i class="bi bi-clipboard"></i>
+                        </button>
+                    </div>
+                    <label class="form-label fw-semibold small">iFrame Snippet</label>
+                    <div class="input-group input-group-sm">
+                        <textarea id="embedIframeCode" class="form-control font-monospace small" rows="3" readonly></textarea>
+                        <button class="btn btn-outline-secondary" type="button" onclick="copyIframeCode()">
+                            <i class="bi bi-clipboard"></i>
+                        </button>
+                    </div>
+                    <p class="text-muted mt-2" style="font-size:0.78rem;">
+                        <i class="bi bi-info-circle me-1"></i>The token expires based on your session settings.
+                        Generate a new one when it expires.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 <!-- Markdown parsing -->
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <!-- XSS sanitisation -->
@@ -159,6 +214,49 @@
     const connection = new signalR.HubConnectionBuilder().withUrl("/hubs/chat").build();
     connection.start().catch(err => console.warn("SignalR:", err));
     connection.on("ReceiveMessage", (role, content) => appendMessage(role, content));
+
+    // ── Agent embed helpers ───────────────────────────────────────────────
+    async function generateEmbedToken() {
+        const btn = document.getElementById('generateEmbedTokenBtn');
+        const status = document.getElementById('embedTokenStatus');
+        btn.disabled = true;
+        status.textContent = 'Generating…';
+        try {
+            const resp = await fetch('/Account/GenerateEmbedToken', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': getAntiForgeryToken()
+                }
+            });
+            const data = await resp.json();
+            if (data.success && data.token) {
+                const origin = window.location.origin;
+                const iframeUrl = `${origin}/Embed/Chat?token=${encodeURIComponent(data.token)}`;
+                document.getElementById('embedTokenDisplay').value = data.token;
+                document.getElementById('embedIframeCode').value =
+                    `<iframe src="${iframeUrl}" width="400" height="600" frameborder="0" allow="microphone"></iframe>`;
+                document.getElementById('embedCodeSection').classList.remove('d-none');
+                status.textContent = '';
+            } else {
+                status.textContent = data.error || 'Failed to generate token.';
+            }
+        } catch {
+            status.textContent = 'Request failed. Please try again.';
+        } finally {
+            btn.disabled = false;
+        }
+    }
+
+    function copyEmbedToken() {
+        const el = document.getElementById('embedTokenDisplay');
+        navigator.clipboard?.writeText(el.value).catch(() => { el.select(); document.execCommand('copy'); });
+    }
+
+    function copyIframeCode() {
+        const el = document.getElementById('embedIframeCode');
+        navigator.clipboard?.writeText(el.value).catch(() => { el.select(); document.execCommand('copy'); });
+    }
 </script>
 <style>
     /* Session sidebar styles */

@@ -1,4 +1,5 @@
 using ChatPortal.Data;
+using ChatPortal.Filters;
 using ChatPortal.Hubs;
 using ChatPortal.Middleware;
 using ChatPortal.Services;
@@ -50,7 +51,10 @@ builder.Services.AddScoped<IPaymentService, PaymentService>();
 builder.Services.AddScoped<IDataChatService, DataChatService>();
 builder.Services.AddHttpClient<IAIChatService, AIChatService>();
 builder.Services.AddHttpClient<IDataChatService, DataChatService>();
-builder.Services.AddControllersWithViews();
+builder.Services.AddControllersWithViews(options =>
+{
+    options.Filters.Add<GlobalExceptionFilter>();
+});
 builder.Services.AddSignalR();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();

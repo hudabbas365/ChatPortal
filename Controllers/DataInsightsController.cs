@@ -12,12 +12,15 @@ public class DataInsightsController : Controller
     private readonly IDataConnectionService _dataConnection;
     private readonly IDataChatService _dataChatService;
     private readonly ICreditService _creditService;
+    private readonly ILogger<DataInsightsController> _logger;
 
-    public DataInsightsController(IDataConnectionService dataConnection, IDataChatService dataChatService, ICreditService creditService)
+    public DataInsightsController(IDataConnectionService dataConnection, IDataChatService dataChatService,
+        ICreditService creditService, ILogger<DataInsightsController> logger)
     {
         _dataConnection = dataConnection;
         _dataChatService = dataChatService;
         _creditService = creditService;
+        _logger = logger;
     }
 
     private int GetUserId() =>
@@ -25,20 +28,29 @@ public class DataInsightsController : Controller
 
     public async Task<IActionResult> Index(int dataSourceId)
     {
-        var userId = GetUserId();
-        var ds = await _dataConnection.GetDataSourceAsync(dataSourceId, userId);
-        if (ds == null)
+        try
         {
-            TempData["Error"] = "Data source not found.";
+            var userId = GetUserId();
+            var ds = await _dataConnection.GetDataSourceAsync(dataSourceId, userId);
+            if (ds == null)
+            {
+                TempData["Error"] = "Data source not found.";
+                return RedirectToAction("Index", "DataConnection");
+            }
+
+            var vm = new DataInsightsViewModel
+            {
+                DataSource = ds,
+                CreditBalance = await _creditService.GetBalanceAsync(userId)
+            };
+            return View(vm);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error loading data insights for source {DataSourceId}", dataSourceId);
+            TempData["Error"] = "Unable to load data source insights. Please try again.";
             return RedirectToAction("Index", "DataConnection");
         }
-
-        var vm = new DataInsightsViewModel
-        {
-            DataSource = ds,
-            CreditBalance = await _creditService.GetBalanceAsync(userId)
-        };
-        return View(vm);
     }
 
     [HttpPost, ValidateAntiForgeryToken]
@@ -47,8 +59,16 @@ public class DataInsightsController : Controller
         if (string.IsNullOrWhiteSpace(question))
             return BadRequest(new { error = "Question is required." });
 
-        var userId = GetUserId();
-        var result = await _dataChatService.QueryDataSourceAsync(userId, dataSourceId, question);
-        return Json(result);
+        try
+        {
+            var userId = GetUserId();
+            var result = await _dataChatService.QueryDataSourceAsync(userId, dataSourceId, question);
+            return Json(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error querying data source {DataSourceId}", dataSourceId);
+            return StatusCode(500, new { success = false, error = "An error occurred while processing your query. Please try again." });
+        }
     }
 }

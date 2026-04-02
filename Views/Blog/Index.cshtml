@@ -4,14 +4,14 @@
     var posts = ViewBag.Posts as List<(int Id, string Title, string Slug, string Author, string Excerpt, string Date, string Tag)>;
 }
 
-<div class="container py-5" style="padding-top:100px!important;">
+<div class="container py-5">
     <div class="text-center mb-5">
         <h1 class="fw-bold display-6">Blog &amp; Resources</h1>
         <p class="text-muted lead">Tips, tutorials, and AI insights from the ChatPortal team</p>
     </div>
 
     <div class="row g-4">
-        @if (posts != null)
+        @if (posts != null && posts.Count > 0)
         {
             @foreach (var post in posts)
             {
@@ -34,6 +34,16 @@
                     </div>
                 </div>
             }
+        }
+        else
+        {
+            <div class="col-12">
+                <div class="text-center py-5 text-muted">
+                    <i class="bi bi-journal-text fs-1 d-block mb-3 opacity-50"></i>
+                    <h5>No posts yet</h5>
+                    <p class="small">Check back soon for tips, tutorials, and AI insights.</p>
+                </div>
+            </div>
         }
     </div>
 </div>

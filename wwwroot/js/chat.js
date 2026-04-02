@@ -35,6 +35,7 @@ function appendMessage(role, content, persist = true) {
                         renderSidebar(document.getElementById('sessionSearch')?.value ?? '');
                     }
                     _insertMessageBubble(isAi, renderedContent, true);
+                    initPendingCharts();
                     updateRightPanel(parsed);
                     return;
                 }
@@ -273,7 +274,7 @@ function escapeHtml(text) {
 
 /**
  * Build an HTML representation for a structured AI data-insights response object.
- * @param {Object} data - Parsed response with optional narrative, query, result, prompts, examples.
+ * @param {Object} data - Parsed response with optional narrative, query, result, prompts, examples, chartData.
  * @returns {string} HTML string.
  */
 function buildStructuredHtml(data) {
@@ -291,6 +292,13 @@ function buildStructuredHtml(data) {
             <tbody>${data.result.slice(0, MAX_TABLE_ROWS).map(r => `<tr>${keys.map(k => `<td>${escapeHtml(String(r[k] ?? ''))}</td>`).join('')}</tr>`).join('')}</tbody>
             </table></div>`;
     }
+    if (data.chartData && data.chartData.labels && data.chartData.datasets) {
+        const chartId = 'chart-' + Math.random().toString(36).slice(2, 9);
+        const safeData = encodeURIComponent(JSON.stringify(data.chartData));
+        html += `<div class="mt-2 mb-2" style="position:relative;max-height:280px;">
+            <canvas id="${chartId}" data-chart="${safeData}" style="max-height:260px;"></canvas>
+        </div>`;
+    }
     if (data.prompts?.length) {
         html += `<div class="d-flex flex-wrap gap-1 mb-1">${data.prompts.map(p =>
             `<button class="btn btn-sm rounded-pill chat-prompt-btn" style="background:#F3E8FF;color:#7c4dff;font-size:0.75rem;"
@@ -304,6 +312,45 @@ function buildStructuredHtml(data) {
         ).join('')}</div>`;
     }
     return html || `<p class="mb-0 small text-muted">No content</p>`;
+}
+
+/**
+ * Initialise any Chart.js charts whose canvas elements have a pending `data-chart` attribute.
+ * Called after structured AI response bubbles are inserted into the DOM.
+ */
+function initPendingCharts() {
+    if (typeof Chart === 'undefined') return;
+    document.querySelectorAll('canvas[data-chart]').forEach(canvas => {
+        try {
+            const chartData = JSON.parse(decodeURIComponent(canvas.dataset.chart));
+            const defaultColors = [
+                'rgba(13,110,253,0.6)', 'rgba(102,16,242,0.6)', 'rgba(25,135,84,0.6)',
+                'rgba(220,53,69,0.6)', 'rgba(255,193,7,0.6)', 'rgba(13,202,240,0.6)'
+            ];
+            new Chart(canvas, {
+                type: chartData.chartType || 'bar',
+                data: {
+                    labels: chartData.labels,
+                    datasets: chartData.datasets.map((ds, i) => ({
+                        label: ds.label,
+                        data: ds.data,
+                        backgroundColor: ds.backgroundColor || defaultColors[i % defaultColors.length],
+                        borderColor: ds.borderColor || defaultColors[i % defaultColors.length].replace('0.6', '1'),
+                        borderWidth: 1,
+                        fill: chartData.chartType === 'line' ? false : undefined
+                    }))
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: { display: chartData.datasets.length > 1 }
+                    }
+                }
+            });
+            canvas.removeAttribute('data-chart');
+        } catch { /* ignore malformed chart data */ }
+    });
 }
 
 // ── File Attachment ───────────────────────────────────────────────────────
