@@ -92,9 +92,13 @@
                 @Html.AntiForgeryToken()
                 <div class="input-group shadow-sm rounded-3 overflow-hidden border">
                     <textarea id="messageInput" class="form-control border-0 shadow-none"
-                              placeholder="Message ChatPortal AI..." rows="1"
+                              placeholder="Message ChatPortal AI... (Enter to send, Shift+Enter for new line)" rows="1"
                               style="resize:none;max-height:200px;"
                               onkeydown="handleKeyDown(event)"></textarea>
+                    <button class="btn btn-outline-secondary border-0 px-3" id="micBtn" type="button"
+                            title="Voice input (Web Speech API)" onclick="toggleMic()">
+                        <i class="bi bi-mic-fill" id="micIcon"></i>
+                    </button>
                     <button class="btn btn-primary px-4" id="sendBtn" onclick="sendMessage()">
                         <i class="bi bi-send-fill"></i>
                     </button>

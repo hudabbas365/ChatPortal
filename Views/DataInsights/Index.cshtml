@@ -1,0 +1,518 @@
+@model ChatPortal.ViewModels.DataInsightsViewModel
+@{
+    ViewData["Title"] = "AI Insights — " + Model.DataSource.Name;
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+    :root {
+        --color-bg: #E8F0FE;
+        --color-lavender: #F3E8FF;
+        --color-green: #E6F9E8;
+        --color-peach: #FFF3E0;
+        --color-card: #ffffff;
+        --shadow-soft: 0 2px 12px rgba(0,0,0,0.08);
+        --radius: 12px;
+    }
+
+    body { background: var(--color-bg); }
+
+    .insights-layout { display: flex; height: calc(100vh - 56px); padding-top: 56px; }
+
+    /* Sidebar */
+    .insights-sidebar {
+        width: 280px; flex-shrink: 0;
+        background: #fff;
+        border-right: 1px solid rgba(0,0,0,0.08);
+        display: flex; flex-direction: column;
+        box-shadow: 2px 0 8px rgba(0,0,0,0.04);
+    }
+
+    .insights-sidebar-header {
+        padding: 1.25rem 1rem;
+        background: linear-gradient(135deg, #E8F0FE, #F3E8FF);
+        border-bottom: 1px solid rgba(0,0,0,0.08);
+    }
+
+    /* Main */
+    .insights-main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+    .chat-messages {
+        flex: 1; overflow-y: auto; padding: 1.5rem;
+        display: flex; flex-direction: column; gap: 1.5rem;
+    }
+
+    /* Message bubbles */
+    .msg-user {
+        align-self: flex-end; max-width: 65%;
+        background: linear-gradient(135deg, #7c4dff, #448aff);
+        color: #fff; border-radius: 16px 16px 4px 16px;
+        padding: 0.75rem 1.1rem; font-size: 0.95rem;
+        box-shadow: 0 2px 8px rgba(124,77,255,0.25);
+    }
+
+    .msg-ai {
+        align-self: flex-start; max-width: 90%;
+        background: var(--color-card);
+        border-radius: 4px 16px 16px 16px;
+        padding: 1.25rem 1.5rem;
+        box-shadow: var(--shadow-soft);
+        border: 1px solid rgba(0,0,0,0.06);
+    }
+
+    /* Structured response sections */
+    .section-label {
+        font-size: 0.7rem; font-weight: 700; letter-spacing: 0.08em;
+        text-transform: uppercase; color: #9c9c9c; margin-bottom: 0.4rem;
+    }
+
+    .query-block {
+        background: #1e1e2e; color: #cdd6f4; border-radius: 8px;
+        padding: 0.75rem 1rem; font-family: monospace; font-size: 0.85rem;
+        overflow-x: auto;
+    }
+
+    .narrative-text { font-size: 0.95rem; line-height: 1.65; color: #333; }
+
+    .data-table-wrap { overflow-x: auto; border-radius: 8px; }
+    .data-table { font-size: 0.82rem; margin-bottom: 0; }
+    .data-table thead th { background: #E8F0FE; font-weight: 700; border: none; }
+    .data-table tbody tr:hover { background: #F5F5F5; }
+
+    .prompt-chip {
+        display: inline-block; padding: 0.35em 0.9em;
+        background: #F3E8FF; color: #7c4dff;
+        border-radius: 100px; font-size: 0.82rem; font-weight: 600;
+        cursor: pointer; transition: background 0.15s, transform 0.1s;
+        border: 1px solid rgba(124,77,255,0.2);
+        text-decoration: none;
+    }
+    .prompt-chip:hover { background: #e0ccff; transform: translateY(-1px); color: #5e35b1; }
+
+    /* Input area */
+    .input-area {
+        padding: 1rem 1.5rem;
+        background: #fff;
+        border-top: 1px solid rgba(0,0,0,0.08);
+        box-shadow: 0 -2px 8px rgba(0,0,0,0.04);
+    }
+
+    .input-wrap {
+        display: flex; gap: 0.75rem; align-items: flex-end;
+        background: #F5F5F5; border-radius: var(--radius);
+        padding: 0.5rem 0.75rem;
+        border: 1px solid rgba(0,0,0,0.1);
+        transition: border-color 0.2s;
+    }
+    .input-wrap:focus-within { border-color: #7c4dff; }
+
+    #messageInput {
+        flex: 1; border: none; background: transparent; resize: none;
+        max-height: 160px; font-size: 0.95rem; outline: none; padding: 0.25rem 0;
+    }
+
+    /* Mic button */
+    .mic-btn {
+        background: none; border: none; padding: 0.35rem;
+        border-radius: 50%; cursor: pointer; color: #888;
+        transition: color 0.2s, background 0.2s;
+    }
+    .mic-btn:hover { color: #7c4dff; background: rgba(124,77,255,0.1); }
+    .mic-btn.recording {
+        color: #e53935;
+        animation: pulse 1.2s ease-in-out infinite;
+    }
+
+    @@keyframes pulse {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(229,57,53,0.4); }
+        50% { box-shadow: 0 0 0 8px rgba(229,57,53,0); }
+    }
+
+    .send-btn {
+        background: linear-gradient(135deg, #7c4dff, #448aff);
+        border: none; border-radius: 8px; padding: 0.5rem 1rem;
+        color: #fff; font-weight: 600; cursor: pointer;
+        transition: opacity 0.2s;
+    }
+    .send-btn:hover { opacity: 0.88; }
+    .send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .credit-pill {
+        background: var(--color-green); color: #2e7d32;
+        border-radius: 100px; padding: 0.25em 0.75em;
+        font-size: 0.78rem; font-weight: 700;
+    }
+
+    /* Chart container */
+    .chart-container { max-height: 320px; position: relative; }
+
+    /* Loading skeleton */
+    .skeleton { background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 6px; height: 16px; }
+    @@keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+
+    .collapsible-header { cursor: pointer; user-select: none; }
+    .collapsible-header:hover { opacity: 0.8; }
+</style>
+
+<div class="insights-layout">
+    <!-- Sidebar -->
+    <div class="insights-sidebar">
+        <div class="insights-sidebar-header">
+            <div class="d-flex align-items-center gap-2 mb-2">
+                @{
+                    var icon = Model.DataSource.SourceType switch
+                    {
+                        "Excel" => "bi-file-earmark-excel",
+                        "CSV" => "bi-filetype-csv",
+                        "SqlServer" => "bi-server",
+                        _ => "bi-database"
+                    };
+                }
+                <i class="bi @icon fs-5" style="color:#7c4dff;"></i>
+                <div>
+                    <div class="fw-bold small text-truncate" style="max-width:180px;">@Model.DataSource.Name</div>
+                    <div class="text-muted" style="font-size:0.7rem;">@Model.DataSource.SourceType</div>
+                </div>
+            </div>
+            <div class="credit-pill"><i class="bi bi-coin me-1"></i>@Model.CreditBalance credits remaining</div>
+        </div>
+
+        <div class="p-3 flex-grow-1 overflow-auto">
+            <p class="text-muted small fw-semibold mb-2 text-uppercase" style="font-size:0.68rem;letter-spacing:0.07em;">Suggested Prompts</p>
+            <div class="d-flex flex-column gap-2" id="sidebarPrompts">
+                <button class="btn btn-sm text-start rounded-3 border-0 sidebar-prompt" style="background:#F3E8FF;color:#5e35b1;"
+                        data-prompt="Show me the top 10 records">
+                    Show me the top 10 records
+                </button>
+                <button class="btn btn-sm text-start rounded-3 border-0 sidebar-prompt" style="background:#E8F0FE;color:#1565c0;"
+                        data-prompt="What are the column names and data types?">
+                    What are the column names?
+                </button>
+                <button class="btn btn-sm text-start rounded-3 border-0 sidebar-prompt" style="background:#E6F9E8;color:#2e7d32;"
+                        data-prompt="What is the total record count?">
+                    Total record count
+                </button>
+                <button class="btn btn-sm text-start rounded-3 border-0 sidebar-prompt" style="background:#FFF3E0;color:#e65100;"
+                        data-prompt="Show me summary statistics for numeric columns">
+                    Summary statistics
+                </button>
+            </div>
+        </div>
+
+        <div class="p-3 border-top">
+            <a asp-controller="DataConnection" asp-action="Index" class="btn btn-outline-secondary btn-sm w-100 rounded-pill">
+                <i class="bi bi-arrow-left me-1"></i>Back to Data Sources
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Chat Area -->
+    <div class="insights-main">
+        <!-- Header -->
+        <div class="d-flex align-items-center justify-content-between px-4 py-3 border-bottom bg-white">
+            <div class="d-flex align-items-center gap-3">
+                <div class="rounded-circle d-flex align-items-center justify-content-center"
+                     style="width:40px;height:40px;background:linear-gradient(135deg,#E8F0FE,#F3E8FF);">
+                    <i class="bi bi-graph-up-arrow" style="color:#7c4dff;"></i>
+                </div>
+                <div>
+                    <div class="fw-bold">AI Data Insights</div>
+                    <div class="text-muted small">Ask questions about <strong>@Model.DataSource.Name</strong> — 5 credits/query</div>
+                </div>
+            </div>
+            <button class="btn btn-sm btn-outline-secondary rounded-pill" onclick="clearChat()">
+                <i class="bi bi-trash3 me-1"></i>Clear
+            </button>
+        </div>
+
+        <!-- Messages -->
+        <div class="chat-messages" id="chatMessages">
+            <div id="emptyState" class="text-center py-5">
+                <div class="mb-4">
+                    <div class="rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                         style="width:72px;height:72px;background:linear-gradient(135deg,#E8F0FE,#F3E8FF);">
+                        <i class="bi bi-graph-up-arrow fs-2" style="color:#7c4dff;"></i>
+                    </div>
+                    <h5 class="fw-bold" style="color:#1a1a2e;">Ask anything about your data</h5>
+                    <p class="text-muted small">Powered by AI. Each query costs <strong>5 credits</strong>.</p>
+                </div>
+                <div class="d-flex flex-wrap gap-2 justify-content-center">
+                    @foreach (var ex in new[] { "Show top 10 rows", "Count all records", "What columns exist?", "Show numeric averages" })
+                    {
+                        <button class="prompt-chip suggestion-prompt" data-prompt="@System.Web.HttpUtility.HtmlAttributeEncode(ex)">@ex</button>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Input Area -->
+        <div class="input-area">
+            <div class="input-wrap">
+                <textarea id="messageInput" placeholder="Ask a question about your data... (Enter to send, Shift+Enter for new line)"
+                          rows="1"></textarea>
+                <button class="mic-btn" id="micBtn" title="Voice input" onclick="toggleMic()">
+                    <i class="bi bi-mic-fill"></i>
+                </button>
+                <button class="send-btn" id="sendBtn" onclick="sendMessage()">
+                    <i class="bi bi-send-fill me-1"></i>Ask
+                </button>
+            </div>
+            <div class="d-flex justify-content-between align-items-center mt-2 px-1">
+                <small class="text-muted">5 credits per query · <span id="creditDisplay">@Model.CreditBalance remaining</span></small>
+                <small class="text-muted">Enter to send · Shift+Enter for new line</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+    const dataSourceId = @Model.DataSource.Id;
+    const antiForgeryToken = '@Html.AntiForgeryToken()'.match(/value="([^"]+)"/)?.[1] ?? '';
+    let chatHistory = [];
+    let recognition = null;
+    let isRecording = false;
+    let chartInstances = {};
+
+    // ── Input handling ──────────────────────────────────────────────────────
+    const textarea = document.getElementById('messageInput');
+    textarea.addEventListener('keydown', e => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
+        }
+    });
+    textarea.addEventListener('input', () => {
+        textarea.style.height = 'auto';
+        textarea.style.height = Math.min(textarea.scrollHeight, 160) + 'px';
+    });
+
+    function setQuestion(q) {
+        textarea.value = q;
+        textarea.focus();
+        textarea.dispatchEvent(new Event('input'));
+    }
+
+    // ── Mic ─────────────────────────────────────────────────────────────────
+    function toggleMic() {
+        if (!('SpeechRecognition' in window || 'webkitSpeechRecognition' in window)) {
+            alert('Voice input is not supported in your browser.');
+            return;
+        }
+
+        if (isRecording) {
+            recognition?.stop();
+            return;
+        }
+
+        const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+        recognition = new SR();
+        recognition.lang = 'en-US';
+        recognition.interimResults = false;
+
+        recognition.onstart = () => {
+            isRecording = true;
+            document.getElementById('micBtn').classList.add('recording');
+        };
+        recognition.onresult = e => {
+            const transcript = e.results[0][0].transcript;
+            textarea.value += (textarea.value ? ' ' : '') + transcript;
+            textarea.dispatchEvent(new Event('input'));
+        };
+        recognition.onend = () => {
+            isRecording = false;
+            document.getElementById('micBtn').classList.remove('recording');
+        };
+        recognition.start();
+    }
+
+    // ── Send message ─────────────────────────────────────────────────────────
+    async function sendMessage() {
+        const question = textarea.value.trim();
+        if (!question) return;
+
+        document.getElementById('emptyState')?.remove();
+        appendUserMessage(question);
+        textarea.value = '';
+        textarea.style.height = 'auto';
+
+        const loadingId = appendLoadingMessage();
+        document.getElementById('sendBtn').disabled = true;
+
+        try {
+            const resp = await fetch(`/DataInsights/Query?dataSourceId=${dataSourceId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': antiForgeryToken
+                },
+                body: JSON.stringify(question)
+            });
+
+            const data = await resp.json();
+            removeLoading(loadingId);
+            appendAIResponse(data);
+        } catch (err) {
+            removeLoading(loadingId);
+            appendAIResponse({ success: false, error: 'Network error. Please try again.' });
+        } finally {
+            document.getElementById('sendBtn').disabled = false;
+        }
+    }
+
+    function appendUserMessage(text) {
+        const msgs = document.getElementById('chatMessages');
+        const div = document.createElement('div');
+        div.className = 'msg-user';
+        div.textContent = text;
+        msgs.appendChild(div);
+        scrollToBottom();
+    }
+
+    function appendLoadingMessage() {
+        const id = 'load-' + Date.now();
+        const msgs = document.getElementById('chatMessages');
+        msgs.insertAdjacentHTML('beforeend', `
+            <div id="${id}" class="msg-ai">
+                <div class="skeleton mb-2" style="width:60%;"></div>
+                <div class="skeleton mb-2" style="width:80%;"></div>
+                <div class="skeleton" style="width:40%;"></div>
+            </div>`);
+        scrollToBottom();
+        return id;
+    }
+
+    function removeLoading(id) {
+        document.getElementById(id)?.remove();
+    }
+
+    function appendAIResponse(data) {
+        const msgs = document.getElementById('chatMessages');
+        const div = document.createElement('div');
+        div.className = 'msg-ai';
+
+        if (!data.success) {
+            div.innerHTML = `<div class="alert alert-danger mb-0 py-2"><i class="bi bi-exclamation-triangle me-2"></i>${escHtml(data.error ?? 'An error occurred.')}</div>`;
+        } else {
+            let html = '';
+
+            // Narrative
+            if (data.narrative) {
+                html += `<div class="narrative-text mb-3">${escHtml(data.narrative)}</div>`;
+            }
+
+            // Generated Query (collapsible)
+            if (data.query) {
+                const qId = 'q-' + Date.now();
+                html += `
+                    <div class="mb-3">
+                        <div class="section-label collapsible-header" data-bs-toggle="collapse" data-bs-target="#${qId}">
+                            <i class="bi bi-code-slash me-1"></i>Generated Query
+                            <i class="bi bi-chevron-down ms-1" style="font-size:0.6rem;"></i>
+                        </div>
+                        <div class="collapse" id="${qId}">
+                            <div class="query-block mt-1">${escHtml(data.query)}</div>
+                        </div>
+                    </div>`;
+            }
+
+            // Result table
+            if (data.result && Array.isArray(data.result) && data.result.length > 0) {
+                const keys = Object.keys(data.result[0]);
+                html += `<div class="mb-3">
+                    <div class="section-label"><i class="bi bi-table me-1"></i>Result (${data.result.length} rows)</div>
+                    <div class="data-table-wrap">
+                        <table class="table table-sm data-table">
+                            <thead><tr>${keys.map(k => `<th>${escHtml(k)}</th>`).join('')}</tr></thead>
+                            <tbody>
+                                ${data.result.slice(0, 50).map(r => `<tr>${keys.map(k => `<td>${escHtml(String(r[k] ?? ''))}</td>`).join('')}</tr>`).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>`;
+            }
+
+            // Chart
+            if (data.chartData) {
+                const chartId = 'chart-' + Date.now();
+                html += `<div class="mb-3">
+                    <div class="section-label"><i class="bi bi-bar-chart me-1"></i>Chart</div>
+                    <div class="chart-container"><canvas id="${chartId}"></canvas></div>
+                </div>`;
+                // Defer chart rendering
+                setTimeout(() => renderChart(chartId, data.chartData), 50);
+            }
+
+            // Credits used
+            if (data.creditsUsed) {
+                html += `<div class="text-muted small mb-3"><i class="bi bi-coin me-1"></i>${data.creditsUsed} credits used</div>`;
+                updateCreditDisplay(data.creditsUsed);
+            }
+
+            // Suggested prompts
+            if (data.prompts?.length) {
+                html += `<div class="mb-2">
+                    <div class="section-label"><i class="bi bi-lightbulb me-1"></i>Follow-up Questions</div>
+                    <div class="d-flex flex-wrap gap-2 mt-1">
+                        ${data.prompts.map(p => `<button class="prompt-chip dynamic-prompt" data-prompt="${escHtml(p)}">${escHtml(p)}</button>`).join('')}
+                    </div>
+                </div>`;
+            }
+
+            div.innerHTML = html;
+        }
+
+        msgs.appendChild(div);
+        scrollToBottom();
+    }
+
+    function renderChart(canvasId, chartData) {
+        const canvas = document.getElementById(canvasId);
+        if (!canvas) return;
+        if (chartInstances[canvasId]) chartInstances[canvasId].destroy();
+        chartInstances[canvasId] = new Chart(canvas, {
+            type: chartData.chartType || 'bar',
+            data: { labels: chartData.labels, datasets: chartData.datasets },
+            options: {
+                responsive: true, maintainAspectRatio: true,
+                plugins: { legend: { display: chartData.datasets?.length > 1 } },
+                scales: { y: { beginAtZero: true } }
+            }
+        });
+    }
+
+    function clearChat() {
+        document.getElementById('chatMessages').innerHTML = `
+            <div id="emptyState" class="text-center py-5">
+                <p class="text-muted">Chat cleared. Ask a new question!</p>
+            </div>`;
+    }
+
+    function scrollToBottom() {
+        const msgs = document.getElementById('chatMessages');
+        msgs.scrollTop = msgs.scrollHeight;
+    }
+
+    let currentCredits = @Model.CreditBalance;
+    function updateCreditDisplay(used) {
+        currentCredits = Math.max(0, currentCredits - used);
+        const el = document.getElementById('creditDisplay');
+        if (el) el.textContent = currentCredits + ' remaining';
+    }
+
+    function escHtml(s) {
+        return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    // ── Event delegation for prompt buttons ───────────────────────────────
+    document.addEventListener('click', e => {
+        const target = e.target.closest('.suggestion-prompt, .sidebar-prompt, .dynamic-prompt');
+        if (target) {
+            e.preventDefault();
+            const prompt = target.dataset.prompt;
+            if (prompt) setQuestion(prompt);
+        }
+    });
+</script>
+}

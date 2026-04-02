@@ -1,0 +1,53 @@
+@{
+    ViewData["Title"] = "Payment Successful";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+    body { background: #E6F9E8; }
+    .success-page { min-height: calc(100vh - 120px); display: flex; align-items: center; justify-content: center; padding-top: 56px; }
+    .success-card {
+        background: #fff;
+        border-radius: 20px;
+        box-shadow: 0 4px 32px rgba(0,0,0,0.1);
+        padding: 3.5rem 3rem;
+        text-align: center;
+        max-width: 480px;
+        width: 100%;
+    }
+    .success-icon {
+        width: 88px; height: 88px;
+        background: linear-gradient(135deg, #E6F9E8, #b2dfdb);
+        border-radius: 50%;
+        display: inline-flex; align-items: center; justify-content: center;
+        margin-bottom: 1.75rem;
+    }
+    .btn-home {
+        display: inline-block;
+        background: linear-gradient(135deg, #7c4dff, #448aff);
+        color: #fff; font-weight: 700;
+        padding: 0.7rem 2rem; border-radius: 10px;
+        text-decoration: none; transition: opacity 0.2s;
+    }
+    .btn-home:hover { opacity: 0.88; color: #fff; }
+</style>
+
+<div class="success-page">
+    <div class="success-card">
+        <div class="success-icon">
+            <i class="bi bi-check2-circle text-success" style="font-size:2.75rem;"></i>
+        </div>
+        <h2 class="fw-bold mb-2" style="color:#1a1a2e;">Payment Successful!</h2>
+        <p class="text-muted mb-4">
+            Your credits have been added to your account. You can now use them for AI-powered queries on your private data.
+        </p>
+        <div class="d-flex flex-column gap-2">
+            <a asp-controller="DataConnection" asp-action="Index" class="btn-home">
+                <i class="bi bi-database me-2"></i>Go to My Data Sources
+            </a>
+            <a asp-controller="Payment" asp-action="SelectPlan" class="btn btn-outline-secondary btn-sm mt-1 rounded-pill">
+                <i class="bi bi-coin me-1"></i>Buy More Credits
+            </a>
+        </div>
+    </div>
+</div>
