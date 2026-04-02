@@ -1,0 +1,47 @@
+@{
+    ViewData["Title"] = "Blog Post";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var post = ViewBag.Post;
+}
+
+<div class="container py-5" style="padding-top:100px!important;">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <nav aria-label="breadcrumb" class="mb-4">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a asp-controller="Blog" asp-action="Index">Blog</a></li>
+                    <li class="breadcrumb-item active">@post?.Title</li>
+                </ol>
+            </nav>
+
+            <div class="mb-4">
+                <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill mb-3">@post?.Tag</span>
+                <h1 class="fw-bold display-6 mb-3">@post?.Title</h1>
+                <div class="d-flex align-items-center gap-3 text-muted">
+                    <span><i class="bi bi-person me-1"></i>@post?.Author</span>
+                    <span><i class="bi bi-calendar me-1"></i>@post?.Date</span>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body p-5">
+                    <p class="lead mb-4">@post?.Excerpt</p>
+                    <p>This is a detailed article about @post?.Title. In this post, we explore the key concepts and provide actionable insights for developers and AI enthusiasts.</p>
+                    <h4 class="fw-bold mt-4 mb-3">Key Takeaways</h4>
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Understand the core concepts</li>
+                        <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Apply best practices</li>
+                        <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Optimize your workflow</li>
+                    </ul>
+                    <p class="mt-4">Stay tuned for more articles and updates from the ChatPortal team. We publish weekly content on AI, productivity, and development best practices.</p>
+                </div>
+            </div>
+
+            <div class="mt-4">
+                <a asp-controller="Blog" asp-action="Index" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-1"></i>Back to Blog
+                </a>
+            </div>
+        </div>
+    </div>
+</div>

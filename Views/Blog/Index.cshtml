@@ -1,0 +1,39 @@
+@{
+    ViewData["Title"] = "Blog";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var posts = ViewBag.Posts as List<(int Id, string Title, string Slug, string Author, string Excerpt, string Date, string Tag)>;
+}
+
+<div class="container py-5" style="padding-top:100px!important;">
+    <div class="text-center mb-5">
+        <h1 class="fw-bold display-6">Blog &amp; Resources</h1>
+        <p class="text-muted lead">Tips, tutorials, and AI insights from the ChatPortal team</p>
+    </div>
+
+    <div class="row g-4">
+        @if (posts != null)
+        {
+            @foreach (var post in posts)
+            {
+                <div class="col-md-6">
+                    <div class="card border-0 shadow-sm rounded-4 h-100 blog-card">
+                        <div class="card-body p-4">
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill">@post.Tag</span>
+                                <small class="text-muted">@post.Date</small>
+                            </div>
+                            <h5 class="fw-bold mb-2">@post.Title</h5>
+                            <p class="text-muted small mb-3">@post.Excerpt</p>
+                            <div class="d-flex justify-content-between align-items-center mt-auto">
+                                <small class="text-muted"><i class="bi bi-person me-1"></i>@post.Author</small>
+                                <a asp-controller="Blog" asp-action="Detail" asp-route-slug="@post.Slug" class="btn btn-sm btn-outline-primary">
+                                    Read More <i class="bi bi-arrow-right ms-1"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+    </div>
+</div>

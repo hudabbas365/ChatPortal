@@ -1,0 +1,92 @@
+@{
+    ViewData["Title"] = "Admin";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid py-4" style="padding-top:76px!important;">
+    <div class="row">
+        <div class="col-lg-2 d-none d-lg-block">
+            <partial name="_Sidebar" />
+        </div>
+        <div class="col-lg-10">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h3 class="fw-bold mb-0">Admin Panel</h3>
+                    <p class="text-muted small mb-0">Platform overview and management</p>
+                </div>
+            </div>
+
+            <!-- Key Metrics -->
+            <div class="row g-3 mb-4">
+                @foreach (var item in new[] {
+                    ("Total Users", ViewBag.TotalUsers?.ToString() ?? "0", "bi-people", "primary"),
+                    ("Active Subscriptions", ViewBag.ActiveSubscriptions?.ToString() ?? "0", "bi-credit-card", "success"),
+                    ("Total Revenue", ViewBag.TotalRevenue?.ToString() ?? "$0", "bi-cash-stack", "warning"),
+                    ("API Calls Today", ViewBag.ApiCalls?.ToString() ?? "0", "bi-code-square", "info")
+                })
+                {
+                    <div class="col-md-3">
+                        <div class="card border-0 shadow-sm rounded-4">
+                            <div class="card-body p-4">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <p class="text-muted small mb-1">@item.Item1</p>
+                                        <h3 class="fw-bold mb-0">@item.Item2</h3>
+                                    </div>
+                                    <div class="bg-@item.Item4 bg-opacity-10 text-@item.Item4 rounded-3 d-flex align-items-center justify-content-center" style="width:48px;height:48px;">
+                                        <i class="bi @item.Item3 fs-5"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="row g-3 mb-4">
+                <div class="col-12">
+                    <div class="card border-0 shadow-sm rounded-4">
+                        <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0">
+                            <h6 class="fw-bold">Quick Actions</h6>
+                        </div>
+                        <div class="card-body p-4">
+                            <div class="d-flex flex-wrap gap-2">
+                                <button class="btn btn-outline-primary btn-sm"><i class="bi bi-people me-1"></i>Manage Users</button>
+                                <button class="btn btn-outline-success btn-sm"><i class="bi bi-credit-card me-1"></i>Subscriptions</button>
+                                <button class="btn btn-outline-info btn-sm"><i class="bi bi-cpu me-1"></i>AI Models</button>
+                                <button class="btn btn-outline-warning btn-sm"><i class="bi bi-cash me-1"></i>Payments</button>
+                                <button class="btn btn-outline-danger btn-sm"><i class="bi bi-shield me-1"></i>Security Logs</button>
+                                <button class="btn btn-outline-secondary btn-sm"><i class="bi bi-gear me-1"></i>System Settings</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- System Status -->
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0">
+                    <h6 class="fw-bold">System Status</h6>
+                </div>
+                <div class="card-body p-4">
+                    <div class="list-group list-group-flush">
+                        @foreach (var svc in new[] {
+                            ("API Server", "Operational", "success"),
+                            ("Database", "Operational", "success"),
+                            ("AI Service", "Operational", "success"),
+                            ("Email Service", "Stub Mode", "warning"),
+                            ("SignalR Hub", "Operational", "success")
+                        })
+                        {
+                            <div class="list-group-item px-0 py-2 border-0 border-bottom d-flex justify-content-between align-items-center">
+                                <span class="small fw-medium">@svc.Item1</span>
+                                <span class="badge bg-@svc.Item3 bg-opacity-10 text-@svc.Item3">@svc.Item2</span>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

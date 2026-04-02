@@ -1,0 +1,77 @@
+@model ChatPortal.ViewModels.LoginViewModel
+@{
+    ViewData["Title"] = "Login";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="auth-page d-flex align-items-center justify-content-center py-5" style="min-height:100vh;padding-top:100px;">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-5">
+                <div class="card shadow-lg border-0 rounded-4">
+                    <div class="card-body p-5">
+                        <div class="text-center mb-4">
+                            <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width:64px;height:64px;">
+                                <i class="bi bi-robot fs-2"></i>
+                            </div>
+                            <h2 class="fw-bold">Welcome back</h2>
+                            <p class="text-muted">Sign in to your ChatPortal account</p>
+                        </div>
+
+                        <form asp-action="Login" method="post">
+                            <input type="hidden" asp-for="ReturnUrl" />
+                            <div asp-validation-summary="ModelOnly" class="alert alert-danger small py-2"></div>
+
+                            <div class="mb-3">
+                                <label asp-for="Email" class="form-label fw-medium">Email</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-body-secondary border-end-0"><i class="bi bi-envelope text-muted"></i></span>
+                                    <input asp-for="Email" class="form-control border-start-0 ps-0" placeholder="you@example.com" />
+                                </div>
+                                <span asp-validation-for="Email" class="text-danger small"></span>
+                            </div>
+
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between">
+                                    <label asp-for="Password" class="form-label fw-medium">Password</label>
+                                    <a href="#" class="text-primary small text-decoration-none">Forgot password?</a>
+                                </div>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-body-secondary border-end-0"><i class="bi bi-lock text-muted"></i></span>
+                                    <input asp-for="Password" class="form-control border-start-0 ps-0" placeholder="••••••••" />
+                                </div>
+                                <span asp-validation-for="Password" class="text-danger small"></span>
+                            </div>
+
+                            <div class="mb-4 d-flex align-items-center justify-content-between">
+                                <div class="form-check">
+                                    <input asp-for="RememberMe" class="form-check-input" type="checkbox" />
+                                    <label asp-for="RememberMe" class="form-check-label small">Remember me</label>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary w-100 btn-lg mb-3">
+                                <i class="bi bi-box-arrow-in-right me-2"></i>Sign In
+                            </button>
+
+                            <div class="text-center">
+                                <span class="text-muted small">Don't have an account? </span>
+                                <a asp-action="Register" class="text-primary small fw-medium text-decoration-none">Sign up free</a>
+                            </div>
+                        </form>
+
+                        <div class="mt-4 p-3 bg-body-secondary rounded-3">
+                            <p class="small text-muted mb-1 fw-medium">Demo credentials:</p>
+                            <p class="small mb-0">Admin: <code>admin@chatportal.com</code> / <code>Admin@123</code></p>
+                            <p class="small mb-0">User: <code>demo@chatportal.com</code> / <code>Demo@123</code></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

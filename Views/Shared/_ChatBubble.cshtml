@@ -1,0 +1,18 @@
+@{
+    string role = ViewData["BubbleRole"] as string ?? "user";
+    string content = ViewData["BubbleContent"] as string ?? "";
+    bool isAi = role.ToLower() == "assistant";
+}
+<div class="d-flex @(isAi ? "" : "justify-content-end") mb-3">
+    @if (isAi)
+    {
+        <div class="me-2 flex-shrink-0">
+            <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center" style="width:36px;height:36px;">
+                <i class="bi bi-robot text-white small"></i>
+            </div>
+        </div>
+    }
+    <div class="chat-bubble @(isAi ? "chat-bubble-ai" : "chat-bubble-user") p-3 rounded-3 shadow-sm" style="max-width:75%;">
+        <p class="mb-0 small">@content</p>
+    </div>
+</div>
