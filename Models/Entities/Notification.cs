@@ -1,6 +1,9 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 namespace ChatPortal.Models.Entities;
+
+public enum NotificationPriority { Informational, Warning, Urgent }
+
 public class Notification
 {
     [Key] public int Id { get; set; }
@@ -9,7 +12,9 @@ public class Notification
     [Required, MaxLength(256)] public string Title { get; set; } = string.Empty;
     [Required] public string Content { get; set; } = string.Empty;
     [MaxLength(50)] public string? Type { get; set; }
+    public NotificationPriority Priority { get; set; } = NotificationPriority.Informational;
     public bool IsRead { get; set; } = false;
+    public bool IsDismissed { get; set; } = false;
     [MaxLength(512)] public string? ActionUrl { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }
