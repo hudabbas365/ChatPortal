@@ -75,9 +75,15 @@ app.UseAuthorization();
 app.UseStatusCodePagesWithReExecute("/Error/{0}");
 app.MapControllerRoute(name: "default", pattern: "{controller=Home}/{action=Index}/{id?}");
 app.MapHub<ChatHub>("/hubs/chat");
-using (var scope = app.Services.CreateScope())
+try
 {
+    using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     db.Database.EnsureCreated();
+}
+catch (Exception ex)
+{
+    var logger = app.Services.GetRequiredService<ILogger<Program>>();
+    logger.LogWarning(ex, "Database initialization skipped: {Message}", ex.Message);
 }
 app.Run();
