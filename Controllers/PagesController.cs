@@ -83,6 +83,8 @@ public class PagesController : Controller
             return RedirectToAction(nameof(Contact));
         }
 
+        // TODO: Integrate IEmailService to deliver this submission as an email notification.
+        // Until then we log the enquiry and acknowledge with a success message.
         // In a production app this would queue an email via IEmailService.
         // For now we acknowledge the submission with a success message.
         TempData["Success"] = $"Thank you, {name}! Your message has been received. We'll reply to {email} shortly.";

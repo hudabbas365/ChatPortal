@@ -42,7 +42,7 @@ public class SeoController : Controller
         {
             new SitemapEntry("/",              today, "daily",   "1.0"),
             new SitemapEntry("/Chat",          today, "daily",   "0.9"),
-            new SitemapEntry("/Chat/History",  today, "weekly",  "0.7"),
+            new SitemapEntry("/Pages/History",  today, "weekly",  "0.7"),
             new SitemapEntry("/Pages/Docs",    today, "weekly",  "0.8"),
             new SitemapEntry("/Pages/About",   today, "monthly", "0.7"),
             new SitemapEntry("/Pages/Contact", today, "monthly", "0.6"),

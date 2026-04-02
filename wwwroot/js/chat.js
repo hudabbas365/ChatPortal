@@ -2,6 +2,10 @@
 // Handles message sending, rendering (Markdown + code highlighting),
 // file attachment, PDF export, right panel, and voice input.
 
+// ── Constants ─────────────────────────────────────────────────────────────
+/** Maximum number of data rows rendered inline in a structured AI response table. */
+const MAX_TABLE_ROWS = 20;
+
 // ── Attachment state ──────────────────────────────────────────────────────
 let attachedFile = null;
 
@@ -284,7 +288,7 @@ function buildStructuredHtml(data) {
         const keys = Object.keys(data.result[0]);
         html += `<div class="table-responsive mb-2"><table class="table table-sm mb-0" style="font-size:0.78rem;">
             <thead><tr>${keys.map(k => `<th>${escapeHtml(k)}</th>`).join('')}</tr></thead>
-            <tbody>${data.result.slice(0, 20).map(r => `<tr>${keys.map(k => `<td>${escapeHtml(String(r[k] ?? ''))}</td>`).join('')}</tr>`).join('')}</tbody>
+            <tbody>${data.result.slice(0, MAX_TABLE_ROWS).map(r => `<tr>${keys.map(k => `<td>${escapeHtml(String(r[k] ?? ''))}</td>`).join('')}</tr>`).join('')}</tbody>
             </table></div>`;
     }
     if (data.prompts?.length) {
@@ -364,7 +368,7 @@ function readFileAsText(file) {
  */
 function exportAsPDF() {
     if (typeof html2pdf === 'undefined') {
-        alert('PDF export library is loading, please try again in a moment.');
+        alert('PDF export is unavailable. Please refresh the page and try again.');
         return;
     }
     const messages = document.getElementById('chatMessages');
@@ -456,7 +460,7 @@ let isRecording = false;
  */
 function toggleMic() {
     if (!('SpeechRecognition' in window || 'webkitSpeechRecognition' in window)) {
-        alert('Voice input is not supported in your browser. Try Chrome or Edge.');
+        alert('Voice input is not supported in your browser. Try Chrome, Edge, or Safari.');
         return;
     }
 

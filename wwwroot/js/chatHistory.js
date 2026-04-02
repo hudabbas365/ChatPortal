@@ -2,16 +2,26 @@
 // Manages all chat sessions stored locally in the browser.
 
 const STORAGE_KEY = 'chatportal_sessions';
+/** Maximum number of characters used for auto-generated session titles. */
+const MAX_TITLE_LENGTH = 40;
 
 /**
- * Generate a UUID v4 string for unique session/message identification.
+ * Generate a cryptographically random UUID v4 string for unique session/message identification.
+ * Uses `crypto.getRandomValues()` for secure random bytes; falls back to `Math.random()` only
+ * when the Web Crypto API is unavailable (non-browser environments).
  * @returns {string} A UUID v4 string.
  */
 function generateUUID() {
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
-        const r = Math.random() * 16 | 0;
-        return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
-    });
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+        return crypto.randomUUID();
+    }
+    // Fallback: construct UUID v4 from secure random bytes
+    const bytes = new Uint8Array(16);
+    (typeof crypto !== 'undefined' ? crypto : window.crypto).getRandomValues(bytes);
+    bytes[6] = (bytes[6] & 0x0f) | 0x40; // version 4
+    bytes[8] = (bytes[8] & 0x3f) | 0x80; // variant
+    const hex = Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
+    return `${hex.slice(0,8)}-${hex.slice(8,12)}-${hex.slice(12,16)}-${hex.slice(16,20)}-${hex.slice(20)}`;
 }
 
 /**
@@ -80,7 +90,7 @@ function addMessageToSession(sessionId, role, content) {
 
     // Auto-generate title from the first user message
     if (session.title === 'New Chat' && role === 'user') {
-        session.title = content.slice(0, 40) + (content.length > 40 ? '…' : '');
+        session.title = content.slice(0, MAX_TITLE_LENGTH) + (content.length > MAX_TITLE_LENGTH ? '…' : '');
     }
 
     saveSessions(sessions);
