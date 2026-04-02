@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /Admin/
+Disallow: /Account/
+Disallow: /Dashboard/
+
+Sitemap: https://your-chatportal-instance.com/sitemap.xml
+# Note: Replace the URL above with your actual deployment domain before going live.

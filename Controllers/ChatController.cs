@@ -4,15 +4,28 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace ChatPortal.Controllers;
 
+/// <summary>
+/// Handles the main chat interface, including rendering the chat page and
+/// accepting AI message requests from the browser.
+/// </summary>
 public class ChatController : Controller
 {
     private readonly IAIChatService _aiChatService;
 
+    /// <summary>
+    /// Initialises a new instance of <see cref="ChatController"/>.
+    /// </summary>
+    /// <param name="aiChatService">Service used to query available AI models and send messages.</param>
     public ChatController(IAIChatService aiChatService)
     {
         _aiChatService = aiChatService;
     }
 
+    /// <summary>
+    /// Renders the main chat page, populating the view model with the list of
+    /// available AI models retrieved from the AI service.
+    /// </summary>
+    /// <returns>The Chat/Index Razor view pre-populated with <see cref="ChatViewModel"/>.</returns>
     public async Task<IActionResult> Index()
     {
         var models = await _aiChatService.GetAvailableModelsAsync();
@@ -28,6 +41,19 @@ public class ChatController : Controller
         return View(vm);
     }
 
+    /// <summary>
+    /// Accepts a chat message from the browser, forwards it to the AI service, and
+    /// returns the AI-generated response as JSON.
+    /// </summary>
+    /// <param name="request">
+    /// The message payload containing the user message text, the selected AI model,
+    /// and an optional session identifier.
+    /// </param>
+    /// <returns>
+    /// A <see cref="JsonResult"/> with <c>content</c> (AI reply text) and
+    /// <c>tokensUsed</c> on success; a <c>400 Bad Request</c> with an <c>error</c>
+    /// property on failure.
+    /// </returns>
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> Send([FromBody] SendMessageRequest request)
     {
@@ -48,9 +74,17 @@ public class ChatController : Controller
     }
 }
 
+/// <summary>
+/// Request body model used by the <see cref="ChatController.Send"/> endpoint.
+/// </summary>
 public class SendMessageRequest
 {
+    /// <summary>Gets or sets the user's message text.</summary>
     public string? Message { get; set; }
+
+    /// <summary>Gets or sets the AI model identifier (e.g. <c>gpt-4</c>).</summary>
     public string? Model { get; set; }
+
+    /// <summary>Gets or sets the optional session ID for conversation tracking.</summary>
     public int? SessionId { get; set; }
 }

@@ -1,0 +1,143 @@
+@{
+    ViewData["Title"] = "Contact ChatPortal — Get in Touch";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<!-- Hero -->
+<section class="bg-dark text-white py-5">
+    <div class="container py-3 text-center">
+        <i class="bi bi-envelope-open text-primary fs-1 mb-3 d-block"></i>
+        <h1 class="fw-bold display-5">Get in Touch</h1>
+        <p class="lead text-muted">We'd love to hear from you — questions, feedback, or partnership enquiries.</p>
+    </div>
+</section>
+
+<section class="py-5">
+    <div class="container">
+        <div class="row g-5">
+
+            <!-- Contact Form -->
+            <div class="col-lg-7">
+                <div class="card border-0 shadow-sm p-4 p-md-5">
+                    <h4 class="fw-bold mb-4"><i class="bi bi-chat-left-text text-primary me-2"></i>Send Us a Message</h4>
+
+                    <form asp-controller="Pages" asp-action="ContactSubmit" method="post">
+                        @Html.AntiForgeryToken()
+                        <div class="row g-3">
+                            <div class="col-sm-6">
+                                <label class="form-label fw-semibold small">Full Name <span class="text-danger">*</span></label>
+                                <input type="text" name="name" class="form-control" placeholder="Jane Smith" required />
+                            </div>
+                            <div class="col-sm-6">
+                                <label class="form-label fw-semibold small">Email Address <span class="text-danger">*</span></label>
+                                <input type="email" name="email" class="form-control" placeholder="jane@example.com" required />
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-semibold small">Subject</label>
+                                <select name="subject" class="form-select">
+                                    <option value="General Enquiry">General Enquiry</option>
+                                    <option value="Technical Support">Technical Support</option>
+                                    <option value="Billing & Credits">Billing &amp; Credits</option>
+                                    <option value="Partnership">Partnership / Integration</option>
+                                    <option value="Bug Report">Bug Report</option>
+                                    <option value="Feature Request">Feature Request</option>
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-semibold small">Message <span class="text-danger">*</span></label>
+                                <textarea name="message" class="form-control" rows="6"
+                                          placeholder="Describe your question or request in detail…" required></textarea>
+                            </div>
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-primary btn-lg w-100">
+                                    <i class="bi bi-send me-2"></i>Send Message
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Contact Info & FAQ -->
+            <div class="col-lg-5">
+
+                <!-- Office Info -->
+                <div class="mb-4">
+                    <h5 class="fw-bold mb-3"><i class="bi bi-building text-primary me-2"></i>Our Office</h5>
+                    <ul class="list-unstyled text-muted">
+                        <li class="mb-2"><i class="bi bi-geo-alt me-2 text-primary"></i>123 AI Boulevard, Tech City, TC 10001</li>
+                        <li class="mb-2"><i class="bi bi-envelope me-2 text-primary"></i><a href="mailto:hello@chatportal.ai" class="text-muted text-decoration-none">hello@chatportal.ai</a></li>
+                        <li class="mb-2"><i class="bi bi-telephone me-2 text-primary"></i>+1 (555) 123-4567</li>
+                        <li class="mb-2"><i class="bi bi-clock me-2 text-primary"></i>Mon–Fri, 9am–6pm EST</li>
+                    </ul>
+                </div>
+
+                <!-- Support Channels -->
+                <div class="mb-4">
+                    <h5 class="fw-bold mb-3"><i class="bi bi-headset text-primary me-2"></i>Support Channels</h5>
+                    <div class="d-flex flex-column gap-2">
+                        <div class="card border-0 bg-body-secondary p-3">
+                            <div class="d-flex align-items-center gap-3">
+                                <i class="bi bi-chat-dots text-primary fs-5"></i>
+                                <div>
+                                    <div class="fw-semibold small">Live Chat</div>
+                                    <div class="text-muted" style="font-size:0.8rem;">Available on the chat page. Fastest response.</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card border-0 bg-body-secondary p-3">
+                            <div class="d-flex align-items-center gap-3">
+                                <i class="bi bi-github text-primary fs-5"></i>
+                                <div>
+                                    <div class="fw-semibold small">GitHub Issues</div>
+                                    <div class="text-muted" style="font-size:0.8rem;">Report bugs or request features publicly.</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card border-0 bg-body-secondary p-3">
+                            <div class="d-flex align-items-center gap-3">
+                                <i class="bi bi-discord text-primary fs-5"></i>
+                                <div>
+                                    <div class="fw-semibold small">Community Discord</div>
+                                    <div class="text-muted" style="font-size:0.8rem;">Join 2,000+ developers in our Discord server.</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FAQ -->
+                <div>
+                    <h5 class="fw-bold mb-3"><i class="bi bi-question-circle text-primary me-2"></i>Frequently Asked Questions</h5>
+                    <div class="accordion accordion-flush" id="faqAccordion">
+                        @{
+                            var faqs = new[]
+                            {
+                                ("How quickly do you respond?", "We aim to reply to all enquiries within 24 hours on business days. Live chat and Discord responses are typically much faster."),
+                                ("Do you offer a free trial?", "Yes! Every new account starts with a free credit allowance so you can test the platform with no commitment."),
+                                ("Can I get a refund?", "Unused credits purchased in the last 14 days can be refunded. Please contact us via this form with your account email."),
+                                ("Is my data private?", "Absolutely. Conversation history is stored only in your browser (localStorage) and never sent to our servers unless you explicitly share a session."),
+                                ("Do you offer enterprise plans?", "Yes — we offer volume discounts, SSO integration, dedicated support, and SLA guarantees for teams of 10+. Get in touch to discuss.")
+                            };
+                        }
+                        @foreach (var (q, a) in faqs.Select((x, i) => (x.Item1, x.Item2)))
+                        {
+                            var idx = Array.IndexOf(faqs.Select(f => f.Item1).ToArray(), q);
+                            <div class="accordion-item border-0 border-bottom mb-1">
+                                <h6 class="accordion-header">
+                                    <button class="accordion-button collapsed bg-transparent shadow-none small fw-semibold ps-0"
+                                            type="button" data-bs-toggle="collapse" data-bs-target="#faq@(idx)">
+                                        @q
+                                    </button>
+                                </h6>
+                                <div id="faq@(idx)" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                    <div class="accordion-body text-muted small ps-0">@a</div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

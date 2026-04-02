@@ -4,6 +4,14 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - ChatPortal</title>
+    @if (ViewData["MetaDescription"] is string metaDesc && !string.IsNullOrEmpty(metaDesc))
+    {
+        <meta name="description" content="@metaDesc" />
+    }
+    @if (ViewData["MetaKeywords"] is string metaKw && !string.IsNullOrEmpty(metaKw))
+    {
+        <meta name="keywords" content="@metaKw" />
+    }
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
@@ -25,6 +33,7 @@
                     <li class="nav-item"><a class="nav-link" asp-controller="Payment" asp-action="SelectPlan">Credits</a></li>
                     <li class="nav-item"><a class="nav-link" asp-controller="Pricing" asp-action="Index">Pricing</a></li>
                     <li class="nav-item"><a class="nav-link" asp-controller="Blog" asp-action="Index">Blog</a></li>
+                    <li class="nav-item"><a class="nav-link" asp-controller="Pages" asp-action="Docs">Docs</a></li>
                 </ul>
                 <partial name="_LoginPartial" />
             </div>
@@ -71,6 +80,15 @@
                     <h6 class="fw-bold text-muted small text-uppercase">Company</h6>
                     <ul class="list-unstyled">
                         <li><a href="/blog" class="text-muted text-decoration-none small">Blog</a></li>
+                        <li><a href="/Pages/About" class="text-muted text-decoration-none small">About</a></li>
+                        <li><a href="/Pages/Contact" class="text-muted text-decoration-none small">Contact</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-2 mb-3">
+                    <h6 class="fw-bold text-muted small text-uppercase">Developers</h6>
+                    <ul class="list-unstyled">
+                        <li><a href="/Pages/Docs" class="text-muted text-decoration-none small">API Docs</a></li>
+                        <li><a href="/Pages/History" class="text-muted text-decoration-none small">Chat History</a></li>
                     </ul>
                 </div>
                 <div class="col-md-4 mb-3 text-md-end">

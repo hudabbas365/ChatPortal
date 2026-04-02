@@ -6,15 +6,24 @@ using System.Text;
 
 namespace ChatPortal.Services;
 
+/// <summary>
+/// Provides JWT generation and validation operations backed by the application's
+/// <c>JwtSettings</c> configuration section.
+/// </summary>
 public class JwtService : IJwtService
 {
     private readonly IConfiguration _configuration;
 
+    /// <summary>
+    /// Initialises a new instance of <see cref="JwtService"/>.
+    /// </summary>
+    /// <param name="configuration">Application configuration, used to read JWT settings.</param>
     public JwtService(IConfiguration configuration)
     {
         _configuration = configuration;
     }
 
+    /// <inheritdoc />
     public string GenerateAccessToken(int userId, string email, string role)
     {
         var jwtSettings = _configuration.GetSection("JwtSettings");
@@ -43,6 +52,7 @@ public class JwtService : IJwtService
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
 
+    /// <inheritdoc />
     public string GenerateRefreshToken()
     {
         var bytes = new byte[64];
@@ -51,6 +61,7 @@ public class JwtService : IJwtService
         return Convert.ToBase64String(bytes);
     }
 
+    /// <inheritdoc />
     public ClaimsPrincipal? ValidateToken(string token)
     {
         try

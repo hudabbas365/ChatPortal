@@ -1,0 +1,208 @@
+@{
+    ViewData["Title"] = "Chat History — How ChatPortal Stores Conversations Privately";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<!-- Hero -->
+<section class="bg-dark text-white py-5">
+    <div class="container py-3 text-center">
+        <i class="bi bi-clock-history text-primary fs-1 mb-3 d-block"></i>
+        <h1 class="fw-bold display-5">Browser-Based Chat History</h1>
+        <p class="lead text-muted mb-0">Your conversations, stored privately in your browser. No server required.</p>
+    </div>
+</section>
+
+<!-- How it Works -->
+<section class="py-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <h2 class="fw-bold mb-3">How It Works</h2>
+                <p class="text-muted">
+                    ChatPortal stores your entire conversation history directly inside your browser using the
+                    <strong>Web Storage API (localStorage)</strong> — a built-in browser feature that persists
+                    data between page loads without any server interaction.
+                </p>
+                <p class="text-muted">
+                    When you send a message, both your message and the AI's reply are saved locally in a
+                    structured JSON format under the key <code>chatportal_sessions</code>. Each session has a
+                    unique ID, an auto-generated title (from your first message), and a full message log with timestamps.
+                </p>
+
+                <div class="card border-0 shadow-sm p-4 my-4">
+                    <h6 class="fw-bold mb-3 text-primary">localStorage Data Structure</h6>
+                    <pre class="p-3 rounded-3 small mb-0" style="background:#1e1e2e;color:#cdd6f4;overflow-x:auto;"><code>{
+  "chatportal_sessions": [
+    {
+      "id": "uuid-v4",
+      "title": "Write a Python function…",
+      "createdAt": "2025-01-15T10:30:00Z",
+      "updatedAt": "2025-01-15T10:35:00Z",
+      "messages": [
+        { "role": "user", "content": "Write a Python function to sort a list", "timestamp": "2025-01-15T10:30:01Z" },
+        { "role": "assistant", "content": "Sure! Here's a simple sort function…", "timestamp": "2025-01-15T10:30:03Z" }
+      ]
+    }
+  ]
+}</code></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Benefits -->
+<section class="py-5 bg-body-secondary">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="fw-bold">Privacy Benefits</h2>
+            <p class="text-muted">Why localStorage is the right choice for conversation history.</p>
+        </div>
+        <div class="row g-4">
+            @foreach (var benefit in new[] {
+                ("bi-shield-lock", "Zero Server Storage", "Your chat history is never uploaded to our servers. It exists only in your browser, on your device."),
+                ("bi-person-lock", "No Account Required", "History works even without signing in. Your conversations are yours from the moment you start chatting."),
+                ("bi-eye-slash", "No Tracking", "We don't analyse your conversation content. What you chat about stays between you and the AI."),
+                ("bi-trash3", "Easy Deletion", "Delete individual conversations — or all history — in one click. Browser data is cleared with your browser's privacy tools."),
+                ("bi-laptop", "Device-Local", "History is tied to the device and browser you use. Switching browsers or devices starts fresh, keeping different contexts separate."),
+                ("bi-wifi-off", "Works Offline", "Previously loaded conversations are accessible even without an internet connection.")
+            })
+            {
+                <div class="col-sm-6 col-lg-4">
+                    <div class="card h-100 border-0 shadow-sm p-4">
+                        <i class="bi @benefit.Item1 text-primary fs-3 mb-3"></i>
+                        <h6 class="fw-bold">@benefit.Item2</h6>
+                        <p class="text-muted small mb-0">@benefit.Item3</p>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</section>
+
+<!-- Features -->
+<section class="py-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <h2 class="fw-bold mb-4">Sidebar Features</h2>
+
+                <div class="d-flex flex-column gap-4">
+                    <div class="d-flex gap-3">
+                        <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center flex-shrink-0" style="width:44px;height:44px;">
+                            <i class="bi bi-plus-lg text-white"></i>
+                        </div>
+                        <div>
+                            <h6 class="fw-bold">New Chat</h6>
+                            <p class="text-muted small mb-0">
+                                Click "New Chat" to start a fresh conversation. The previous session is automatically
+                                saved and appears in the sidebar list, ordered by most recent activity.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-3">
+                        <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center flex-shrink-0" style="width:44px;height:44px;">
+                            <i class="bi bi-pencil text-white"></i>
+                        </div>
+                        <div>
+                            <h6 class="fw-bold">Rename Conversations</h6>
+                            <p class="text-muted small mb-0">
+                                Right-click (or hover and click the ⋮ menu) on any conversation in the sidebar
+                                to rename it. Inline editing lets you type a new title and press Enter to save.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-3">
+                        <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center flex-shrink-0" style="width:44px;height:44px;">
+                            <i class="bi bi-search text-white"></i>
+                        </div>
+                        <div>
+                            <h6 class="fw-bold">Search Conversations</h6>
+                            <p class="text-muted small mb-0">
+                                Use the search box at the top of the sidebar to filter conversations by title.
+                                The list updates in real-time as you type, making it easy to find past discussions.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-3">
+                        <div class="rounded-circle bg-danger d-flex align-items-center justify-content-center flex-shrink-0" style="width:44px;height:44px;">
+                            <i class="bi bi-trash3 text-white"></i>
+                        </div>
+                        <div>
+                            <h6 class="fw-bold">Delete Conversations</h6>
+                            <p class="text-muted small mb-0">
+                                Remove any conversation permanently via the right-click context menu. A confirmation
+                                prompt prevents accidental deletion. Deleted conversations are immediately purged
+                                from localStorage.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Export / Import -->
+<section class="py-5 bg-body-secondary">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <h2 class="fw-bold mb-3">Export &amp; Import</h2>
+
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <div class="card border-0 shadow-sm p-4 h-100">
+                            <i class="bi bi-file-earmark-pdf text-primary fs-2 mb-3"></i>
+                            <h5 class="fw-bold">Export as PDF</h5>
+                            <p class="text-muted small">
+                                Use the <strong>"Export as PDF"</strong> button in the chat header to download a
+                                beautifully formatted PDF of your current conversation — complete with the
+                                ChatPortal branding, all messages, and an export timestamp.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card border-0 shadow-sm p-4 h-100">
+                            <i class="bi bi-filetype-json text-primary fs-2 mb-3"></i>
+                            <h5 class="fw-bold">Raw JSON Access</h5>
+                            <p class="text-muted small">
+                                Advanced users can access or back up their raw history directly from the browser's
+                                developer tools. Open DevTools → Application → Local Storage →
+                                <code>chatportal_sessions</code> to view, copy, or import JSON data.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Limitations -->
+<section class="py-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <h2 class="fw-bold mb-3">Limitations &amp; Considerations</h2>
+                <div class="alert alert-warning">
+                    <h6 class="fw-bold"><i class="bi bi-exclamation-triangle me-2"></i>Important to Know</h6>
+                    <ul class="mb-0 text-muted small">
+                        <li class="mb-1">History is stored <strong>per browser, per device</strong>. Switching browsers or incognito mode starts a fresh history.</li>
+                        <li class="mb-1">Clearing browser data (cookies, cache, or site data) will erase your history.</li>
+                        <li class="mb-1">localStorage is limited to approximately <strong>5–10 MB</strong> per origin. Very long conversation histories may approach this limit.</li>
+                        <li>History is <strong>not synced</strong> across devices unless you manually export/import the JSON.</li>
+                    </ul>
+                </div>
+
+                <div class="mt-4 text-center">
+                    <a href="/Chat" class="btn btn-primary btn-lg me-2"><i class="bi bi-chat-dots me-2"></i>Try It Now</a>
+                    <a href="/Pages/Docs" class="btn btn-outline-secondary btn-lg"><i class="bi bi-book me-2"></i>Read the Docs</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

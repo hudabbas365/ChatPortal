@@ -1,0 +1,245 @@
+@{
+    ViewData["Title"] = "ChatPortal API Documentation — Developer Guide";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid py-0" style="padding-top:56px;">
+    <div class="row g-0" style="min-height:calc(100vh - 56px);">
+
+        <!-- Sidebar TOC -->
+        <div class="col-lg-3 col-xl-2 d-none d-lg-block bg-body-secondary border-end py-4 px-3"
+             style="position:sticky;top:56px;height:calc(100vh - 56px);overflow-y:auto;">
+            <h6 class="text-muted small text-uppercase fw-bold mb-3">Table of Contents</h6>
+            <nav class="nav flex-column gap-1">
+                <a class="nav-link py-1 small" href="#intro">Introduction</a>
+                <a class="nav-link py-1 small" href="#auth">Authentication</a>
+                <a class="nav-link py-1 small ps-3 text-muted" href="#auth-jwt">JWT Bearer</a>
+                <a class="nav-link py-1 small ps-3 text-muted" href="#auth-token">Obtaining a Token</a>
+                <a class="nav-link py-1 small" href="#endpoints">Chat Endpoints</a>
+                <a class="nav-link py-1 small ps-3 text-muted" href="#endpoint-send">POST /Chat/Send</a>
+                <a class="nav-link py-1 small" href="#embed">Iframe Embedding</a>
+                <a class="nav-link py-1 small ps-3 text-muted" href="#embed-setup">Setup Guide</a>
+                <a class="nav-link py-1 small ps-3 text-muted" href="#embed-token">Token Endpoint</a>
+                <a class="nav-link py-1 small" href="#signalr">SignalR / Streaming</a>
+                <a class="nav-link py-1 small" href="#credits">Credits & Rate Limits</a>
+                <a class="nav-link py-1 small" href="#examples">Code Examples</a>
+                <a class="nav-link py-1 small ps-3 text-muted" href="#ex-curl">curl</a>
+                <a class="nav-link py-1 small ps-3 text-muted" href="#ex-js">JavaScript</a>
+                <a class="nav-link py-1 small ps-3 text-muted" href="#ex-python">Python</a>
+                <a class="nav-link py-1 small ps-3 text-muted" href="#ex-csharp">C#</a>
+            </nav>
+        </div>
+
+        <!-- Main content -->
+        <div class="col-lg-9 col-xl-10 py-5 px-4 px-md-5">
+            <div style="max-width:820px;">
+
+                <!-- Intro -->
+                <section id="intro" class="mb-5">
+                    <span class="badge bg-primary mb-2">v1.0</span>
+                    <h1 class="fw-bold">ChatPortal API Documentation</h1>
+                    <p class="lead text-muted">
+                        The ChatPortal API lets you integrate intelligent AI conversation into any application.
+                        Build chat widgets, automate workflows, or embed a full chat interface into your website.
+                    </p>
+                    <div class="alert alert-info d-flex gap-2 small">
+                        <i class="bi bi-info-circle-fill fs-6"></i>
+                        <div>Base URL: <code>https://your-chatportal-instance.com</code> — replace with your own deployment URL.</div>
+                    </div>
+                </section>
+
+                <!-- Auth -->
+                <section id="auth" class="mb-5">
+                    <h2 class="fw-bold h4 mb-3 border-bottom pb-2">Authentication</h2>
+                    <p class="text-muted">All API requests must be authenticated. ChatPortal uses JWT Bearer tokens.</p>
+
+                    <h5 id="auth-jwt" class="fw-semibold mt-4">JWT Bearer Token</h5>
+                    <p class="text-muted small">Include the token in the <code>Authorization</code> header:</p>
+                    <pre class="p-3 rounded-3 small" style="background:#1e1e2e;color:#cdd6f4;overflow-x:auto;"><code>Authorization: Bearer &lt;your_jwt_token&gt;</code></pre>
+
+                    <h5 id="auth-token" class="fw-semibold mt-4">Obtaining a Token</h5>
+                    <p class="text-muted small">
+                        Log in via <code>POST /Account/Login</code> — the server sets an <code>access_token</code> HTTP-only cookie.
+                        For API usage, parse the token from the response or use <code>POST /Account/Token</code>.
+                    </p>
+                    <pre class="p-3 rounded-3 small" style="background:#1e1e2e;color:#cdd6f4;overflow-x:auto;"><code>{
+  "email": "user@example.com",
+  "password": "your_password"
+}</code></pre>
+
+                    <div class="alert alert-warning small mt-3">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        Never expose your JWT token in client-side JavaScript for production deployments.
+                        Use the server-side cookie mechanism for browser apps.
+                    </div>
+                </section>
+
+                <!-- Endpoints -->
+                <section id="endpoints" class="mb-5">
+                    <h2 class="fw-bold h4 mb-3 border-bottom pb-2">Chat Endpoints</h2>
+
+                    <div id="endpoint-send" class="card border-0 shadow-sm p-4 mb-3">
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <span class="badge bg-success">POST</span>
+                            <code class="fw-semibold">/Chat/Send</code>
+                        </div>
+                        <p class="text-muted small mb-3">Send a message to the AI and receive a response.</p>
+
+                        <div class="mb-3">
+                            <div class="fw-semibold small mb-1">Request Body</div>
+                            <pre class="p-3 rounded-3 small mb-0" style="background:#1e1e2e;color:#cdd6f4;overflow-x:auto;"><code>{
+  "message": "Explain the difference between REST and GraphQL",
+  "model": "gpt-4",
+  "sessionId": null
+}</code></pre>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="fw-semibold small mb-1">Required Headers</div>
+                            <pre class="p-3 rounded-3 small mb-0" style="background:#1e1e2e;color:#cdd6f4;overflow-x:auto;"><code>Content-Type: application/json
+RequestVerificationToken: &lt;anti-forgery-token&gt;</code></pre>
+                        </div>
+
+                        <div>
+                            <div class="fw-semibold small mb-1">Response (200 OK)</div>
+                            <pre class="p-3 rounded-3 small mb-0" style="background:#1e1e2e;color:#cdd6f4;overflow-x:auto;"><code>{
+  "content": "REST uses HTTP verbs and URLs...",
+  "tokensUsed": 142
+}</code></pre>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Embed -->
+                <section id="embed" class="mb-5">
+                    <h2 class="fw-bold h4 mb-3 border-bottom pb-2">Iframe Embedding</h2>
+                    <p class="text-muted">Embed a fully functional ChatPortal chat widget inside any webpage using a single <code>&lt;iframe&gt;</code>.</p>
+
+                    <h5 id="embed-setup" class="fw-semibold mt-4">Setup Guide</h5>
+                    <ol class="text-muted small">
+                        <li class="mb-2">Generate an embed JWT token for your user (server-side).</li>
+                        <li class="mb-2">Insert the iframe tag with the token as a query parameter.</li>
+                        <li class="mb-2">Style the iframe to fit your layout (recommended: <code>width:100%;height:600px;border:none;</code>).</li>
+                    </ol>
+
+                    <pre class="p-3 rounded-3 small" style="background:#1e1e2e;color:#cdd6f4;overflow-x:auto;"><code>&lt;iframe
+  src="https://your-chatportal-instance.com/Embed/Chat?token=YOUR_JWT"
+  style="width:100%;height:600px;border:none;border-radius:12px;"
+  title="ChatPortal AI"
+  allow="microphone"&gt;
+&lt;/iframe&gt;</code></pre>
+
+                    <h5 id="embed-token" class="fw-semibold mt-4">Embed Token Validation</h5>
+                    <p class="text-muted small">Validate a token before embedding using:</p>
+                    <pre class="p-3 rounded-3 small" style="background:#1e1e2e;color:#cdd6f4;overflow-x:auto;"><code>GET /Embed/Token?token=YOUR_JWT
+
+// Response
+{ "valid": true, "userId": "42", "email": "user@example.com" }</code></pre>
+                </section>
+
+                <!-- SignalR -->
+                <section id="signalr" class="mb-5">
+                    <h2 class="fw-bold h4 mb-3 border-bottom pb-2">SignalR / Real-time Streaming</h2>
+                    <p class="text-muted">ChatPortal uses <a href="https://dotnet.microsoft.com/apps/aspnet/signalr" class="text-primary">ASP.NET Core SignalR</a> for real-time message streaming.</p>
+
+                    <div class="fw-semibold small mb-2">Hub URL: <code>/hubs/chat</code></div>
+                    <div class="fw-semibold small mb-2">Event: <code>ReceiveMessage(role, content)</code></div>
+                    <pre class="p-3 rounded-3 small" style="background:#1e1e2e;color:#cdd6f4;overflow-x:auto;"><code>import * as signalR from "@@microsoft/signalr";
+
+const connection = new signalR.HubConnectionBuilder()
+    .withUrl("/hubs/chat")
+    .build();
+
+connection.on("ReceiveMessage", (role, content) => {
+    console.log(`[${role}]:`, content);
+});
+
+await connection.start();</code></pre>
+                </section>
+
+                <!-- Credits & Rate Limits -->
+                <section id="credits" class="mb-5">
+                    <h2 class="fw-bold h4 mb-3 border-bottom pb-2">Credits &amp; Rate Limits</h2>
+                    <div class="table-responsive">
+                        <table class="table table-bordered small">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Tier</th>
+                                    <th>Credits/Month</th>
+                                    <th>Rate Limit</th>
+                                    <th>Max Tokens/Request</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>Free</td><td>100</td><td>10 req/min</td><td>2,048</td></tr>
+                                <tr><td>Starter</td><td>2,000</td><td>60 req/min</td><td>8,192</td></tr>
+                                <tr><td>Pro</td><td>20,000</td><td>300 req/min</td><td>32,768</td></tr>
+                                <tr><td>Enterprise</td><td>Unlimited</td><td>Custom</td><td>128,000</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="text-muted small">
+                        One credit is consumed per AI request, regardless of model.
+                        Token counts within a request do not affect credit usage.
+                    </p>
+                </section>
+
+                <!-- Code Examples -->
+                <section id="examples" class="mb-5">
+                    <h2 class="fw-bold h4 mb-3 border-bottom pb-2">Code Examples</h2>
+
+                    <ul class="nav nav-tabs mb-3" id="exampleTabs">
+                        <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#ex-curl">curl</button></li>
+                        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#ex-js">JavaScript</button></li>
+                        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#ex-python">Python</button></li>
+                        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#ex-csharp">C#</button></li>
+                    </ul>
+                    <div class="tab-content">
+                        <div id="ex-curl" class="tab-pane fade show active">
+                            <pre class="p-3 rounded-3 small" style="background:#1e1e2e;color:#cdd6f4;overflow-x:auto;"><code>curl -X POST https://your-instance.com/Chat/Send \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $JWT_TOKEN" \
+  -d '{"message":"Hello, AI!","model":"gpt-4"}'</code></pre>
+                        </div>
+                        <div id="ex-js" class="tab-pane fade">
+                            <pre class="p-3 rounded-3 small" style="background:#1e1e2e;color:#cdd6f4;overflow-x:auto;"><code>const response = await fetch('/Chat/Send', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${jwtToken}`
+  },
+  body: JSON.stringify({ message: 'Hello, AI!', model: 'gpt-4' })
+});
+const data = await response.json();
+console.log(data.content);</code></pre>
+                        </div>
+                        <div id="ex-python" class="tab-pane fade">
+                            <pre class="p-3 rounded-3 small" style="background:#1e1e2e;color:#cdd6f4;overflow-x:auto;"><code>import requests
+
+headers = {
+    "Authorization": f"Bearer {jwt_token}",
+    "Content-Type": "application/json"
+}
+payload = {"message": "Hello, AI!", "model": "gpt-4"}
+res = requests.post("https://your-instance.com/Chat/Send",
+                    json=payload, headers=headers)
+print(res.json()["content"])</code></pre>
+                        </div>
+                        <div id="ex-csharp" class="tab-pane fade">
+                            <pre class="p-3 rounded-3 small" style="background:#1e1e2e;color:#cdd6f4;overflow-x:auto;"><code>using var client = new HttpClient();
+client.DefaultRequestHeaders.Authorization =
+    new AuthenticationHeaderValue("Bearer", jwtToken);
+
+var payload = new { message = "Hello, AI!", model = "gpt-4" };
+var response = await client.PostAsJsonAsync(
+    "https://your-instance.com/Chat/Send", payload);
+var data = await response.Content.ReadFromJsonAsync&lt;dynamic&gt;();
+Console.WriteLine(data?.content);</code></pre>
+                        </div>
+                    </div>
+                </section>
+
+            </div>
+        </div>
+    </div>
+</div>
