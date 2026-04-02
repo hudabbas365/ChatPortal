@@ -1,13 +1,13 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 namespace ChatPortal.Models.Entities;
-public class Credit
+public class TeamMember
 {
     [Key] public int Id { get; set; }
+    public int TeamId { get; set; }
+    [ForeignKey("TeamId")] public virtual Team Team { get; set; } = null!;
     public int UserId { get; set; }
     [ForeignKey("UserId")] public virtual User User { get; set; } = null!;
-    public int Amount { get; set; }
-    [Required, MaxLength(50)] public string Type { get; set; } = "Purchased";
-    [MaxLength(256)] public string? Description { get; set; }
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    [MaxLength(50)] public string Role { get; set; } = "Member";
+    public DateTime JoinedAt { get; set; } = DateTime.UtcNow;
 }
