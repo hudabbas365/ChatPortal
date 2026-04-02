@@ -1,0 +1,284 @@
+@model ChatPortal.ViewModels.PaymentViewModel
+@{
+    ViewData["Title"] = "Buy Credits";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+    :root {
+        --color-bg: #E8F0FE;
+        --color-lavender: #F3E8FF;
+        --color-green: #E6F9E8;
+        --color-peach: #FFF3E0;
+        --color-card: #ffffff;
+        --shadow-soft: 0 2px 12px rgba(0,0,0,0.08);
+        --radius: 12px;
+    }
+
+    body { background: var(--color-bg); }
+
+    .page-hero {
+        background: linear-gradient(135deg, #E8F0FE 0%, #F3E8FF 100%);
+        padding: 2.5rem 0 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .plan-card {
+        background: var(--color-card);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow-soft);
+        border: 2px solid transparent;
+        transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+        padding: 2rem 1.75rem;
+        text-align: center;
+        height: 100%;
+    }
+    .plan-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 28px rgba(0,0,0,0.13);
+        border-color: #c8b6ff;
+    }
+    .plan-card.featured {
+        border-color: #7c4dff;
+        background: linear-gradient(180deg, #F3E8FF 0%, #fff 40%);
+    }
+
+    .plan-icon {
+        width: 56px; height: 56px;
+        border-radius: 50%;
+        display: inline-flex; align-items: center; justify-content: center;
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .price-tag { font-size: 2.5rem; font-weight: 800; color: #1a1a2e; }
+    .price-tag sup { font-size: 1.1rem; vertical-align: super; font-weight: 600; }
+    .price-tag small { font-size: 0.9rem; font-weight: 500; color: #777; }
+
+    .credits-badge {
+        display: inline-block;
+        background: var(--color-lavender); color: #7c4dff;
+        border-radius: 100px; padding: 0.3em 0.9em;
+        font-size: 0.85rem; font-weight: 700; margin-bottom: 0.75rem;
+    }
+
+    .btn-pay {
+        width: 100%; border: none; border-radius: 8px;
+        padding: 0.65rem 1rem; font-weight: 700; font-size: 0.95rem;
+        cursor: pointer; transition: opacity 0.2s, transform 0.1s;
+    }
+    .btn-pay:hover { opacity: 0.88; transform: translateY(-1px); }
+    .btn-pay:active { transform: translateY(0); }
+
+    .btn-stripe { background: linear-gradient(135deg, #635bff, #a78bfa); color: #fff; }
+    .btn-paypal { background: linear-gradient(135deg, #003087, #009cde); color: #fff; }
+
+    .balance-card {
+        background: linear-gradient(135deg, #E6F9E8, #E8F0FE);
+        border-radius: var(--radius);
+        padding: 1.5rem;
+        box-shadow: var(--shadow-soft);
+    }
+
+    .tx-row { border-radius: 8px; background: #fff; padding: 0.75rem 1rem; margin-bottom: 0.5rem; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
+    .provider-badge { font-size: 0.7rem; font-weight: 700; padding: 0.2em 0.6em; border-radius: 100px; }
+    .provider-stripe { background: #ede9ff; color: #635bff; }
+    .provider-paypal { background: #e0f0ff; color: #003087; }
+    .status-completed { color: #2e7d32; }
+    .status-pending   { color: #e65100; }
+    .status-failed    { color: #c62828; }
+
+    .payment-modal .modal-content { border-radius: var(--radius); border: none; box-shadow: 0 8px 40px rgba(0,0,0,0.15); }
+    .payment-modal .modal-header { background: linear-gradient(135deg, #E8F0FE, #F3E8FF); border-radius: var(--radius) var(--radius) 0 0; }
+
+    #card-element { padding: 0.85rem; border: 1px solid #ddd; border-radius: 8px; background: #fafafa; }
+    #card-element.StripeElement--focus { border-color: #7c4dff; box-shadow: 0 0 0 3px rgba(124,77,255,0.15); }
+    #card-errors { color: #c62828; font-size: 0.85rem; min-height: 1.2em; }
+</style>
+
+<!-- Hero -->
+<div class="page-hero">
+    <div class="container text-center">
+        <h1 class="fw-bold mb-2" style="color:#1a1a2e;">
+            <i class="bi bi-coin me-2" style="color:#7c4dff;"></i>Buy Credits
+        </h1>
+        <p class="text-muted mb-0">Credits are used for AI-powered queries on your private data</p>
+    </div>
+</div>
+
+<div class="container mb-5">
+    <!-- Balance -->
+    <div class="row justify-content-center mb-4">
+        <div class="col-md-6">
+            <div class="balance-card d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="text-muted small fw-semibold text-uppercase mb-1" style="letter-spacing:0.07em;">Current Balance</div>
+                    <div class="fw-bold fs-3" style="color:#1a1a2e;"><i class="bi bi-coin me-2 text-success"></i>@Model.CurrentBalance credits</div>
+                </div>
+                <a asp-controller="DataConnection" asp-action="Index" class="btn btn-outline-primary btn-sm rounded-pill">
+                    <i class="bi bi-database me-1"></i>My Data Sources
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Packages -->
+    <div class="row g-4 justify-content-center mb-5">
+        @for (int i = 0; i < Model.Packages.Count; i++)
+        {
+            var pkg = Model.Packages[i];
+            var isFeatured = i == 1;
+            var iconBg = i == 0 ? "#E8F0FE" : i == 1 ? "#F3E8FF" : "#E6F9E8";
+            var iconColor = i == 0 ? "#1565c0" : i == 1 ? "#7c4dff" : "#2e7d32";
+            var iconName = i == 0 ? "bi-rocket" : i == 1 ? "bi-stars" : "bi-gem";
+
+            <div class="col-md-4">
+                <div class="plan-card @(isFeatured ? "featured" : "")">
+                    @if (isFeatured)
+                    {
+                        <div class="mb-2">
+                            <span style="background:#F3E8FF;color:#7c4dff;font-size:0.72rem;font-weight:700;padding:0.25em 0.8em;border-radius:100px;">Most Popular</span>
+                        </div>
+                    }
+
+                    <div class="plan-icon" style="background:@iconBg;color:@iconColor;">
+                        <i class="bi @iconName"></i>
+                    </div>
+
+                    <h4 class="fw-bold mb-1">@pkg.Name</h4>
+                    <p class="text-muted small mb-3">@pkg.Description</p>
+
+                    <div class="credits-badge"><i class="bi bi-coin me-1"></i>@pkg.Credits credits</div>
+
+                    <div class="price-tag mb-3">
+                        <sup>$</sup>@pkg.Price.ToString("0.00")<small>/one-time</small>
+                    </div>
+
+                    <div class="d-flex flex-column gap-2">
+                        <!-- Stripe Pay -->
+                        <form asp-action="ProcessStripePayment" method="post">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="packageId" value="@pkg.Id" />
+                            <button type="submit" class="btn-pay btn-stripe">
+                                <i class="bi bi-credit-card me-2"></i>Pay with Card
+                            </button>
+                        </form>
+
+                        <!-- PayPal Pay -->
+                        <button class="btn-pay btn-paypal paypal-btn" data-package-id="@pkg.Id" data-price="@pkg.Price.ToString("0.00")">
+                            <i class="bi bi-paypal me-2"></i>Pay with PayPal
+                        </button>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- Transaction History -->
+    @if (Model.RecentTransactions.Any())
+    {
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <h5 class="fw-bold mb-3"><i class="bi bi-clock-history me-2 text-muted"></i>Recent Transactions</h5>
+                @foreach (var tx in Model.RecentTransactions)
+                {
+                    var provClass = "provider-" + tx.Provider.ToLower();
+                    var statusClass = "status-" + tx.Status.ToLower();
+                    <div class="tx-row d-flex align-items-center justify-content-between">
+                        <div>
+                            <span class="provider-badge @provClass">@tx.Provider</span>
+                            <span class="ms-2 fw-medium small">$@tx.Amount.ToString("0.00")</span>
+                            @if (tx.CreditsAwarded.HasValue)
+                            {
+                                <span class="text-muted small ms-1">· @tx.CreditsAwarded credits</span>
+                            }
+                        </div>
+                        <div class="d-flex align-items-center gap-3">
+                            <span class="small @statusClass fw-semibold">@tx.Status</span>
+                            <span class="text-muted small">@tx.CreatedAt.ToString("MMM dd, yyyy")</span>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+<!-- PayPal Modal -->
+<div class="modal fade payment-modal" id="paypalModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold"><i class="bi bi-paypal me-2" style="color:#003087;"></i>PayPal Payment</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body py-4">
+                <p class="text-muted small text-center">You'll be redirected to PayPal to complete the payment.</p>
+                <div id="paypalButtonContainer" class="text-center py-3">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <p class="text-muted small mt-2">Initializing PayPal...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    function getAntiForgeryToken() {
+        return document.querySelector('[name="__RequestVerificationToken"]')?.value ?? '';
+    }
+
+    // Event delegation for PayPal buttons
+    document.addEventListener('click', e => {
+        const btn = e.target.closest('.paypal-btn');
+        if (!btn) return;
+
+        const packageId = btn.dataset.packageId;
+        const price = btn.dataset.price;
+        if (!packageId) return;
+
+        const modal = new bootstrap.Modal(document.getElementById('paypalModal'));
+        modal.show();
+
+        // Simulate PayPal initialization (requires real PayPal JS SDK in production)
+        setTimeout(() => {
+            const container = document.getElementById('paypalButtonContainer');
+            if (!container) return;
+            const afToken = getAntiForgeryToken();
+            // Build the form DOM elements safely (no innerHTML with untrusted data)
+            const p = document.createElement('p');
+            p.className = 'text-muted small mb-3';
+            p.textContent = `Package: $${price} USD`;
+
+            const form = document.createElement('form');
+            form.method = 'post';
+            form.action = '/Payment/ProcessPayPalPayment';
+
+            const tokenInput = document.createElement('input');
+            tokenInput.type = 'hidden';
+            tokenInput.name = '__RequestVerificationToken';
+            tokenInput.value = afToken;
+
+            const pkgInput = document.createElement('input');
+            pkgInput.type = 'hidden';
+            pkgInput.name = 'packageId';
+            pkgInput.value = packageId;
+
+            const submitBtn = document.createElement('button');
+            submitBtn.type = 'submit';
+            submitBtn.className = 'btn-pay btn-paypal';
+            submitBtn.style.cssText = 'width:auto;padding:0.65rem 2rem;';
+            submitBtn.innerHTML = '<i class="bi bi-paypal me-2"></i>Continue to PayPal';
+
+            form.appendChild(tokenInput);
+            form.appendChild(pkgInput);
+            form.appendChild(submitBtn);
+
+            container.innerHTML = '';
+            container.appendChild(p);
+            container.appendChild(form);
+        }, 800);
+    });
+</script>
+}

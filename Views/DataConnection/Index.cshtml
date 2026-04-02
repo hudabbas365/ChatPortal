@@ -1,0 +1,247 @@
+@model ChatPortal.ViewModels.DataConnectionViewModel
+@{
+    ViewData["Title"] = "My Data Sources";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+    :root {
+        --color-bg: #E8F0FE;
+        --color-lavender: #F3E8FF;
+        --color-green: #E6F9E8;
+        --color-peach: #FFF3E0;
+        --color-neutral: #F5F5F5;
+        --color-card: #ffffff;
+        --shadow-soft: 0 2px 12px rgba(0,0,0,0.08);
+        --radius: 12px;
+    }
+
+    body { background: var(--color-bg); }
+
+    .page-hero {
+        background: linear-gradient(135deg, #E8F0FE 0%, #F3E8FF 100%);
+        padding: 2.5rem 0 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .card-soft {
+        background: var(--color-card);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow-soft);
+        border: 1px solid rgba(0,0,0,0.06);
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .card-soft:hover { transform: translateY(-2px); box-shadow: 0 6px 24px rgba(0,0,0,0.12); }
+
+    .badge-source-type {
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 0.3em 0.8em;
+        border-radius: 100px;
+    }
+    .badge-excel  { background:#E6F9E8; color:#2e7d32; }
+    .badge-csv    { background:#E8F0FE; color:#1565c0; }
+    .badge-sqlserver { background:#FFF3E0; color:#e65100; }
+    .badge-oracle { background:#F3E8FF; color:#6a1b9a; }
+
+    .status-badge {
+        font-size: 0.7rem;
+        font-weight: 600;
+        padding: 0.2em 0.7em;
+        border-radius: 100px;
+    }
+    .status-active  { background:#E6F9E8; color:#2e7d32; }
+    .status-pending { background:#FFF3E0; color:#e65100; }
+    .status-error   { background:#FFEBEE; color:#c62828; }
+
+    .btn-gradient {
+        background: linear-gradient(135deg, #7c4dff, #448aff);
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        padding: 0.5rem 1.25rem;
+        font-weight: 600;
+        transition: opacity 0.2s;
+    }
+    .btn-gradient:hover { opacity: 0.88; color: #fff; }
+
+    .credit-badge {
+        background: linear-gradient(135deg, #E6F9E8, #E8F0FE);
+        border-radius: 100px;
+        padding: 0.4em 1em;
+        font-weight: 700;
+        color: #1565c0;
+    }
+
+    .empty-state { background: var(--color-neutral); border-radius: var(--radius); padding: 3rem; text-align: center; }
+</style>
+
+<div class="page-hero">
+    <div class="container">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+            <div>
+                <h1 class="fw-bold mb-1" style="color:#1a1a2e;">
+                    <i class="bi bi-database-fill me-2" style="color:#7c4dff;"></i>My Data Sources
+                </h1>
+                <p class="text-muted mb-0">Connect your Excel, CSV, or database for private AI-powered insights</p>
+            </div>
+            <div class="d-flex align-items-center gap-3">
+                <span class="credit-badge">
+                    <i class="bi bi-coin me-1"></i>@Model.CreditBalance credits
+                </span>
+                <a asp-controller="Payment" asp-action="SelectPlan" class="btn btn-outline-primary btn-sm rounded-pill">
+                    <i class="bi bi-plus-circle me-1"></i>Buy Credits
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container mb-5">
+    <div class="row g-4">
+        <!-- Upload File Card -->
+        <div class="col-12">
+            <div class="card-soft p-4 mb-2">
+                <h5 class="fw-bold mb-3"><i class="bi bi-cloud-upload me-2 text-primary"></i>Upload File Data Source</h5>
+                <form asp-action="UploadFile" method="post" enctype="multipart/form-data">
+                    @Html.AntiForgeryToken()
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label fw-medium">Name</label>
+                            <input name="Name" type="text" class="form-control" placeholder="e.g. Sales Data 2024" required />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-medium">Type</label>
+                            <select name="SourceType" class="form-select">
+                                <option value="Excel">Excel (.xlsx / .xls)</option>
+                                <option value="CSV">CSV (.csv)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-medium">File</label>
+                            <input name="File" type="file" class="form-control" accept=".xlsx,.xls,.csv" required />
+                        </div>
+                        <div class="col-md-1 d-flex align-items-end">
+                            <button type="submit" class="btn-gradient w-100">Upload</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Connect Database Card -->
+        <div class="col-12">
+            <div class="card-soft p-4 mb-2">
+                <h5 class="fw-bold mb-3"><i class="bi bi-server me-2 text-warning"></i>Connect Database</h5>
+                <form asp-action="ConnectDatabase" method="post" id="dbConnectForm">
+                    @Html.AntiForgeryToken()
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label class="form-label fw-medium">Name</label>
+                            <input name="Name" type="text" class="form-control" placeholder="e.g. Production DB" required />
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label fw-medium">Type</label>
+                            <select name="SourceType" id="dbSourceType" class="form-select" onchange="toggleOracleNote()">
+                                <option value="SqlServer">SQL Server</option>
+                                <option value="Oracle" disabled title="Oracle support coming soon">Oracle (Soon)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-5">
+                            <label class="form-label fw-medium">Connection String</label>
+                            <input name="ConnectionString" type="text" class="form-control"
+                                   placeholder="Server=...;Database=...;User Id=...;Password=...;" required />
+                        </div>
+                        <div class="col-md-1 d-flex align-items-end">
+                            <button type="button" class="btn btn-outline-secondary w-100" onclick="testConnection()">Test</button>
+                        </div>
+                        <div class="col-md-1 d-flex align-items-end">
+                            <button type="submit" class="btn-gradient w-100">Connect</button>
+                        </div>
+                    </div>
+                </form>
+                <div id="testResult" class="mt-2 d-none"></div>
+            </div>
+        </div>
+
+        <!-- Data Sources List -->
+        <div class="col-12">
+            <h5 class="fw-bold mb-3">Your Data Sources (@Model.DataSources.Count)</h5>
+            @if (!Model.DataSources.Any())
+            {
+                <div class="empty-state">
+                    <i class="bi bi-database fs-1 text-muted mb-3 d-block"></i>
+                    <h6 class="text-muted">No data sources yet</h6>
+                    <p class="text-muted small">Upload an Excel/CSV file or connect a database to get started with AI Insights.</p>
+                </div>
+            }
+            else
+            {
+                <div class="row g-3">
+                    @foreach (var ds in Model.DataSources)
+                    {
+                        var typeClass = ds.SourceType.ToLower().Replace(" ", "");
+                        var statusClass = "status-" + ds.Status.ToLower();
+                        <div class="col-md-6 col-lg-4">
+                            <div class="card-soft p-4 h-100 d-flex flex-column">
+                                <div class="d-flex align-items-start justify-content-between mb-2">
+                                    <div>
+                                        <span class="badge-source-type badge-@typeClass">@ds.SourceType</span>
+                                        <span class="status-badge @statusClass ms-2">@ds.Status</span>
+                                    </div>
+                                    <form asp-action="Delete" method="post" class="d-inline"
+                                          onsubmit="return confirm('Delete this data source?')">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@ds.Id" />
+                                        <button type="submit" class="btn btn-link btn-sm text-danger p-0" title="Delete">
+                                            <i class="bi bi-trash3"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                                <h6 class="fw-bold mb-1">@ds.Name</h6>
+                                <p class="text-muted small mb-auto">
+                                    Created @ds.CreatedAt.ToString("MMM dd, yyyy")
+                                </p>
+                                <div class="mt-3">
+                                    <a asp-controller="DataInsights" asp-action="Index"
+                                       asp-route-dataSourceId="@ds.Id"
+                                       class="btn-gradient btn-sm d-inline-block text-decoration-none">
+                                        <i class="bi bi-graph-up me-1"></i>AI Insights
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    function testConnection() {
+        const sourceType = document.getElementById('dbSourceType').value;
+        const cs = document.querySelector('[name="ConnectionString"]').value;
+        if (!cs) { alert('Enter a connection string first.'); return; }
+
+        const result = document.getElementById('testResult');
+        result.innerHTML = '<div class="text-muted small"><i class="bi bi-arrow-repeat spin me-1"></i>Testing connection...</div>';
+        result.classList.remove('d-none');
+
+        fetch(`/DataConnection/GetTables?sourceType=${encodeURIComponent(sourceType)}&connectionString=${encodeURIComponent(cs)}`)
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    result.innerHTML = `<div class="alert alert-success py-2 mb-0 small"><i class="bi bi-check-circle me-1"></i>Connected! Found ${data.tables.length} tables.</div>`;
+                } else {
+                    result.innerHTML = `<div class="alert alert-danger py-2 mb-0 small"><i class="bi bi-x-circle me-1"></i>${data.error}</div>`;
+                }
+            })
+            .catch(() => {
+                result.innerHTML = '<div class="alert alert-danger py-2 mb-0 small"><i class="bi bi-x-circle me-1"></i>Connection test failed.</div>';
+            });
+    }
+</script>
+}

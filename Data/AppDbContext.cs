@@ -40,6 +40,12 @@ public class AppDbContext : DbContext
     public DbSet<Webhook> Webhooks { get; set; }
     public DbSet<SentimentResult> SentimentResults { get; set; }
 
+    // New feature entities
+    public DbSet<UserDataSource> UserDataSources { get; set; }
+    public DbSet<CreditTransaction> CreditTransactions { get; set; }
+    public DbSet<CreditPackage> CreditPackages { get; set; }
+    public DbSet<PaymentTransaction> PaymentTransactions { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -83,5 +89,11 @@ public class AppDbContext : DbContext
             .WithMany()
             .HasForeignKey(i => i.InvitedById)
             .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<CreditPackage>().HasData(
+            new CreditPackage { Id = 1, Name = "Starter", Description = "100 AI query credits", Credits = 100, Price = 4.99m, IsActive = true },
+            new CreditPackage { Id = 2, Name = "Standard", Description = "500 AI query credits", Credits = 500, Price = 19.99m, IsActive = true },
+            new CreditPackage { Id = 3, Name = "Professional", Description = "2000 AI query credits", Credits = 2000, Price = 59.99m, IsActive = true }
+        );
     }
 }
