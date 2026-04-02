@@ -12,4 +12,10 @@ public class Notification
     public bool IsRead { get; set; } = false;
     [MaxLength(512)] public string? ActionUrl { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    /// <summary>informational | warning | urgent</summary>
+    [MaxLength(50)]
+    public string Priority { get; set; } = "informational";
+
+    public DateTime? DismissedAt { get; set; }
 }

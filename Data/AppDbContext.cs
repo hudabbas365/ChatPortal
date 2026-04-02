@@ -46,6 +46,9 @@ public class AppDbContext : DbContext
     public DbSet<CreditPackage> CreditPackages { get; set; }
     public DbSet<PaymentTransaction> PaymentTransactions { get; set; }
 
+    // Notification & Announcement system
+    public DbSet<GlobalAnnouncement> GlobalAnnouncements { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -94,6 +97,85 @@ public class AppDbContext : DbContext
             new CreditPackage { Id = 1, Name = "Starter", Description = "100 AI query credits", Credits = 100, Price = 4.99m, IsActive = true },
             new CreditPackage { Id = 2, Name = "Standard", Description = "500 AI query credits", Credits = 500, Price = 19.99m, IsActive = true },
             new CreditPackage { Id = 3, Name = "Professional", Description = "2000 AI query credits", Credits = 2000, Price = 59.99m, IsActive = true }
+        );
+
+        // ── Demo Users ────────────────────────────────────────────────────────
+        // Passwords use SHA256(password + "ChatPortalSalt").
+        // Admin@123 → 6F9C5BA6C2BBA8C601EC59FDE264D5D8245793A209E1034DA9D6BA9E35B11882
+        // Demo@123  → 8EA9D894B93D6524C104DB00772D3F87AC40E55D958B37099C65036689F2E48D
+        var seedNow = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        modelBuilder.Entity<User>().HasData(
+            new User
+            {
+                Id = 1, FirstName = "Admin", LastName = "User",
+                Email = "admin@chatportal.com",
+                PasswordHash = "6F9C5BA6C2BBA8C601EC59FDE264D5D8245793A209E1034DA9D6BA9E35B11882",
+                RoleId = 1, IsActive = true, IsEmailVerified = true,
+                CreatedAt = seedNow, UpdatedAt = seedNow
+            },
+            new User
+            {
+                Id = 2, FirstName = "Demo", LastName = "User",
+                Email = "demo@chatportal.com",
+                PasswordHash = "8EA9D894B93D6524C104DB00772D3F87AC40E55D958B37099C65036689F2E48D",
+                RoleId = 2, IsActive = true, IsEmailVerified = true,
+                CreatedAt = seedNow, UpdatedAt = seedNow
+            },
+            new User
+            {
+                Id = 3, FirstName = "Alice", LastName = "Johnson",
+                Email = "alice@demo.com",
+                PasswordHash = "8EA9D894B93D6524C104DB00772D3F87AC40E55D958B37099C65036689F2E48D",
+                RoleId = 2, IsActive = true, IsEmailVerified = true,
+                CreatedAt = seedNow, UpdatedAt = seedNow
+            }
+        );
+
+        // ── Sample Global Announcements ───────────────────────────────────────
+        modelBuilder.Entity<GlobalAnnouncement>().HasData(
+            new GlobalAnnouncement
+            {
+                Id = 1, Title = "Welcome to ChatPortal!",
+                Content = "We're excited to have you here. Explore AI-powered chat, data insights, and more.",
+                Priority = "informational", IsActive = true, CreatedById = 1, CreatedAt = seedNow
+            },
+            new GlobalAnnouncement
+            {
+                Id = 2, Title = "Scheduled Maintenance – 2 Jan 2025 02:00 UTC",
+                Content = "The platform will be briefly unavailable during routine maintenance. Expected downtime: 15 minutes.",
+                Priority = "warning", IsActive = false, CreatedById = 1, CreatedAt = seedNow
+            },
+            new GlobalAnnouncement
+            {
+                Id = 3, Title = "Security Advisory: Please Update Your Password",
+                Content = "As a precaution, we recommend all users update their passwords immediately.",
+                Priority = "urgent", IsActive = true, CreatedById = 1, CreatedAt = seedNow
+            }
+        );
+
+        // ── Sample Notifications (for demo user ID 2) ─────────────────────────
+        modelBuilder.Entity<Notification>().HasData(
+            new Notification
+            {
+                Id = 1, UserId = 2, Title = "Welcome to ChatPortal!",
+                Content = "Get started by exploring AI chat, data insights, and your personalized dashboard.",
+                Priority = "informational", Type = "announcement", IsRead = false,
+                CreatedAt = seedNow
+            },
+            new Notification
+            {
+                Id = 2, UserId = 2, Title = "Pro Plan Activated",
+                Content = "Your Pro subscription is now active. You have 1,000 credits available this month.",
+                Priority = "informational", Type = "subscription", IsRead = true,
+                CreatedAt = seedNow
+            },
+            new Notification
+            {
+                Id = 3, UserId = 2, Title = "Security Advisory",
+                Content = "As a precaution, we recommend updating your password.",
+                Priority = "urgent", Type = "announcement", IsRead = false,
+                CreatedAt = seedNow
+            }
         );
     }
 }
