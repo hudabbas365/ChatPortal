@@ -1,25 +1,62 @@
-// ChatPortal - Chat JavaScript
+// ChatPortal - Main Chat JavaScript
+// Handles message sending, rendering (Markdown + code highlighting),
+// file attachment, PDF export, right panel, and voice input.
 
-let sessionId = null;
+// ── Attachment state ──────────────────────────────────────────────────────
+let attachedFile = null;
 
-function appendMessage(role, content) {
+/**
+ * Append a message bubble to the chat messages container.
+ * AI responses are rendered as Markdown; user messages are plain-text escaped.
+ * @param {string} role - "user" or "assistant".
+ * @param {string} content - Raw message content.
+ * @param {boolean} [persist=true] - Whether to save the message to the active localStorage session.
+ */
+function appendMessage(role, content, persist = true) {
     const isAi = role.toLowerCase() === 'assistant';
     const emptyState = document.getElementById('emptyState');
-    if (emptyState) emptyState.style.display = 'none';
+    if (emptyState) emptyState.remove();
 
-    // Check if content is a structured AI response (JSON object)
-    let displayContent = content;
-    let isStructured = false;
-    if (isAi && typeof content === 'string' && content.trim().startsWith('{')) {
-        try {
-            const parsed = JSON.parse(content);
-            if (parsed.narrative || parsed.query) {
-                displayContent = buildStructuredHtml(parsed);
-                isStructured = true;
-            }
-        } catch { /* not JSON, render as plain text */ }
+    // Determine how to render the content
+    let renderedContent;
+    if (isAi) {
+        // Try structured JSON first (data insights responses)
+        if (typeof content === 'string' && content.trim().startsWith('{')) {
+            try {
+                const parsed = JSON.parse(content);
+                if (parsed.narrative || parsed.query) {
+                    renderedContent = buildStructuredHtml(parsed);
+                    if (persist && typeof currentSessionId !== 'undefined' && currentSessionId) {
+                        addMessageToSession(currentSessionId, role, content);
+                        renderSidebar(document.getElementById('sessionSearch')?.value ?? '');
+                    }
+                    _insertMessageBubble(isAi, renderedContent, true);
+                    updateRightPanel(parsed);
+                    return;
+                }
+            } catch { /* not JSON */ }
+        }
+        // Render Markdown (marked.js + DOMPurify)
+        renderedContent = renderMarkdown(content);
+    } else {
+        renderedContent = `<p class="mb-0 small" style="white-space:pre-wrap;">${escapeHtml(String(content))}</p>`;
     }
 
+    if (persist && typeof currentSessionId !== 'undefined' && currentSessionId) {
+        addMessageToSession(currentSessionId, role, content);
+        renderSidebar(document.getElementById('sessionSearch')?.value ?? '');
+    }
+
+    _insertMessageBubble(isAi, renderedContent, false);
+}
+
+/**
+ * Insert a message bubble DOM element into the chat messages container.
+ * @param {boolean} isAi - True if the message is from the AI assistant.
+ * @param {string} renderedContent - HTML string for the bubble body.
+ * @param {boolean} isStructured - True when the content was built from structured JSON.
+ */
+function _insertMessageBubble(isAi, renderedContent, isStructured) {
     const messageHtml = `
         <div class="d-flex ${isAi ? '' : 'justify-content-end'} mb-3 message-item">
             ${isAi ? `
@@ -29,15 +66,43 @@ function appendMessage(role, content) {
                 </div>
             </div>` : ''}
             <div class="chat-bubble ${isAi ? 'chat-bubble-ai' : 'chat-bubble-user'} p-3 rounded-3 shadow-sm" style="max-width:80%;">
-                ${isStructured ? displayContent : `<p class="mb-0 small" style="white-space:pre-wrap;">${escapeHtml(String(content))}</p>`}
+                ${renderedContent}
             </div>
         </div>`;
 
     const container = document.getElementById('chatMessages');
     container.insertAdjacentHTML('beforeend', messageHtml);
+
+    // Apply syntax highlighting to any newly added code blocks
+    container.querySelectorAll('pre code:not(.hljs)').forEach(block => {
+        if (typeof hljs !== 'undefined') hljs.highlightElement(block);
+    });
+
     container.scrollTop = container.scrollHeight;
 }
 
+/**
+ * Render a Markdown string to sanitised HTML.
+ * Uses marked.js for parsing and DOMPurify for XSS sanitisation.
+ * Falls back to escaped plain text if libraries are unavailable.
+ * @param {string} markdown - The raw Markdown string.
+ * @returns {string} Safe HTML string.
+ */
+function renderMarkdown(markdown) {
+    if (typeof marked === 'undefined') {
+        return `<p class="mb-0 small" style="white-space:pre-wrap;">${escapeHtml(markdown)}</p>`;
+    }
+    try {
+        const raw = marked.parse(markdown, { breaks: true, gfm: true });
+        return typeof DOMPurify !== 'undefined' ? DOMPurify.sanitize(raw) : raw;
+    } catch {
+        return `<p class="mb-0 small" style="white-space:pre-wrap;">${escapeHtml(markdown)}</p>`;
+    }
+}
+
+/**
+ * Display the animated typing indicator inside the chat messages container.
+ */
 function showTypingIndicator() {
     const html = `
         <div class="d-flex mb-3" id="typingIndicator">
@@ -54,37 +119,65 @@ function showTypingIndicator() {
                 </div>
             </div>
         </div>`;
-
     const container = document.getElementById('chatMessages');
     container.insertAdjacentHTML('beforeend', html);
     container.scrollTop = container.scrollHeight;
 }
 
+/**
+ * Remove the typing indicator from the chat messages container.
+ */
 function removeTypingIndicator() {
-    const indicator = document.getElementById('typingIndicator');
-    if (indicator) indicator.remove();
+    document.getElementById('typingIndicator')?.remove();
 }
 
+/**
+ * Send the current message (and optional file attachment) to the server.
+ * Updates localStorage history with both the user message and the AI response.
+ */
 async function sendMessage() {
     const input = document.getElementById('messageInput');
     const message = input.value.trim();
-    if (!message) return;
+    if (!message && !attachedFile) return;
 
     const model = document.getElementById('modelSelect')?.value ?? 'gpt-3.5-turbo';
     input.value = '';
     autoResizeTextarea(input);
 
-    appendMessage('user', message);
+    // Build display message (include filename if file attached)
+    const displayMessage = attachedFile
+        ? `${message}\n📎 ${attachedFile.name}`
+        : message;
+
+    appendMessage('user', displayMessage);
     showTypingIndicator();
 
     const sendBtn = document.getElementById('sendBtn');
     sendBtn.disabled = true;
 
     try {
+        let bodyContent;
+        const headers = {
+            'Content-Type': 'application/json',
+            'RequestVerificationToken': getAntiForgeryToken()
+        };
+
+        if (attachedFile) {
+            const fileContent = await readFileAsText(attachedFile);
+            bodyContent = JSON.stringify({
+                message: message + '\n\n[Attached file: ' + attachedFile.name + ']\n' + fileContent,
+                model
+            });
+        } else {
+            bodyContent = JSON.stringify({ message, model });
+        }
+
+        clearAttachment();
+
         const response = await fetch('/Chat/Send', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': getAntiForgeryToken() },
-            body: JSON.stringify({ message, model, sessionId })
+            headers,
+            body: bodyContent
         });
 
         removeTypingIndicator();
@@ -105,6 +198,11 @@ async function sendMessage() {
     }
 }
 
+/**
+ * Handle keydown events on the message textarea.
+ * Submits on Enter (without Shift) and auto-resizes on any key.
+ * @param {KeyboardEvent} event - The keyboard event.
+ */
 function handleKeyDown(event) {
     if (event.key === 'Enter' && !event.shiftKey) {
         event.preventDefault();
@@ -113,47 +211,67 @@ function handleKeyDown(event) {
     autoResizeTextarea(event.target);
 }
 
+/**
+ * Auto-resize a textarea element to fit its content, up to 200 px.
+ * @param {HTMLTextAreaElement} el - The textarea element.
+ */
 function autoResizeTextarea(el) {
     el.style.height = 'auto';
     el.style.height = Math.min(el.scrollHeight, 200) + 'px';
 }
 
+/**
+ * Clear the chat messages area and show the empty state placeholder.
+ * Also resets the active localStorage session message history.
+ */
 function clearChat() {
-    const container = document.getElementById('chatMessages');
-    container.innerHTML = '';
-    const emptyState = document.createElement('div');
-    emptyState.id = 'emptyState';
-    emptyState.className = 'text-center text-muted py-5';
-    emptyState.innerHTML = `<i class="bi bi-chat-dots fs-1 mb-3 d-block opacity-25"></i><h5>Start a conversation</h5><p class="small">Ask me anything!</p>`;
-    container.appendChild(emptyState);
+    clearChatUI();
+    if (typeof currentSessionId !== 'undefined' && currentSessionId) {
+        const sessions = loadSessions();
+        const s = sessions.find(x => x.id === currentSessionId);
+        if (s) {
+            s.messages = [];
+            s.title = 'New Chat';
+            saveSessions(sessions);
+        }
+        renderSidebar();
+    }
 }
 
-function newChat() {
-    clearChat();
-    sessionId = null;
-}
-
-function loadSession(id) {
-    sessionId = id;
-    clearChat();
-}
-
+/**
+ * Use a suggestion chip as the message input and immediately send it.
+ * @param {HTMLElement} btn - The suggestion button element.
+ */
 function useSuggestion(btn) {
     const input = document.getElementById('messageInput');
-    input.value = btn.textContent;
+    input.value = btn.textContent.trim();
     sendMessage();
 }
 
+/**
+ * Get the ASP.NET Core anti-forgery token value from the hidden form field.
+ * @returns {string} The token string, or empty string if not found.
+ */
 function getAntiForgeryToken() {
     return document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? '';
 }
 
+/**
+ * Escape special HTML characters in a string to prevent XSS.
+ * @param {string} text - Raw text to escape.
+ * @returns {string} HTML-escaped string.
+ */
 function escapeHtml(text) {
     const div = document.createElement('div');
     div.appendChild(document.createTextNode(text));
     return div.innerHTML;
 }
 
+/**
+ * Build an HTML representation for a structured AI data-insights response object.
+ * @param {Object} data - Parsed response with optional narrative, query, result, prompts, examples.
+ * @returns {string} HTML string.
+ */
 function buildStructuredHtml(data) {
     let html = '';
     if (data.narrative) html += `<p class="mb-2 small" style="white-space:pre-wrap;">${escapeHtml(data.narrative)}</p>`;
@@ -166,7 +284,7 @@ function buildStructuredHtml(data) {
         const keys = Object.keys(data.result[0]);
         html += `<div class="table-responsive mb-2"><table class="table table-sm mb-0" style="font-size:0.78rem;">
             <thead><tr>${keys.map(k => `<th>${escapeHtml(k)}</th>`).join('')}</tr></thead>
-            <tbody>${data.result.slice(0,20).map(r => `<tr>${keys.map(k => `<td>${escapeHtml(String(r[k] ?? ''))}</td>`).join('')}</tr>`).join('')}</tbody>
+            <tbody>${data.result.slice(0, 20).map(r => `<tr>${keys.map(k => `<td>${escapeHtml(String(r[k] ?? ''))}</td>`).join('')}</tr>`).join('')}</tbody>
             </table></div>`;
     }
     if (data.prompts?.length) {
@@ -184,31 +302,158 @@ function buildStructuredHtml(data) {
     return html || `<p class="mb-0 small text-muted">No content</p>`;
 }
 
-// Initialize
-document.getElementById('messageInput')?.addEventListener('input', function () {
-    autoResizeTextarea(this);
-});
+// ── File Attachment ───────────────────────────────────────────────────────
 
-// Event delegation for structured response prompt buttons
-document.addEventListener('click', e => {
-    const btn = e.target.closest('.chat-prompt-btn');
-    if (btn) {
-        const prompt = btn.dataset.prompt;
-        if (prompt) {
-            const input = document.getElementById('messageInput');
-            if (input) {
-                input.value = prompt;
-                autoResizeTextarea(input);
-                input.focus();
-            }
-        }
+/**
+ * Trigger the hidden file input dialog for attaching a file.
+ */
+function triggerFileAttach() {
+    document.getElementById('fileInput')?.click();
+}
+
+/**
+ * Handle file selection from the hidden file input.
+ * Displays a chip/badge above the input area showing the selected filename.
+ * @param {Event} event - The file input change event.
+ */
+function handleFileSelected(event) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    attachedFile = file;
+
+    const chip = document.getElementById('attachmentChip');
+    if (chip) {
+        chip.innerHTML = `<span class="badge bg-secondary me-1"><i class="bi bi-paperclip me-1"></i>${escapeHtml(file.name)}
+            <button type="button" class="btn-close btn-close-white ms-1" style="font-size:0.6rem;" onclick="clearAttachment()"></button>
+        </span>`;
+        chip.style.display = 'block';
     }
-});
+    // Reset the input so the same file can be re-selected if needed
+    event.target.value = '';
+}
 
-// ── Voice Input (Web Speech API) ──────────────────────────────────────────
+/**
+ * Clear the currently attached file and hide the chip.
+ */
+function clearAttachment() {
+    attachedFile = null;
+    const chip = document.getElementById('attachmentChip');
+    if (chip) { chip.innerHTML = ''; chip.style.display = 'none'; }
+}
+
+/**
+ * Read a File object as plain text.
+ * @param {File} file - The file to read.
+ * @returns {Promise<string>} Resolves with the file content string.
+ */
+function readFileAsText(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = e => resolve(e.target.result);
+        reader.onerror = () => reject(new Error('Failed to read file'));
+        reader.readAsText(file);
+    });
+}
+
+// ── PDF Export ────────────────────────────────────────────────────────────
+
+/**
+ * Export the current chat conversation as a styled PDF file.
+ * Requires the html2pdf.js library to be loaded via CDN.
+ * Downloads the PDF as "ChatPortal-Export-{date}.pdf".
+ */
+function exportAsPDF() {
+    if (typeof html2pdf === 'undefined') {
+        alert('PDF export library is loading, please try again in a moment.');
+        return;
+    }
+    const messages = document.getElementById('chatMessages');
+    if (!messages) return;
+
+    const dateStr = new Date().toISOString().split('T')[0];
+    const wrapper = document.createElement('div');
+    wrapper.style.cssText = 'font-family:Arial,sans-serif;padding:20px;max-width:800px;';
+    wrapper.innerHTML = `
+        <div style="border-bottom:2px solid #0d6efd;padding-bottom:12px;margin-bottom:20px;">
+            <h2 style="color:#0d6efd;margin:0;">ChatPortal</h2>
+            <p style="color:#666;margin:4px 0 0;">Chat Export — ${new Date().toLocaleString()}</p>
+        </div>
+        ${messages.cloneNode(true).innerHTML}`;
+
+    // Remove action buttons from export
+    wrapper.querySelectorAll('button, .session-menu-btn').forEach(b => b.remove());
+
+    html2pdf().set({
+        margin: [10, 10, 10, 10],
+        filename: `ChatPortal-Export-${dateStr}.pdf`,
+        image: { type: 'jpeg', quality: 0.95 },
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    }).from(wrapper).save();
+}
+
+// ── Right Panel (Source References) ──────────────────────────────────────
+
+let rightPanelOpen = false;
+
+/**
+ * Toggle the visibility of the right-hand source-references panel.
+ */
+function toggleRightPanel() {
+    const panel = document.getElementById('rightPanel');
+    if (!panel) return;
+    rightPanelOpen = !rightPanelOpen;
+    panel.classList.toggle('panel-open', rightPanelOpen);
+    const btn = document.getElementById('togglePanelBtn');
+    if (btn) btn.classList.toggle('active', rightPanelOpen);
+}
+
+/**
+ * Update the right panel with source reference data from a structured AI response.
+ * @param {Object} data - Structured response data containing optional query and result fields.
+ */
+function updateRightPanel(data) {
+    const content = document.getElementById('rightPanelContent');
+    if (!content) return;
+
+    let html = '<div class="p-3">';
+    html += '<h6 class="fw-bold mb-3 small text-uppercase text-muted">Source References</h6>';
+
+    if (data.query) {
+        html += `<div class="mb-3">
+            <div class="small fw-semibold text-muted mb-1">Generated SQL</div>
+            <pre class="p-2 rounded small" style="background:#1e1e2e;color:#cdd6f4;overflow-x:auto;font-size:0.75rem;">${escapeHtml(data.query)}</pre>
+        </div>`;
+    }
+
+    if (data.result && Array.isArray(data.result) && data.result.length > 0) {
+        html += `<div class="mb-3">
+            <div class="small fw-semibold text-muted mb-1">Data Snippet (${data.result.length} rows)</div>
+            <div class="table-responsive" style="font-size:0.72rem;">`;
+        const keys = Object.keys(data.result[0]);
+        html += `<table class="table table-sm table-dark mb-0">
+            <thead><tr>${keys.map(k => `<th>${escapeHtml(k)}</th>`).join('')}</tr></thead>
+            <tbody>${data.result.slice(0, 5).map(r =>
+            `<tr>${keys.map(k => `<td>${escapeHtml(String(r[k] ?? ''))}</td>`).join('')}</tr>`
+        ).join('')}</tbody></table></div></div>`;
+    }
+
+    html += '</div>';
+    content.innerHTML = html;
+
+    // Auto-open the panel when new data arrives
+    if (!rightPanelOpen) toggleRightPanel();
+}
+
+// ── Voice Input ───────────────────────────────────────────────────────────
+
 let recognition = null;
 let isRecording = false;
 
+/**
+ * Toggle voice input recording using the Web Speech API.
+ * Shows an alert if the API is unsupported by the current browser.
+ */
 function toggleMic() {
     if (!('SpeechRecognition' in window || 'webkitSpeechRecognition' in window)) {
         alert('Voice input is not supported in your browser. Try Chrome or Edge.');
@@ -234,7 +479,7 @@ function toggleMic() {
         if (icon) { icon.className = 'bi bi-record-circle-fill'; }
     };
 
-    recognition.onresult = (e) => {
+    recognition.onresult = e => {
         const transcript = e.results[0][0].transcript;
         const input = document.getElementById('messageInput');
         if (input) {
@@ -244,18 +489,18 @@ function toggleMic() {
         }
     };
 
-    recognition.onerror = (e) => {
+    recognition.onerror = e => {
         console.warn('Speech recognition error:', e.error);
         stopMicUI();
     };
 
-    recognition.onend = () => {
-        stopMicUI();
-    };
-
+    recognition.onend = () => stopMicUI();
     recognition.start();
 }
 
+/**
+ * Reset the microphone button UI to its default (non-recording) state.
+ */
 function stopMicUI() {
     isRecording = false;
     const btn = document.getElementById('micBtn');
@@ -263,3 +508,25 @@ function stopMicUI() {
     if (btn) { btn.classList.remove('text-danger'); btn.title = 'Voice input'; }
     if (icon) { icon.className = 'bi bi-mic-fill'; }
 }
+
+// ── Initialisation ────────────────────────────────────────────────────────
+
+document.getElementById('messageInput')?.addEventListener('input', function () {
+    autoResizeTextarea(this);
+});
+
+// Event delegation for structured response prompt buttons
+document.addEventListener('click', e => {
+    const btn = e.target.closest('.chat-prompt-btn');
+    if (btn) {
+        const prompt = btn.dataset.prompt;
+        if (prompt) {
+            const input = document.getElementById('messageInput');
+            if (input) {
+                input.value = prompt;
+                autoResizeTextarea(input);
+                input.focus();
+            }
+        }
+    }
+});
