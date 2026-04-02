@@ -20,7 +20,9 @@ public class AdminController : Controller
     private int GetUserId()
     {
         var claim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
-        return claim != null ? int.Parse(claim.Value) : 0;
+        if (claim == null || !int.TryParse(claim.Value, out var userId))
+            throw new UnauthorizedAccessException("User identity not found.");
+        return userId;
     }
 
     public IActionResult Index()
@@ -83,11 +85,9 @@ public class AdminController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> BroadcastAnnouncement(int id)
     {
-        // Broadcast to all users in the system (in-memory demo users + any DB users)
+        // Broadcast to all users in the database
         var userIds = _db.Users.Select(u => u.Id).ToList();
-        // Also include the standard in-memory demo user IDs
-        var allIds = userIds.Union(new[] { 1, 2 }).Distinct();
-        await _notificationService.BroadcastAnnouncementAsync(id, allIds);
+        await _notificationService.BroadcastAnnouncementAsync(id, userIds);
         TempData["Success"] = "Announcement broadcast to all users.";
         return RedirectToAction(nameof(Announcements));
     }

@@ -17,7 +17,9 @@ public class NotificationsController : Controller
     private int GetUserId()
     {
         var claim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
-        return claim != null ? int.Parse(claim.Value) : 0;
+        if (claim == null || !int.TryParse(claim.Value, out var userId))
+            throw new UnauthorizedAccessException("User identity not found.");
+        return userId;
     }
 
     // GET /Notifications
