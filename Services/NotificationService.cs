@@ -15,7 +15,7 @@ public class NotificationService : INotificationService
 
     public async Task<List<NotificationDto>> GetUserNotificationsAsync(int userId, bool includeRead = true, bool includeDismissed = false)
     {
-        var query = _db.Notifications.Where(n => n.UserId == userId && !n.IsDismissed);
+        var query = _db.Notifications.Where(n => n.UserId == userId);
         if (!includeRead) query = query.Where(n => !n.IsRead);
         if (!includeDismissed) query = query.Where(n => !n.IsDismissed);
         return await query
