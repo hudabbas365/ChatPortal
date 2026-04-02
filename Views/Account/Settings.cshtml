@@ -1,0 +1,80 @@
+@model ChatPortal.ViewModels.ProfileViewModel
+@{
+    ViewData["Title"] = "Settings";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container py-5" style="padding-top:100px!important;">
+    <div class="row">
+        <div class="col-lg-3 mb-4">
+            <partial name="_Sidebar" />
+        </div>
+        <div class="col-lg-9">
+            <h3 class="fw-bold mb-4">Account Settings</h3>
+
+            <div class="card border-0 shadow-sm rounded-4 mb-4">
+                <div class="card-header bg-transparent border-0 pt-4 px-4">
+                    <h5 class="fw-bold mb-0">Profile Information</h5>
+                </div>
+                <div class="card-body p-4">
+                    <form asp-action="Settings" method="post">
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger small py-2"></div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="FirstName" class="form-label fw-medium">First Name</label>
+                                <input asp-for="FirstName" class="form-control" />
+                                <span asp-validation-for="FirstName" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="LastName" class="form-label fw-medium">Last Name</label>
+                                <input asp-for="LastName" class="form-control" />
+                                <span asp-validation-for="LastName" class="text-danger small"></span>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="Email" class="form-label fw-medium">Email</label>
+                            <input asp-for="Email" class="form-control" />
+                            <span asp-validation-for="Email" class="text-danger small"></span>
+                        </div>
+                        <div class="mb-4">
+                            <label asp-for="AvatarUrl" class="form-label fw-medium">Avatar URL</label>
+                            <input asp-for="AvatarUrl" class="form-control" placeholder="https://..." />
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-lg me-1"></i>Save Changes
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-header bg-transparent border-0 pt-4 px-4">
+                    <h5 class="fw-bold mb-0">Change Password</h5>
+                </div>
+                <div class="card-body p-4">
+                    <form asp-action="Settings" method="post">
+                        <div class="mb-3">
+                            <label asp-for="CurrentPassword" class="form-label fw-medium">Current Password</label>
+                            <input asp-for="CurrentPassword" class="form-control" />
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="NewPassword" class="form-label fw-medium">New Password</label>
+                            <input asp-for="NewPassword" class="form-control" />
+                        </div>
+                        <div class="mb-4">
+                            <label asp-for="ConfirmNewPassword" class="form-label fw-medium">Confirm New Password</label>
+                            <input asp-for="ConfirmNewPassword" class="form-control" />
+                        </div>
+                        <button type="submit" class="btn btn-outline-primary">
+                            <i class="bi bi-shield-lock me-1"></i>Update Password
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
