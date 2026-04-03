@@ -71,4 +71,29 @@ public class AdminController : Controller
         TempData[deleted ? "Success" : "Error"] = deleted ? "Announcement deleted." : "Announcement not found.";
         return RedirectToAction(nameof(Index));
     }
+
+    // ── Embed / Dashboard Management ─────────────────────────────────────────
+
+    [HttpGet]
+    public async Task<IActionResult> Embeds([FromServices] IDashboardService dashboardService)
+    {
+        var dashboards = await dashboardService.GetAllPublicDashboardsAsync();
+        return View(dashboards);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> RevokeEmbed(int id, [FromServices] IDashboardService dashboardService)
+    {
+        try
+        {
+            await dashboardService.RevokeShareAsync(id);
+            TempData["Success"] = "Embed has been revoked successfully.";
+        }
+        catch (KeyNotFoundException)
+        {
+            TempData["Error"] = "Dashboard not found.";
+        }
+        return RedirectToAction(nameof(Embeds));
+    }
 }

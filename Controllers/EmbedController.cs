@@ -1,4 +1,5 @@
 using ChatPortal.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ChatPortal.Controllers;
@@ -122,6 +123,26 @@ public class EmbedController : Controller
             return BadRequest(new { error = response.Error });
 
         return Json(new { content = response.Content, tokensUsed = response.TokensUsed });
+    }
+
+    /// <summary>
+    /// Renders a read-only public dashboard view for external embedding.
+    /// </summary>
+    [HttpGet("/embed/dashboard/{slug}")]
+    [AllowAnonymous]
+    public async Task<IActionResult> Dashboard(string slug, [FromServices] IDashboardService dashboardService)
+    {
+        Response.Headers.Remove("X-Frame-Options");
+        Response.Headers.Append("Content-Security-Policy", "frame-ancestors *");
+
+        if (string.IsNullOrWhiteSpace(slug))
+            return Content("Invalid embed link.", "text/plain");
+
+        var dashboard = await dashboardService.GetBySlugAsync(slug);
+        if (dashboard == null)
+            return View("DashboardRevoked");
+
+        return View("~/Views/Embed/Dashboard.cshtml", dashboard);
     }
 
     /// <summary>

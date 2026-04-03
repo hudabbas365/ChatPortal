@@ -54,16 +54,6 @@ public class AppDbContext : DbContext
     public DbSet<Workspace> Workspaces { get; set; }
     public DbSet<FeatureToggle> FeatureToggles { get; set; }
 
-    // Organization management
-    public DbSet<Organization> Organizations { get; set; }
-    public DbSet<OrganizationMember> OrganizationMembers { get; set; }
-    public DbSet<Agent> Agents { get; set; }
-    public DbSet<Invitation> Invitations { get; set; }
-    public DbSet<TeamWorkspacePermission> TeamWorkspacePermissions { get; set; }
-
-    // Data Source Connections
-    public DbSet<DataSourceConnection> DataSourceConnections { get; set; }
-
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -175,6 +165,23 @@ public class AppDbContext : DbContext
             .WithMany()
             .HasForeignKey(f => f.CreatedByAdminId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<QueryHistory>()
+            .HasOne(q => q.DataSource)
+            .WithMany()
+            .HasForeignKey(q => q.DataSourceId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<PinnedChart>()
+            .HasOne(p => p.Dashboard)
+            .WithMany(d => d.PinnedCharts)
+            .HasForeignKey(p => p.DashboardId)
+            .OnDelete(DeleteBehavior.SetNull)
+            .IsRequired(false);
+
+        modelBuilder.Entity<Dashboard>()
+            .HasIndex(d => d.PublicSlug)
+            .IsUnique();
 
         modelBuilder.Entity<CreditPackage>().HasData(
             new CreditPackage { Id = 1, Name = "Starter", Description = "100 AI query credits", Credits = 100, Price = 4.99m, IsActive = true },
