@@ -124,5 +124,29 @@ namespace ChatPortal.Services.DataSourceConnectors.NoSQLConnectors
                 ""required"": [""host"", ""database""]
             }";
         }
+
+        public async Task<List<string>> GetTablesAsync(DataSourceConnection connection)
+        {
+            await Task.Delay(100);
+            return new List<string> { "Placeholder - Install MongoDB.Driver package for real collection listing" };
+        }
+
+        public async Task<Dictionary<string, string>> GetTableSchemaAsync(DataSourceConnection connection, string tableName)
+        {
+            await Task.Delay(100);
+            return new Dictionary<string, string> 
+            { 
+                { "Info", "Placeholder - Install MongoDB.Driver package for real schema" } 
+            };
+        }
+
+        public async Task<DataTable> ExecuteQueryAsync(DataSourceConnection connection, string query)
+        {
+            await Task.Delay(100);
+            var dt = new DataTable();
+            dt.Columns.Add("Info", typeof(string));
+            dt.Rows.Add("Placeholder - Install MongoDB.Driver package for real query execution");
+            return dt;
+        }
     }
 }

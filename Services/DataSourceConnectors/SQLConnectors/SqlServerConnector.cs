@@ -175,5 +175,99 @@ namespace ChatPortal.Services.DataSourceConnectors.SQLConnectors
                 ""required"": [""server"", ""database""]
             }";
         }
+
+        public async Task<List<string>> GetTablesAsync(DataSourceConnection connection)
+        {
+            var tables = new List<string>();
+
+            try
+            {
+                using var conn = new SqlConnection(connection.ConnectionString);
+                await conn.OpenAsync();
+
+                using var cmd = new SqlCommand("SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE'", conn);
+                using var reader = await cmd.ExecuteReaderAsync();
+
+                while (await reader.ReadAsync())
+                {
+                    tables.Add(reader.GetString(0));
+                }
+
+                await conn.CloseAsync();
+            }
+            catch (Exception)
+            {
+                // Return empty list on error
+            }
+
+            return tables;
+        }
+
+        public async Task<Dictionary<string, string>> GetTableSchemaAsync(DataSourceConnection connection, string tableName)
+        {
+            var schema = new Dictionary<string, string>();
+
+            try
+            {
+                using var conn = new SqlConnection(connection.ConnectionString);
+                await conn.OpenAsync();
+
+                var query = @"SELECT COLUMN_NAME, DATA_TYPE, IS_NULLABLE, CHARACTER_MAXIMUM_LENGTH, COLUMN_DEFAULT
+                             FROM INFORMATION_SCHEMA.COLUMNS 
+                             WHERE TABLE_NAME = @tableName";
+
+                using var cmd = new SqlCommand(query, conn);
+                cmd.Parameters.AddWithValue("@tableName", tableName);
+
+                using var reader = await cmd.ExecuteReaderAsync();
+
+                while (await reader.ReadAsync())
+                {
+                    var columnName = reader.GetString(0);
+                    var dataType = reader.GetString(1);
+                    var isNullable = reader.GetString(2);
+                    var maxLength = reader.IsDBNull(3) ? "" : $"({reader.GetInt32(3)})";
+
+                    var details = $"{dataType}{maxLength}";
+                    if (isNullable == "NO") details += " NOT NULL";
+
+                    schema[columnName] = details;
+                }
+
+                await conn.CloseAsync();
+            }
+            catch (Exception ex)
+            {
+                schema["Error"] = ex.Message;
+            }
+
+            return schema;
+        }
+
+        public async Task<DataTable> ExecuteQueryAsync(DataSourceConnection connection, string query)
+        {
+            var dt = new DataTable();
+
+            try
+            {
+                using var conn = new SqlConnection(connection.ConnectionString);
+                await conn.OpenAsync();
+
+                using var cmd = new SqlCommand(query, conn);
+                using var adapter = new SqlDataAdapter(cmd);
+
+                adapter.Fill(dt);
+
+                await conn.CloseAsync();
+            }
+            catch (Exception ex)
+            {
+                dt.Columns.Clear();
+                dt.Columns.Add("Error", typeof(string));
+                dt.Rows.Add(ex.Message);
+            }
+
+            return dt;
+        }
     }
 }
