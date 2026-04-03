@@ -1,13 +1,11 @@
 using ChatPortal.Models.Entities;
 using ChatPortal.Data;
 using Microsoft.EntityFrameworkCore;
-// Note: Install Npgsql NuGet package for production use
-// using Npgsql;
+using Npgsql;
 using System.Data;
 
 namespace ChatPortal.Services.DataSourceConnectors.SQLConnectors
 {
-    // TODO: Install NuGet package: Npgsql
     public class PostgreSQLConnector : IDataSourceConnector
     {
         private readonly AppDbContext _context;
@@ -19,13 +17,44 @@ namespace ChatPortal.Services.DataSourceConnectors.SQLConnectors
 
         public async Task<ConnectionResult> TestConnectionAsync(DataSourceConnection connection)
         {
-            await Task.Delay(500); // Simulate network call
-            return new ConnectionResult
+            try
             {
-                Success = true,
-                Message = "PostgreSQL connector is a placeholder. Install Npgsql package for real connections.",
-                Metadata = new Dictionary<string, object> { { "Status", "Placeholder" } }
-            };
+                using var conn = new NpgsqlConnection(connection.ConnectionString);
+                await conn.OpenAsync();
+
+                if (conn.State == ConnectionState.Open)
+                {
+                    var version = conn.ServerVersion;
+                    var database = conn.Database;
+                    await conn.CloseAsync();
+
+                    return new ConnectionResult
+                    {
+                        Success = true,
+                        Message = "Successfully connected to PostgreSQL database",
+                        Metadata = new Dictionary<string, object>
+                        {
+                            { "ServerVersion", version },
+                            { "Database", database }
+                        }
+                    };
+                }
+
+                return new ConnectionResult
+                {
+                    Success = false,
+                    Message = "Failed to open PostgreSQL connection"
+                };
+            }
+            catch (Exception ex)
+            {
+                return new ConnectionResult
+                {
+                    Success = false,
+                    Message = "PostgreSQL connection test failed",
+                    ErrorDetails = ex.Message
+                };
+            }
         }
 
         public async Task<ConnectionResult> ConnectAsync(DataSourceConnection connection)
@@ -70,18 +99,40 @@ namespace ChatPortal.Services.DataSourceConnectors.SQLConnectors
                 };
             }
 
-            await Task.Delay(500);
-            connection.LastSyncAt = DateTime.UtcNow;
-            connection.LastSyncStatus = "Success";
-            await _context.SaveChangesAsync();
-
-            return new SyncResult
+            try
             {
-                Success = true,
-                RecordsProcessed = 0,
-                SyncTime = DateTime.UtcNow,
-                Message = "Placeholder sync completed."
-            };
+                using var conn = new NpgsqlConnection(connection.ConnectionString);
+                await conn.OpenAsync();
+
+                using var cmd = new NpgsqlCommand("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public'", conn);
+                var tableCount = Convert.ToInt32(await cmd.ExecuteScalarAsync());
+
+                connection.LastSyncAt = DateTime.UtcNow;
+                connection.LastSyncStatus = "Success";
+                await _context.SaveChangesAsync();
+
+                return new SyncResult
+                {
+                    Success = true,
+                    RecordsProcessed = tableCount,
+                    SyncTime = DateTime.UtcNow,
+                    Message = $"Successfully synced. Found {tableCount} tables."
+                };
+            }
+            catch (Exception ex)
+            {
+                connection.LastSyncStatus = "Failed";
+                await _context.SaveChangesAsync();
+
+                return new SyncResult
+                {
+                    Success = false,
+                    RecordsProcessed = 0,
+                    SyncTime = DateTime.UtcNow,
+                    Message = "Sync failed",
+                    ErrorDetails = ex.Message
+                };
+            }
         }
 
         public async Task<HealthStatus> GetHealthAsync(int connectionId)
@@ -129,25 +180,80 @@ namespace ChatPortal.Services.DataSourceConnectors.SQLConnectors
 
         public async Task<List<string>> GetTablesAsync(DataSourceConnection connection)
         {
-            await Task.Delay(100);
-            return new List<string> { "Placeholder - Install Npgsql package for real table listing" };
+            var tables = new List<string>();
+
+            try
+            {
+                using var conn = new NpgsqlConnection(connection.ConnectionString);
+                await conn.OpenAsync();
+
+                using var cmd = new NpgsqlCommand("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' ORDER BY table_name", conn);
+                using var reader = await cmd.ExecuteReaderAsync();
+
+                while (await reader.ReadAsync())
+                {
+                    tables.Add(reader.GetString(0));
+                }
+            }
+            catch (Exception)
+            {
+                // Return empty list on error
+            }
+
+            return tables;
         }
 
         public async Task<Dictionary<string, string>> GetTableSchemaAsync(DataSourceConnection connection, string tableName)
         {
-            await Task.Delay(100);
-            return new Dictionary<string, string> 
-            { 
-                { "Info", "Placeholder - Install Npgsql package for real schema" } 
-            };
+            var schema = new Dictionary<string, string>();
+
+            try
+            {
+                using var conn = new NpgsqlConnection(connection.ConnectionString);
+                await conn.OpenAsync();
+
+                using var cmd = new NpgsqlCommand($"SELECT column_name, data_type FROM information_schema.columns WHERE table_name = @tableName AND table_schema = 'public' ORDER BY ordinal_position", conn);
+                cmd.Parameters.AddWithValue("@tableName", tableName);
+
+                using var reader = await cmd.ExecuteReaderAsync();
+
+                while (await reader.ReadAsync())
+                {
+                    var columnName = reader.GetString(0);
+                    var dataType = reader.GetString(1);
+                    schema[columnName] = dataType;
+                }
+            }
+            catch (Exception ex)
+            {
+                schema["Error"] = ex.Message;
+            }
+
+            return schema;
         }
 
         public async Task<DataTable> ExecuteQueryAsync(DataSourceConnection connection, string query)
         {
-            await Task.Delay(100);
             var dt = new DataTable();
-            dt.Columns.Add("Info", typeof(string));
-            dt.Rows.Add("Placeholder - Install Npgsql package for real query execution");
+
+            try
+            {
+                using var conn = new NpgsqlConnection(connection.ConnectionString);
+                await conn.OpenAsync();
+
+                using var cmd = new NpgsqlCommand(query, conn);
+                cmd.CommandTimeout = 30;
+
+                using var adapter = new NpgsqlDataAdapter(cmd);
+                adapter.Fill(dt);
+            }
+            catch (Exception ex)
+            {
+                dt.Columns.Clear();
+                dt.Columns.Add("Error", typeof(string));
+                dt.Rows.Add(ex.Message);
+            }
+
             return dt;
         }
     }

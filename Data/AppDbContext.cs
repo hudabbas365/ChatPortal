@@ -27,6 +27,11 @@ public class AppDbContext : DbContext
     public DbSet<Feedback> Feedbacks { get; set; }
     public DbSet<Annotation> Annotations { get; set; }
     public DbSet<DataSource> DataSources { get; set; }
+    public DbSet<DataSourceConnection> DataSourceConnections { get; set; }
+    public DbSet<QueryHistory> QueryHistories { get; set; }
+    public DbSet<ChartDefinition> ChartDefinitions { get; set; }
+    public DbSet<Dashboard> Dashboards { get; set; }
+    public DbSet<PinnedChart> PinnedCharts { get; set; }
     public DbSet<Integration> Integrations { get; set; }
     public DbSet<Invite> Invites { get; set; }
     public DbSet<CaseStudy> CaseStudies { get; set; }
@@ -53,6 +58,17 @@ public class AppDbContext : DbContext
     // Workspace and feature management
     public DbSet<Workspace> Workspaces { get; set; }
     public DbSet<FeatureToggle> FeatureToggles { get; set; }
+
+    // Organization system
+    public DbSet<Organization> Organizations { get; set; }
+    public DbSet<OrganizationMember> OrganizationMembers { get; set; }
+    public DbSet<Invitation> Invitations { get; set; }
+
+    // Agent system
+    public DbSet<Agent> Agents { get; set; }
+
+    // Team workspace permissions
+    public DbSet<TeamWorkspacePermission> TeamWorkspacePermissions { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -840,6 +840,24 @@
 <script src="~/js/chatHistory.js" asp-append-version="true"></script>
 <script src="~/js/chat.js" asp-append-version="true"></script>
 <script>
+    // ── Utility Functions ──────────────────────────────────────────────────
+    // Escape HTML to prevent XSS
+    function escapeHtml(unsafe) {
+        if (!unsafe) return '';
+        return unsafe
+            .toString()
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+    // Get anti-forgery token for AJAX requests
+    function getAntiForgeryToken() {
+        return document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+    }
+
     // Configure marked.js
     if (typeof marked !== 'undefined') {
         marked.setOptions({ breaks: true, gfm: true });
@@ -1945,14 +1963,21 @@
     let selectedProvider = null;
     let allProviders = {};
 
-    async function connectDataSource() {
-        const modal = new bootstrap.Modal(document.getElementById('dataSourceModal'));
-        modal.show();
+    // Make sure connectDataSource is globally accessible
+    window.connectDataSource = async function() {
+        console.log('connectDataSource called'); // Debug log
+        try {
+            const modal = new bootstrap.Modal(document.getElementById('dataSourceModal'));
+            modal.show();
 
-        // Load providers from backend
-        await loadProviders();
-        displayProviderSelection();
-        loadConnectedDataSources();
+            // Load providers from backend
+            await loadProviders();
+            displayProviderSelection();
+            loadConnectedDataSources();
+        } catch (error) {
+            console.error('Error in connectDataSource:', error);
+            showToast('Failed to open data source modal: ' + error.message, 'danger');
+        }
     }
 
     async function loadProviders() {
@@ -2020,12 +2045,12 @@
     }
 
     function filterProviders() {
-        const searchTerm = document.getElementById('providerSearch').value.toLowerCase();
+        const searchTerm = document.getElementById('providerSearch')?.value?.toLowerCase() || '';
         const cards = document.querySelectorAll('.provider-card');
 
         cards.forEach(card => {
             const providerName = card.getAttribute('data-provider-name');
-            if (providerName.includes(searchTerm)) {
+            if (providerName && providerName.includes(searchTerm)) {
                 card.style.display = '';
             } else {
                 card.style.display = 'none';
@@ -2117,6 +2142,7 @@
             showToast('Failed to load connection form', 'danger');
         }
     }
+    window.selectProvider = selectProvider; // Make globally accessible
 
     function cancelProviderSelection() {
         selectedProvider = null;
@@ -2129,6 +2155,7 @@
             card.style.transform = 'scale(1)';
         });
     }
+    window.cancelProviderSelection = cancelProviderSelection; // Make globally accessible
 
     async function submitConnection(event) {
         event.preventDefault();
@@ -2215,6 +2242,7 @@
             btn.innerHTML = '<i class="bi bi-plug me-1"></i>Test & Connect';
         }
     }
+    window.submitConnection = submitConnection; // Make globally accessible
 
     async function loadConnectedDataSources() {
         try {
@@ -2425,22 +2453,6 @@
             console.error('Failed to load data sources status:', error);
         }
     }
-        } catch (error) {
-            console.error('Failed to load data sources:', error);
-        }
-    }
-
-    function removeDataSource(id) {
-        try {
-            const dataSources = JSON.parse(localStorage.getItem('chatportal_datasources') || '[]');
-            const filtered = dataSources.filter(ds => ds.id !== id);
-            localStorage.setItem('chatportal_datasources', JSON.stringify(filtered));
-            showToast('Data source removed successfully!', 'success');
-            loadDataSources();
-        } catch (error) {
-            showToast('Failed to remove data source: ' + error.message, 'danger');
-        }
-    }
 
     // Load data sources on page load
     document.addEventListener('DOMContentLoaded', function() {
@@ -2452,6 +2464,83 @@
         showToast('Workspace editing feature coming soon!', 'info');
         // TODO: Open modal to edit workspace name, description, context
     }
+
+    // ══════════════════════════════════════════════════════════════════════
+    // Make all functions globally accessible for inline event handlers
+    // ══════════════════════════════════════════════════════════════════════
+
+    // Organization functions
+    window.createOrganization = createOrganization;
+    window.openOrgMemberModal = openOrgMemberModal;
+    window.addOrgMember = addOrgMember;
+    window.setActiveOrganization = setActiveOrganization;
+    window.loadOrganizations = loadOrganizations;
+
+    // Workspace functions
+    window.createWorkspace = createWorkspace;
+    window.deleteWorkspace = deleteWorkspace;
+    window.editWorkspace = editWorkspace;
+    window.loadWorkspaces = loadWorkspaces;
+
+    // Agent functions
+    window.selectAgent = selectAgent;
+    window.shareAgent = shareAgent;
+    window.generateAgentEmbed = generateAgentEmbed;
+    window.copyShareLink = copyShareLink;
+    window.copyEmbedCode = copyEmbedCode;
+    window.previewAgentEmbed = previewAgentEmbed;
+    window.openAgentModal = openAgentModal;
+    window.createAgent = createAgent;
+    window.toggleAgentActive = toggleAgentActive;
+    window.deleteAgent = deleteAgent;
+    window.loadAgents = loadAgents;
+    window.loadAvailableAgents = loadAvailableAgents;
+
+    // Team functions
+    window.createTeam = createTeam;
+    window.openAddMemberModal = openAddMemberModal;
+    window.addTeamMember = addTeamMember;
+    window.editTeam = editTeam;
+    window.updateTeam = updateTeam;
+    window.deleteTeam = deleteTeam;
+    window.manageTeamWorkspaces = manageTeamWorkspaces;
+    window.loadTeams = loadTeams;
+
+    // Embed functions
+    window.generateEmbedToken = generateEmbedToken;
+    window.copyEmbedToken = copyEmbedToken;
+    window.copyIframeCode = copyIframeCode;
+
+    // Data source connection functions
+    window.connectDataSource = connectDataSource;
+    window.filterProviders = filterProviders;
+    window.selectProvider = selectProvider;
+    window.cancelProviderSelection = cancelProviderSelection;
+    window.submitConnection = submitConnection;
+    window.testConnection = testConnection;
+    window.syncDataSource = syncDataSource;
+    window.confirmRemoveDataSource = confirmRemoveDataSource;
+    window.removeDataSource = removeDataSource;
+    window.loadDataSources = loadDataSources;
+
+    // UI/Toast/Modal functions
+    window.showToast = showToast;
+    window.showConfirmModal = showConfirmModal;
+    window.executeConfirmedAction = executeConfirmedAction;
+    window.confirmClearAllSessions = confirmClearAllSessions;
+    window.copyToClipboard = copyToClipboard;
+
+    // Utility functions (also used by chat.js)
+    window.escapeHtml = escapeHtml;
+    window.getAntiForgeryToken = getAntiForgeryToken;
+
+    // ══════════════════════════════════════════════════════════════════════
+    // Note: The following functions are defined in chat.js and should be
+    // made globally accessible there if needed for inline handlers:
+    // - newChat(), clearChat(), exportAsPDF(), toggleRightPanel()
+    // - triggerFileAttach(), handleFileSelected(), handleKeyDown()
+    // - toggleMic(), sendMessage(), appendMessage()
+    // ══════════════════════════════════════════════════════════════════════
 </script>
 <style>
     /* Session sidebar styles */
