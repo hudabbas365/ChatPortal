@@ -45,6 +45,7 @@ public class ChartController : Controller
 
     // POST: Chart/Generate
     [HttpPost]
+    [IgnoreAntiforgeryToken]
     public IActionResult Generate([FromBody] GenerateChartRequest request)
     {
         try
@@ -155,6 +156,7 @@ public class ChartController : Controller
 
     // POST: Chart/Export
     [HttpPost]
+    [IgnoreAntiforgeryToken]
     public IActionResult Export([FromBody] ExportChartRequest request)
     {
         try
@@ -213,6 +215,11 @@ public class ChartController : Controller
         try
         {
             var userId = GetUserId();
+            // Verify ownership before revoking
+            var dashboard = await _dashboardService.GetByIdAsync(dashboardId, userId);
+            if (dashboard == null)
+                return Json(new { success = false, error = "Dashboard not found or access denied" });
+
             await _dashboardService.RevokeShareAsync(dashboardId);
             return Json(new { success = true, message = "Share link revoked successfully" });
         }

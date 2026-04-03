@@ -120,6 +120,7 @@
                 if (el) el.textContent = data.balance.toLocaleString();
             }
         })
-        .catch(() => {});
-})();
+        .catch(() => {
+            console.warn('Unable to load credits balance');
+        });
 </script>

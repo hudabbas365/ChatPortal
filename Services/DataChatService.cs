@@ -144,6 +144,11 @@ public class DataChatService : IDataChatService
                 if (start >= 0 && end > start)
                     jsonText = jsonText[start..(end + 1)];
             }
+            else
+            {
+                // Trim any trailing backticks
+                jsonText = jsonText.TrimEnd('`').Trim();
+            }
 
             using var parsed = JsonDocument.Parse(jsonText);
             var root = parsed.RootElement;
