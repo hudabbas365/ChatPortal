@@ -1,0 +1,154 @@
+using ChatPortal.Models.Entities;
+using ChatPortal.Data;
+using Microsoft.EntityFrameworkCore;
+// Note: Install Npgsql NuGet package for production use
+// using Npgsql;
+using System.Data;
+
+namespace ChatPortal.Services.DataSourceConnectors.SQLConnectors
+{
+    // TODO: Install NuGet package: Npgsql
+    public class PostgreSQLConnector : IDataSourceConnector
+    {
+        private readonly AppDbContext _context;
+
+        public PostgreSQLConnector(AppDbContext context)
+        {
+            _context = context;
+        }
+
+        public async Task<ConnectionResult> TestConnectionAsync(DataSourceConnection connection)
+        {
+            await Task.Delay(500); // Simulate network call
+            return new ConnectionResult
+            {
+                Success = true,
+                Message = "PostgreSQL connector is a placeholder. Install Npgsql package for real connections.",
+                Metadata = new Dictionary<string, object> { { "Status", "Placeholder" } }
+            };
+        }
+
+        public async Task<ConnectionResult> ConnectAsync(DataSourceConnection connection)
+        {
+            var testResult = await TestConnectionAsync(connection);
+            
+            if (testResult.Success)
+            {
+                connection.LastSyncAt = DateTime.UtcNow;
+                connection.LastSyncStatus = "Connected";
+                connection.IsActive = true;
+                
+                _context.DataSourceConnections.Update(connection);
+                await _context.SaveChangesAsync();
+            }
+
+            return testResult;
+        }
+
+        public async Task<bool> DisconnectAsync(int connectionId)
+        {
+            var connection = await _context.DataSourceConnections.FindAsync(connectionId);
+            if (connection == null) return false;
+
+            connection.IsActive = false;
+            connection.LastSyncStatus = "Disconnected";
+            await _context.SaveChangesAsync();
+
+            return true;
+        }
+
+        public async Task<SyncResult> SyncDataAsync(int connectionId)
+        {
+            var connection = await _context.DataSourceConnections.FindAsync(connectionId);
+            if (connection == null)
+            {
+                return new SyncResult
+                {
+                    Success = false,
+                    Message = "Connection not found",
+                    SyncTime = DateTime.UtcNow
+                };
+            }
+
+            await Task.Delay(500);
+            connection.LastSyncAt = DateTime.UtcNow;
+            connection.LastSyncStatus = "Success";
+            await _context.SaveChangesAsync();
+
+            return new SyncResult
+            {
+                Success = true,
+                RecordsProcessed = 0,
+                SyncTime = DateTime.UtcNow,
+                Message = "Placeholder sync completed."
+            };
+        }
+
+        public async Task<HealthStatus> GetHealthAsync(int connectionId)
+        {
+            var connection = await _context.DataSourceConnections.FindAsync(connectionId);
+            if (connection == null)
+            {
+                return new HealthStatus
+                {
+                    IsHealthy = false,
+                    Status = "Error",
+                    LastChecked = DateTime.UtcNow,
+                    Message = "Connection not found"
+                };
+            }
+
+            var testResult = await TestConnectionAsync(connection);
+
+            return new HealthStatus
+            {
+                IsHealthy = testResult.Success,
+                Status = testResult.Success ? "Connected" : "Error",
+                LastChecked = DateTime.UtcNow,
+                Message = testResult.Message,
+                Details = testResult.Metadata
+            };
+        }
+
+        public string GetConfigurationSchema()
+        {
+            return @"{
+                ""type"": ""object"",
+                ""properties"": {
+                    ""host"": { ""type"": ""string"", ""description"": ""PostgreSQL server hostname or IP"" },
+                    ""port"": { ""type"": ""integer"", ""default"": 5432 },
+                    ""database"": { ""type"": ""string"", ""description"": ""Database name"" },
+                    ""username"": { ""type"": ""string"" },
+                    ""password"": { ""type"": ""string"", ""format"": ""password"" },
+                    ""ssl"": { ""type"": ""boolean"", ""default"": false },
+                    ""connectionTimeout"": { ""type"": ""integer"", ""default"": 30 }
+                },
+                ""required"": [""host"", ""database"", ""username"", ""password""]
+            }";
+        }
+
+        public async Task<List<string>> GetTablesAsync(DataSourceConnection connection)
+        {
+            await Task.Delay(100);
+            return new List<string> { "Placeholder - Install Npgsql package for real table listing" };
+        }
+
+        public async Task<Dictionary<string, string>> GetTableSchemaAsync(DataSourceConnection connection, string tableName)
+        {
+            await Task.Delay(100);
+            return new Dictionary<string, string> 
+            { 
+                { "Info", "Placeholder - Install Npgsql package for real schema" } 
+            };
+        }
+
+        public async Task<DataTable> ExecuteQueryAsync(DataSourceConnection connection, string query)
+        {
+            await Task.Delay(100);
+            var dt = new DataTable();
+            dt.Columns.Add("Info", typeof(string));
+            dt.Rows.Add("Placeholder - Install Npgsql package for real query execution");
+            return dt;
+        }
+    }
+}

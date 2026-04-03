@@ -8,68 +8,181 @@
 
 <div class="chat-layout d-flex position-relative" style="height:calc(100vh - 56px);overflow:hidden;">
 
-    <!-- ── Left Sidebar: Conversation History ── -->
-    <div class="chat-sidebar bg-dark text-white d-flex flex-column border-end border-secondary border-opacity-25" style="width:280px;flex-shrink:0;">
+    <!-- ── Left Sidebar: Navigation & Management ── -->
+    <div class="chat-sidebar d-flex flex-column border-end" style="width:280px;flex-shrink:0;background:linear-gradient(180deg,#f8f9fa 0%,#e8eaf6 100%);">
 
-        <!-- Workspace Selector -->
-        <div class="p-3 border-bottom border-secondary border-opacity-25">
-            <label class="text-muted mb-1 d-block" style="font-size:0.68rem;text-transform:uppercase;letter-spacing:0.08em;font-weight:600;">Workspace</label>
-            <div class="dropdown w-100">
-                <button class="btn btn-sm w-100 text-start d-flex align-items-center justify-content-between"
-                        style="background:rgba(143,217,251,0.12);border:1px solid rgba(143,217,251,0.25);color:#fff;"
-                        type="button" data-bs-toggle="dropdown">
-                    <span><i class="bi bi-grid-fill me-2" style="color:#8FD9FB;font-size:0.8rem;"></i><span id="activeWorkspaceName">General Workspace</span></span>
-                    <i class="bi bi-chevron-down" style="font-size:0.7rem;opacity:0.6;"></i>
-                </button>
-                <ul class="dropdown-menu dropdown-menu-dark w-100 shadow">
-                    <li>
-                        <a class="dropdown-item workspace-option active-workspace d-flex align-items-center gap-2" href="#" data-workspace="General Workspace">
-                            <i class="bi bi-grid-fill" style="color:#8FD9FB;font-size:0.8rem;"></i>
-                            <div>
-                                <div style="font-size:0.85rem;">General Workspace</div>
-                                <div class="text-muted" style="font-size:0.7rem;">General Purpose Agent</div>
-                            </div>
-                        </a>
-                    </li>
-                    <li><hr class="dropdown-divider my-1"></li>
-                    <li>
-                        <a class="dropdown-item d-flex align-items-center gap-2 text-muted" href="/Account/Settings" style="font-size:0.82rem;">
-                            <i class="bi bi-plus-circle me-1"></i>Manage Workspaces
-                        </a>
-                    </li>
-                </ul>
-            </div>
-        </div>
-
-        <!-- New Chat + Search -->
-        <div class="p-3 border-bottom border-secondary border-opacity-25">
-            <button class="btn w-100 mb-2" style="background:var(--cp-accent);color:var(--cp-primary-text,#1a5276);font-weight:600;" onclick="newChat()">
+        <!-- New Chat Button -->
+        <div class="p-3 border-bottom">
+            <button class="btn w-100 shadow-sm" style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:white;font-weight:600;" onclick="newChat()">
                 <i class="bi bi-plus-lg me-2"></i>New Chat
             </button>
-            <div class="input-group input-group-sm">
-                <span class="input-group-text bg-secondary border-0 text-muted"><i class="bi bi-search"></i></span>
-                <input type="text" id="sessionSearch" class="form-control bg-secondary border-0 text-white shadow-none"
-                       placeholder="Search conversations…" style="font-size:0.8rem;">
-            </div>
         </div>
 
-        <!-- Session List -->
-        <div class="flex-grow-1 overflow-auto p-2" id="sessionList">
-            <!-- Rendered by chatHistory.js -->
+        <!-- Navigation Sections -->
+        <div class="flex-grow-1 overflow-auto">
+
+            <!-- Organization Management Section -->
+            <div class="p-3 border-bottom">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <label class="text-secondary mb-0" style="font-size:0.75rem;text-transform:uppercase;letter-spacing:0.08em;font-weight:600;">Organization</label>
+                    <button class="btn btn-sm" style="color:#667eea;padding:0;" title="Manage Organizations" data-bs-toggle="modal" data-bs-target="#organizationManagementModal">
+                        <i class="bi bi-gear"></i>
+                    </button>
+                </div>
+                <div class="dropdown w-100">
+                    <button class="btn btn-sm w-100 text-start d-flex align-items-center justify-content-between bg-white border shadow-sm"
+                            type="button" data-bs-toggle="dropdown" style="color:#2d3748;">
+                        <span><i class="bi bi-building me-2" style="color:#667eea;font-size:0.8rem;"></i><span id="activeOrgName">My Organization</span></span>
+                        <i class="bi bi-chevron-down" style="font-size:0.7rem;color:#667eea;"></i>
+                    </button>
+                    <ul class="dropdown-menu w-100 shadow border-0" id="organizationDropdown">
+                        <li>
+                            <a class="dropdown-item org-option active-org d-flex align-items-center gap-2" href="#" data-org="My Organization">
+                                <i class="bi bi-building" style="color:#667eea;font-size:0.8rem;"></i>
+                                <div>
+                                    <div style="font-size:0.85rem;color:#2d3748;">My Organization</div>
+                                    <div class="text-muted" style="font-size:0.7rem;">Owner</div>
+                                </div>
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider my-1"></li>
+                        <li>
+                            <a class="dropdown-item d-flex align-items-center gap-2" href="#" data-bs-toggle="modal" data-bs-target="#organizationManagementModal" style="font-size:0.82rem;color:#667eea;">
+                                <i class="bi bi-gear me-1"></i>Manage Organization
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Team Management Section -->
+            <div class="p-3 border-bottom">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <label class="text-secondary mb-0" style="font-size:0.75rem;text-transform:uppercase;letter-spacing:0.08em;font-weight:600;">Teams</label>
+                    <button class="btn btn-sm" style="color:#667eea;padding:0;" title="Manage Teams" data-bs-toggle="modal" data-bs-target="#teamManagementModal">
+                        <i class="bi bi-gear"></i>
+                    </button>
+                </div>
+                <div class="dropdown w-100">
+                    <button class="btn btn-sm w-100 text-start d-flex align-items-center justify-content-between bg-white border shadow-sm"
+                            type="button" data-bs-toggle="dropdown" style="color:#2d3748;">
+                        <span><i class="bi bi-people-fill me-2" style="color:#667eea;font-size:0.8rem;"></i><span id="activeTeamName">Personal Team</span></span>
+                        <i class="bi bi-chevron-down" style="font-size:0.7rem;color:#667eea;"></i>
+                    </button>
+                    <ul class="dropdown-menu w-100 shadow border-0">
+                        <li>
+                            <a class="dropdown-item team-option active-team d-flex align-items-center gap-2" href="#" data-team="Personal Team">
+                                <i class="bi bi-people-fill" style="color:#667eea;font-size:0.8rem;"></i>
+                                <div>
+                                    <div style="font-size:0.85rem;color:#2d3748;">Personal Team</div>
+                                    <div class="text-muted" style="font-size:0.7rem;">Private workspace</div>
+                                </div>
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider my-1"></li>
+                        <li>
+                            <a class="dropdown-item d-flex align-items-center gap-2" href="#" data-bs-toggle="modal" data-bs-target="#teamManagementModal" style="font-size:0.82rem;color:#667eea;">
+                                <i class="bi bi-plus-circle me-1"></i>Create Team
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Workspace Management Section -->
+            <div class="p-3 border-bottom">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <label class="text-secondary mb-0" style="font-size:0.75rem;text-transform:uppercase;letter-spacing:0.08em;font-weight:600;">Workspaces</label>
+                    <div class="d-flex gap-1">
+                        <button class="btn btn-sm" style="color:#667eea;padding:0;" title="Manage AI Agents" data-bs-toggle="modal" data-bs-target="#agentManagementModal">
+                            <i class="bi bi-robot"></i>
+                        </button>
+                        <button class="btn btn-sm" style="color:#764ba2;padding:0;" title="Manage Workspaces" data-bs-toggle="modal" data-bs-target="#workspaceManagementModal">
+                            <i class="bi bi-gear"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="dropdown w-100">
+                    <button class="btn btn-sm w-100 text-start d-flex align-items-center justify-content-between bg-white border shadow-sm"
+                            type="button" data-bs-toggle="dropdown" style="color:#2d3748;">
+                        <span><i class="bi bi-grid-fill me-2" style="color:#764ba2;font-size:0.8rem;"></i><span id="activeWorkspaceName">General Workspace</span></span>
+                        <i class="bi bi-chevron-down" style="font-size:0.7rem;color:#764ba2;"></i>
+                    </button>
+                    <ul class="dropdown-menu w-100 shadow border-0" id="workspaceDropdown">
+                        <li>
+                            <a class="dropdown-item workspace-option active-workspace d-flex align-items-center gap-2" href="#" data-workspace="General Workspace">
+                                <i class="bi bi-grid-fill" style="color:#764ba2;font-size:0.8rem;"></i>
+                                <div>
+                                    <div style="font-size:0.85rem;color:#2d3748;">General Workspace</div>
+                                    <div class="text-muted" style="font-size:0.7rem;">General Purpose Agent</div>
+                                </div>
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider my-1"></li>
+                        <li>
+                            <a class="dropdown-item d-flex align-items-center gap-2" href="#" data-bs-toggle="modal" data-bs-target="#agentManagementModal" style="font-size:0.82rem;color:#667eea;">
+                                <i class="bi bi-robot me-1"></i>Manage AI Agents
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item d-flex align-items-center gap-2" href="#" data-bs-toggle="modal" data-bs-target="#workspaceManagementModal" style="font-size:0.82rem;color:#764ba2;">
+                                <i class="bi bi-plus-circle me-1"></i>Create Workspace
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- My Data Section -->
+            <div class="p-3 border-bottom">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <label class="text-secondary mb-0" style="font-size:0.75rem;text-transform:uppercase;letter-spacing:0.08em;font-weight:600;">My Data</label>
+                    <button class="btn btn-sm" style="color:#667eea;padding:0;" title="Manage Data Sources" onclick="connectDataSource()">
+                        <i class="bi bi-gear"></i>
+                    </button>
+                </div>
+                <div class="small text-muted mb-2" data-datasource-status>
+                    <div class="d-flex align-items-center gap-2 mb-1" style="font-size:0.8rem;">
+                        <i class="bi bi-database" style="color:#667eea;"></i>
+                        <span>No data sources connected</span>
+                    </div>
+                </div>
+                <button class="btn btn-sm btn-outline-secondary w-100" style="font-size:0.75rem;" onclick="connectDataSource()">
+                    <i class="bi bi-plus-circle me-1"></i>Connect Data Source
+                </button>
+            </div>
+
+            <!-- Conversation History Section -->
+            <div class="p-3">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <label class="text-secondary mb-0" style="font-size:0.75rem;text-transform:uppercase;letter-spacing:0.08em;font-weight:600;">Conversations</label>
+                    <button class="btn btn-sm" style="color:#e74c3c;padding:0;" title="Clear All Sessions" onclick="confirmClearAllSessions()">
+                        <i class="bi bi-trash3"></i>
+                    </button>
+                </div>
+                <div class="input-group input-group-sm mb-3">
+                    <span class="input-group-text bg-white border"><i class="bi bi-search" style="color:#667eea;"></i></span>
+                    <input type="text" id="sessionSearch" class="form-control bg-white border shadow-none"
+                           placeholder="Search…" style="font-size:0.8rem;color:#2d3748;">
+                </div>
+                <div id="sessionList">
+                    <!-- Rendered by chatHistory.js -->
+                </div>
+            </div>
         </div>
 
         <!-- User Info -->
-        <div class="p-3 border-top border-secondary border-opacity-25">
+        <div class="p-3 border-top" style="background:#fff;">
             <div class="d-flex align-items-center gap-2">
                 <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
-                     style="width:32px;height:32px;background:rgba(143,217,251,0.25);">
-                    <i class="bi bi-person" style="color:#8FD9FB;font-size:0.9rem;"></i>
+                     style="width:32px;height:32px;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);">
+                    <i class="bi bi-person" style="color:white;font-size:0.9rem;"></i>
                 </div>
                 <div class="overflow-hidden flex-grow-1">
-                    <div class="small fw-medium text-truncate">Demo User</div>
+                    <div class="small fw-medium text-truncate" style="color:#2d3748;">Demo User</div>
                     <div class="text-muted" style="font-size:0.7rem;">Free Plan</div>
                 </div>
-                <a href="/Account/Settings" class="text-muted" title="Settings" style="font-size:0.85rem;">
+                <a href="/Account/Settings" style="color:#667eea;font-size:0.85rem;" title="Settings">
                     <i class="bi bi-gear"></i>
                 </a>
             </div>
@@ -77,26 +190,41 @@
     </div>
 
     <!-- ── Central Chat Area ── -->
-    <div class="chat-main flex-grow-1 d-flex flex-column bg-body" style="min-width:0;">
+    <div class="chat-main flex-grow-1 d-flex flex-column" style="min-width:0;background:#fafafa;">
         <!-- Chat Header -->
-        <div class="chat-header d-flex align-items-center justify-content-between p-3 border-bottom bg-body shadow-sm">
+        <div class="chat-header d-flex align-items-center justify-content-between p-3 border-bottom bg-white shadow-sm">
             <div class="d-flex align-items-center gap-3">
                 <div class="rounded-circle d-flex align-items-center justify-content-center"
-                     style="width:40px;height:40px;background:rgba(143,217,251,0.2);">
-                    <i class="bi bi-robot" style="color:var(--cp-accent,#8FD9FB);font-size:1.1rem;"></i>
+                     style="width:40px;height:40px;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);">
+                    <i class="bi bi-robot" style="color:white;font-size:1.1rem;"></i>
                 </div>
                 <div>
-                    <div class="fw-medium">ChatPortal AI</div>
-                    <div class="small" style="color:#2ecc71;"><i class="bi bi-circle-fill me-1" style="font-size:0.45rem;vertical-align:middle;"></i>Ready</div>
+                    <div class="fw-medium" style="color:#2d3748;" id="selectedAgentName">No Agent Selected</div>
+                    <div class="small" id="agentStatus" style="color:#e74c3c;">
+                        <i class="bi bi-circle-fill me-1" style="font-size:0.45rem;vertical-align:middle;"></i>Select an agent to start
+                    </div>
                 </div>
             </div>
             <div class="d-flex gap-2 align-items-center flex-wrap">
+                <!-- Agent Selector -->
+                <select id="agentSelect" class="form-select form-select-sm" style="width:200px;" onchange="selectAgent()">
+                    <option value="">-- Select AI Agent --</option>
+                </select>
                 <select id="modelSelect" class="form-select form-select-sm" style="width:auto;">
                     @foreach (var aiModel in Model.AvailableModels)
                     {
                         <option value="@aiModel" selected="@(aiModel == Model.SelectedModel)">@aiModel</option>
                     }
                 </select>
+                <!-- Share Agent -->
+                <button class="btn btn-sm btn-outline-secondary" id="shareAgentBtn" title="Share Agent" onclick="shareAgent()" disabled>
+                    <i class="bi bi-share"></i>
+                </button>
+                <!-- Export as iframe -->
+                <button class="btn btn-sm btn-outline-secondary" id="exportAgentBtn" title="Export Agent as iframe" 
+                        data-bs-toggle="modal" data-bs-target="#embedAgentModal" disabled>
+                    <i class="bi bi-code-slash"></i>
+                </button>
                 <!-- Export PDF -->
                 <button class="btn btn-sm btn-outline-secondary" title="Export as PDF" onclick="exportAsPDF()">
                     <i class="bi bi-file-earmark-pdf"></i>
@@ -105,14 +233,6 @@
                 <button class="btn btn-sm btn-outline-secondary" id="togglePanelBtn" title="Source references" onclick="toggleRightPanel()">
                     <i class="bi bi-layout-sidebar-reverse"></i>
                 </button>
-                <!-- Publish as iframe (agents only) -->
-                @if (User.IsInRole("Agent") || User.Identity?.IsAuthenticated == true)
-                {
-                    <button class="btn btn-sm btn-outline-secondary" title="Publish conversation as iframe"
-                            data-bs-toggle="modal" data-bs-target="#embedModal">
-                        <i class="bi bi-code-slash"></i>
-                    </button>
-                }
                 <!-- Clear Chat -->
                 <button class="btn btn-sm btn-outline-secondary" title="Clear chat" onclick="clearChat()">
                     <i class="bi bi-trash3"></i>
@@ -129,7 +249,7 @@
         <div id="attachmentChip" class="px-3 pt-2" style="display:none;"></div>
 
         <!-- Input Area -->
-        <div class="chat-input-area p-3 border-top bg-body shadow-sm">
+        <div class="chat-input-area p-3 border-top bg-white shadow-sm">
             <div class="container-lg">
                 @Html.AntiForgeryToken()
                 <div class="input-group shadow-sm rounded-3 overflow-hidden border">
@@ -142,14 +262,14 @@
                         <i class="bi bi-paperclip"></i>
                     </button>
                     <textarea id="messageInput" class="form-control border-0 shadow-none"
-                              placeholder="Message ChatPortal AI… (Enter to send, Shift+Enter for new line)" rows="1"
+                              placeholder="Select an AI agent above to start chatting…" rows="1"
                               style="resize:none;max-height:200px;"
-                              onkeydown="handleKeyDown(event)"></textarea>
+                              onkeydown="handleKeyDown(event)" disabled></textarea>
                     <button class="btn btn-outline-secondary border-0 px-3" id="micBtn" type="button"
                             title="Voice input (Web Speech API)" onclick="toggleMic()">
                         <i class="bi bi-mic-fill" id="micIcon"></i>
                     </button>
-                    <button class="btn px-4" id="sendBtn" style="background:var(--cp-accent);color:var(--cp-primary-text,#1a5276);" onclick="sendMessage()">
+                    <button class="btn px-4" id="sendBtn" style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:white;border:none;" onclick="sendMessage()" disabled>
                         <i class="bi bi-send-fill"></i>
                     </button>
                 </div>
@@ -161,18 +281,405 @@
     </div>
 
     <!-- ── Right Panel: Source References ── -->
-    <div id="rightPanel" class="chat-right-panel bg-dark text-white border-start border-secondary border-opacity-25 d-flex flex-column"
+    <div id="rightPanel" class="chat-right-panel bg-white border-start d-flex flex-column"
          style="width:300px;flex-shrink:0;transition:width 0.25s ease,opacity 0.25s ease;overflow:hidden;opacity:0;width:0;">
-        <div class="p-3 border-bottom border-secondary border-opacity-25 d-flex justify-content-between align-items-center">
-            <span class="small fw-semibold text-uppercase text-muted">Source References</span>
-            <button class="btn btn-sm text-muted border-0 p-0" onclick="toggleRightPanel()" title="Close panel">
+        <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
+            <span class="small fw-semibold text-uppercase text-secondary">Source References</span>
+            <button class="btn btn-sm border-0 p-0" onclick="toggleRightPanel()" title="Close panel" style="color:#667eea;">
                 <i class="bi bi-x-lg"></i>
             </button>
         </div>
         <div class="flex-grow-1 overflow-auto" id="rightPanelContent">
             <div class="text-center text-muted py-5 px-3">
-                <i class="bi bi-database fs-3 mb-2 d-block opacity-25"></i>
+                <i class="bi bi-database fs-3 mb-2 d-block opacity-25" style="color:#667eea;"></i>
                 <p class="small">Data references from AI responses will appear here.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ── Organization Management Modal ── -->
+<div class="modal fade" id="organizationManagementModal" tabindex="-1" aria-labelledby="organizationManagementLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-0 pb-2" style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);">
+                <h5 class="modal-title fw-bold text-white" id="organizationManagementLabel">
+                    <i class="bi bi-building me-2"></i>Organization Management
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="mb-4" id="createOrgSection">
+                    <h6 class="fw-bold mb-3">Create Your Organization</h6>
+                    <div class="alert alert-info small">
+                        <i class="bi bi-info-circle me-1"></i>Each user can create one organization. You can invite members to join your organization.
+                    </div>
+                    <form id="createOrganizationForm" onsubmit="createOrganization(event)">
+                        @Html.AntiForgeryToken()
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <input type="text" class="form-control" placeholder="Organization Name" id="orgName" name="name" required />
+                            </div>
+                            <div class="col-md-6">
+                                <input type="text" class="form-control" placeholder="Industry (optional)" id="orgIndustry" name="industry" />
+                            </div>
+                            <div class="col-12">
+                                <textarea class="form-control" placeholder="Description (optional)" id="orgDescription" name="description" rows="2"></textarea>
+                            </div>
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-sm" style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:white;">
+                                    <i class="bi bi-plus-circle me-1"></i>Create Organization
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <hr id="orgDivider" />
+                <div>
+                    <h6 class="fw-bold mb-3">Your Organization</h6>
+                    <div id="organizationsList" class="list-group">
+                        <div class="text-center text-muted py-3">
+                            <i class="bi bi-building fs-2"></i>
+                            <p class="small mb-0">Loading organization...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ── Team Management Modal ── -->
+<div class="modal fade" id="teamManagementModal" tabindex="-1" aria-labelledby="teamManagementLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-0 pb-2" style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);">
+                <h5 class="modal-title fw-bold text-white" id="teamManagementLabel">
+                    <i class="bi bi-people-fill me-2"></i>Team Management
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="mb-4">
+                    <h6 class="fw-bold mb-3">Create New Team</h6>
+                    <form id="createTeamForm" onsubmit="createTeam(event)">
+                        @Html.AntiForgeryToken()
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <input type="text" class="form-control" placeholder="Team Name" id="teamName" name="name" required />
+                            </div>
+                            <div class="col-md-6">
+                                <input type="text" class="form-control" placeholder="Description" id="teamDescription" name="description" />
+                            </div>
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-sm" style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:white;">
+                                    <i class="bi bi-plus-circle me-1"></i>Create Team
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <hr />
+                <div>
+                    <h6 class="fw-bold mb-3">Your Teams</h6>
+                    <div id="teamsList" class="list-group">
+                        <div class="text-center text-muted py-3">
+                            <i class="bi bi-people-fill fs-2"></i>
+                            <p class="small mb-0">Loading teams...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ── Workspace Management Modal ── -->
+<div class="modal fade" id="workspaceManagementModal" tabindex="-1" aria-labelledby="workspaceManagementLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-0 pb-2" style="background:linear-gradient(135deg,#764ba2 0%,#667eea 100%);">
+                <h5 class="modal-title fw-bold text-white" id="workspaceManagementLabel">
+                    <i class="bi bi-grid-fill me-2"></i>Workspace Management
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="mb-4">
+                    <h6 class="fw-bold mb-3">Create New Workspace</h6>
+                    <form id="createWorkspaceForm" onsubmit="createWorkspace(event)">
+                        @Html.AntiForgeryToken()
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <input type="text" class="form-control" placeholder="Workspace Name" id="workspaceName" name="name" required />
+                            </div>
+                            <div class="col-md-4">
+                                <select class="form-select" id="workspaceContext" name="context">
+                                    <option value="general">General Purpose</option>
+                                    <option value="code">Code Assistant</option>
+                                    <option value="writing">Writing Helper</option>
+                                    <option value="data">Data Analysis</option>
+                                    <option value="research">Research</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <select class="form-select" id="workspaceTeam" name="teamId">
+                                    <option value="">None</option>
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <textarea class="form-control" placeholder="Description (optional)" id="workspaceDesc" name="description" rows="2"></textarea>
+                            </div>
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-sm" style="background:linear-gradient(135deg,#764ba2 0%,#667eea 100%);color:white;">
+                                    <i class="bi bi-plus-circle me-1"></i>Create Workspace
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <hr />
+                <div>
+                    <h6 class="fw-bold mb-3">Your Workspaces</h6>
+                    <div id="workspacesList" class="list-group">
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="fw-medium">General Workspace</div>
+                                <small class="text-muted">General Purpose Agent - Active</small>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-sm btn-outline-secondary" title="Edit">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" title="Delete">
+                                    <i class="bi bi-trash3"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ── Agent Management Modal ── -->
+<div class="modal fade" id="agentManagementModal" tabindex="-1" aria-labelledby="agentManagementLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-xl">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-0 pb-2" style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);">
+                <h5 class="modal-title fw-bold text-white" id="agentManagementLabel">
+                    <i class="bi bi-robot me-2"></i>AI Agent Management
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="alert alert-info small">
+                    <i class="bi bi-info-circle me-1"></i>Create AI agents to power intelligent conversations. Each agent can have custom behavior, model selection, and system prompts.
+                </div>
+
+                <!-- Workspace Selection -->
+                <div class="mb-4">
+                    <label class="form-label fw-semibold">Select Workspace</label>
+                    <select class="form-select" id="agentWorkspaceSelect" onchange="loadAgents()">
+                        <option value="">-- Select a workspace --</option>
+                    </select>
+                </div>
+
+                <div id="agentWorkspaceContent" style="display:none;">
+                    <!-- Create Agent Form -->
+                    <div class="mb-4">
+                        <h6 class="fw-bold mb-3">Create New AI Agent</h6>
+                        <form id="createAgentForm" onsubmit="createAgent(event)">
+                            @Html.AntiForgeryToken()
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label small">Agent Name *</label>
+                                    <input type="text" class="form-control" id="agentName" name="name" placeholder="e.g., Code Assistant" required />
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label small">Agent Type</label>
+                                    <select class="form-select" id="agentType" name="agentType">
+                                        <option value="general">General Purpose</option>
+                                        <option value="code">Code Assistant</option>
+                                        <option value="writing">Writing Helper</option>
+                                        <option value="data">Data Analyst</option>
+                                        <option value="research">Research Assistant</option>
+                                        <option value="customer-service">Customer Service</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label small">AI Model</label>
+                                    <select class="form-select" id="agentModel" name="modelName">
+                                        <option value="GPT-4">GPT-4</option>
+                                        <option value="GPT-3.5 Turbo" selected>GPT-3.5 Turbo</option>
+                                        <option value="Claude-3">Claude-3</option>
+                                        <option value="Gemini Pro">Gemini Pro</option>
+                                    </select>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label small">Description</label>
+                                    <textarea class="form-control" id="agentDescription" name="description" rows="2" placeholder="Brief description of the agent's purpose"></textarea>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label small">System Prompt (optional)</label>
+                                    <textarea class="form-control" id="agentSystemPrompt" name="systemPrompt" rows="3" placeholder="Custom instructions for the AI agent behavior..."></textarea>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label small">Temperature (0.0 - 1.0)</label>
+                                    <input type="number" class="form-control" id="agentTemperature" name="temperature" value="0.7" min="0" max="1" step="0.1" />
+                                    <small class="text-muted">Higher = more creative, Lower = more focused</small>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label small">Max Tokens</label>
+                                    <input type="number" class="form-control" id="agentMaxTokens" name="maxTokens" value="2000" min="100" max="4000" step="100" />
+                                    <small class="text-muted">Maximum response length</small>
+                                </div>
+                                <div class="col-12">
+                                    <button type="submit" class="btn btn-sm" style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:white;">
+                                        <i class="bi bi-plus-circle me-1"></i>Create AI Agent
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <hr />
+                    <!-- Agents List -->
+                    <div>
+                        <h6 class="fw-bold mb-3">AI Agents in Workspace</h6>
+                        <div id="agentsList" class="row g-3">
+                            <div class="col-12 text-center text-muted py-3">
+                                <i class="bi bi-robot fs-2"></i>
+                                <p class="small mb-0">No agents yet. Create one to get started!</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ── Team Member Invitation Modal ── -->
+<div class="modal fade" id="teamMemberModal" tabindex="-1" aria-labelledby="teamMemberLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-0 pb-2" style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);">
+                <h5 class="modal-title fw-bold text-white" id="teamMemberLabel">
+                    <i class="bi bi-person-plus me-2"></i>Add Team Member
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="addTeamMemberForm" onsubmit="addTeamMember(event)">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" id="memberTeamId" name="teamId" />
+                    <div class="mb-3">
+                        <label class="form-label">User Email *</label>
+                        <input type="email" class="form-control" id="memberEmail" name="email" placeholder="user@example.com" required />
+                        <small class="text-muted">The user must already have an account</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Role</label>
+                        <select class="form-select" id="memberRole" name="role">
+                            <option value="Member">Member</option>
+                            <option value="Admin">Admin</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn w-100" style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:white;">
+                        <i class="bi bi-person-plus me-1"></i>Add Member
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ── Organization Member Invitation Modal ── -->
+<div class="modal fade" id="orgMemberModal" tabindex="-1" aria-labelledby="orgMemberLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-0 pb-2" style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);">
+                <h5 class="modal-title fw-bold text-white" id="orgMemberLabel">
+                    <i class="bi bi-person-plus me-2"></i>Add Organization Member
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="addOrgMemberForm" onsubmit="addOrgMember(event)">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" id="orgMemberId" name="organizationId" />
+                    <div class="mb-3">
+                        <label class="form-label">User Email *</label>
+                        <input type="email" class="form-control" id="orgMemberEmail" name="email" placeholder="user@example.com" required />
+                        <small class="text-muted">The user must already have an account</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Role</label>
+                        <select class="form-select" id="orgMemberRole" name="role">
+                            <option value="Member">Member</option>
+                            <option value="Admin">Admin</option>
+                            <option value="Viewer">Viewer</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn w-100" style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:white;">
+                        <i class="bi bi-person-plus me-1"></i>Add Member
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ── Export Agent as iframe Modal ── -->
+<div class="modal fade" id="embedAgentModal" tabindex="-1" aria-labelledby="embedAgentLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-0 pb-2" style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);">
+                <h5 class="modal-title fw-bold text-white" id="embedAgentLabel">
+                    <i class="bi bi-code-slash me-2"></i>Export AI Agent as iFrame
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="alert alert-info small">
+                    <i class="bi bi-info-circle me-1"></i>Share your AI agent with others by embedding it on any website. The agent will maintain its configuration and behavior.
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Selected Agent</label>
+                    <div class="p-3 bg-light rounded">
+                        <div class="fw-medium" id="embedAgentDisplayName">No agent selected</div>
+                        <small class="text-muted" id="embedAgentDisplayType">Select an agent to export</small>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Share Link</label>
+                    <div class="input-group">
+                        <input type="text" id="agentShareLink" class="form-control font-monospace small" readonly />
+                        <button class="btn btn-outline-secondary" type="button" onclick="copyShareLink()">
+                            <i class="bi bi-clipboard"></i> Copy
+                        </button>
+                    </div>
+                    <small class="text-muted">Anyone with this link can chat with your agent</small>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">iFrame Embed Code</label>
+                    <div class="input-group">
+                        <textarea id="agentEmbedCode" class="form-control font-monospace small" rows="4" readonly></textarea>
+                        <button class="btn btn-outline-secondary" type="button" onclick="copyEmbedCode()">
+                            <i class="bi bi-clipboard"></i> Copy
+                        </button>
+                    </div>
+                    <small class="text-muted">Paste this code into your website HTML</small>
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-sm" style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:white;" onclick="generateAgentEmbed()">
+                        <i class="bi bi-arrow-repeat me-1"></i>Regenerate Link
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="previewAgentEmbed()">
+                        <i class="bi bi-eye me-1"></i>Preview
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -184,7 +691,7 @@
         <div class="modal-content border-0 shadow">
             <div class="modal-header border-0 pb-0">
                 <h5 class="modal-title fw-bold" id="embedModalLabel">
-                    <i class="bi bi-code-slash me-2" style="color:var(--cp-accent);"></i>Publish Conversation as iFrame
+                    <i class="bi bi-code-slash me-2" style="color:#667eea;"></i>Publish Conversation as iFrame
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
@@ -193,7 +700,7 @@
                     Generate an embed token and copy the snippet below into any webpage to embed this chat interface.
                 </p>
                 <div class="d-flex gap-2 mb-3">
-                    <button class="btn btn-primary btn-sm" id="generateEmbedTokenBtn" onclick="generateEmbedToken()">
+                    <button class="btn btn-sm" id="generateEmbedTokenBtn" onclick="generateEmbedToken()" style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:white;">
                         <i class="bi bi-key me-1"></i>Generate Embed Token
                     </button>
                     <span id="embedTokenStatus" class="small text-muted align-self-center"></span>
@@ -223,6 +730,98 @@
     </div>
 </div>
 
+<!-- ── Edit Team Modal ── -->
+<div class="modal fade" id="editTeamModal" tabindex="-1" aria-labelledby="editTeamLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-0 pb-2" style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);">
+                <h5 class="modal-title fw-bold text-white" id="editTeamLabel">
+                    <i class="bi bi-pencil me-2"></i>Edit Team
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="editTeamForm" onsubmit="updateTeam(event)">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" id="editTeamId" name="id" />
+                    <div class="mb-3">
+                        <label class="form-label">Team Name *</label>
+                        <input type="text" class="form-control" id="editTeamName" name="name" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-control" id="editTeamDesc" name="description" rows="2"></textarea>
+                    </div>
+                    <button type="submit" class="btn w-100" style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:white;">
+                        <i class="bi bi-check-circle me-1"></i>Update Team
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ── Confirmation Modal (Reusable) ── -->
+<div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-0 pb-2" style="background:linear-gradient(135deg,#e74c3c 0%,#c0392b 100%);">
+                <h5 class="modal-title fw-bold text-white" id="confirmModalLabel">
+                    <i class="bi bi-exclamation-triangle me-2"></i>Confirm Action
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <p id="confirmModalMessage" class="mb-0">Are you sure you want to proceed?</p>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmModalAction" onclick="executeConfirmedAction()">Confirm</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ── Data Source Connection Modal ── -->
+<div class="modal fade" id="dataSourceModal" tabindex="-1" aria-labelledby="dataSourceLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-xl modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-0 pb-2" style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);">
+                <h5 class="modal-title fw-bold text-white" id="dataSourceLabel">
+                    <i class="bi bi-database-add me-2"></i>Connect Data Source
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4" style="max-height:70vh;overflow-y:auto;">
+                <div class="alert alert-info small mb-4">
+                    <i class="bi bi-info-circle me-1"></i>Connect to 50+ cloud services, databases, APIs, and data sources to enhance your AI conversations with real-time data.
+                </div>
+
+                <!-- Provider Selection Container -->
+                <div id="providerSelectionContainer">
+                    <!-- Populated dynamically by JavaScript -->
+                </div>
+
+                <!-- Connection Form Container (Hidden initially) -->
+                <div id="connectionFormContainer" style="display:none;">
+                    <!-- Populated dynamically when provider is selected -->
+                </div>
+
+                <!-- Connected Data Sources List -->
+                <div class="mt-4">
+                    <h6 class="fw-semibold mb-3">Connected Data Sources</h6>
+                    <div id="dataSourcesList">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ── Toast Container for Notifications ── -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3" id="toastContainer"></div>
+
 @section Scripts {
 <!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
@@ -251,6 +850,32 @@
     connection.start().catch(err => console.warn("SignalR:", err));
     connection.on("ReceiveMessage", (role, content) => appendMessage(role, content));
 
+    // Team switcher
+    document.querySelectorAll('.team-option').forEach(item => {
+        item.addEventListener('click', function (e) {
+            e.preventDefault();
+            document.querySelectorAll('.team-option').forEach(i => i.classList.remove('active-team'));
+            this.classList.add('active-team');
+            document.getElementById('activeTeamName').textContent = this.dataset.team;
+        });
+    });
+
+    // Organization switcher
+    document.querySelectorAll('.org-option').forEach(item => {
+        item.addEventListener('click', function (e) {
+            e.preventDefault();
+            document.querySelectorAll('.org-option').forEach(i => i.classList.remove('active-org'));
+            this.classList.add('active-org');
+            document.getElementById('activeOrgName').textContent = this.dataset.org;
+
+            // Set active organization and reload workspaces
+            const orgId = this.getAttribute('data-org-id');
+            if (orgId) {
+                setActiveOrganization(orgId);
+            }
+        });
+    });
+
     // Workspace switcher
     document.querySelectorAll('.workspace-option').forEach(item => {
         item.addEventListener('click', function (e) {
@@ -259,6 +884,938 @@
             this.classList.add('active-workspace');
             document.getElementById('activeWorkspaceName').textContent = this.dataset.workspace;
         });
+    });
+
+    // Load organizations on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        loadOrganizations();
+        loadWorkspaces();
+        loadAvailableAgents(); // Load agents for selection
+    });
+
+    // ── AI Agent Selection & Management ──────────────────────────────────
+    let selectedAgent = null;
+
+    async function loadAvailableAgents() {
+        try {
+            const response = await fetch('/Workspace/GetUserWorkspaces');
+            const result = await response.json();
+
+            if (result.success && result.workspaces) {
+                // Get all agents from all workspaces
+                const agentPromises = result.workspaces.map(ws => 
+                    fetch(`/Agent/GetWorkspaceAgents?workspaceId=${ws.id}`)
+                        .then(r => r.json())
+                        .then(data => data.success ? data.agents.map(a => ({...a, workspaceName: ws.name})) : [])
+                );
+
+                const agentArrays = await Promise.all(agentPromises);
+                const allAgents = agentArrays.flat();
+
+                displayAgentSelector(allAgents);
+            }
+        } catch (error) {
+            console.error('Failed to load agents for selection:', error);
+        }
+    }
+
+    function displayAgentSelector(agents) {
+        const select = document.getElementById('agentSelect');
+        select.innerHTML = '<option value="">-- Select AI Agent --</option>';
+
+        agents.forEach(agent => {
+            if (agent.isActive) {
+                const option = document.createElement('option');
+                option.value = agent.id;
+                option.textContent = `${agent.name} (${agent.workspaceName}) - ${agent.agentType}`;
+                option.dataset.agent = JSON.stringify(agent);
+                select.appendChild(option);
+            }
+        });
+    }
+
+    function selectAgent() {
+        const select = document.getElementById('agentSelect');
+        const selectedOption = select.options[select.selectedIndex];
+
+        if (!selectedOption.value) {
+            selectedAgent = null;
+            document.getElementById('selectedAgentName').textContent = 'No Agent Selected';
+            document.getElementById('agentStatus').innerHTML = '<i class="bi bi-circle-fill me-1" style="font-size:0.45rem;vertical-align:middle;"></i>Select an agent to start';
+            document.getElementById('agentStatus').style.color = '#e74c3c';
+            document.getElementById('shareAgentBtn').disabled = true;
+            document.getElementById('exportAgentBtn').disabled = true;
+            document.getElementById('messageInput').disabled = true;
+            document.getElementById('sendBtn').disabled = true;
+            return;
+        }
+
+        selectedAgent = JSON.parse(selectedOption.dataset.agent);
+        document.getElementById('selectedAgentName').textContent = selectedAgent.name;
+        document.getElementById('agentStatus').innerHTML = `<i class="bi bi-circle-fill me-1" style="font-size:0.45rem;vertical-align:middle;"></i>${selectedAgent.agentType} • ${selectedAgent.modelName}`;
+        document.getElementById('agentStatus').style.color = '#2ecc71';
+        document.getElementById('shareAgentBtn').disabled = false;
+        document.getElementById('exportAgentBtn').disabled = false;
+        document.getElementById('messageInput').disabled = false;
+        document.getElementById('sendBtn').disabled = false;
+
+        // Update model select to match agent's model
+        const modelSelect = document.getElementById('modelSelect');
+        for (let i = 0; i < modelSelect.options.length; i++) {
+            if (modelSelect.options[i].value === selectedAgent.modelName) {
+                modelSelect.selectedIndex = i;
+                break;
+            }
+        }
+
+        // Clear chat for new agent
+        clearChat();
+    }
+
+    function shareAgent() {
+        if (!selectedAgent) {
+            showToast('Please select an agent first', 'warning');
+            return;
+        }
+
+        const shareUrl = `${window.location.origin}/Chat/Agent/${selectedAgent.id}`;
+
+        if (navigator.share) {
+            navigator.share({
+                title: `Chat with ${selectedAgent.name}`,
+                text: `Try chatting with my AI agent: ${selectedAgent.name} - ${selectedAgent.description || 'Intelligent AI assistant'}`,
+                url: shareUrl
+            }).catch(() => {
+                // Fallback to copy
+                copyToClipboard(shareUrl);
+                showToast('Share link copied to clipboard!', 'success');
+            });
+        } else {
+            copyToClipboard(shareUrl);
+            showToast('Share link copied to clipboard!', 'success');
+        }
+    }
+
+    function generateAgentEmbed() {
+        if (!selectedAgent) {
+            showToast('Please select an agent first', 'warning');
+            return;
+        }
+
+        const agentId = selectedAgent.id;
+        const shareUrl = `${window.location.origin}/Chat/Agent/${agentId}`;
+        const embedCode = `<iframe src="${shareUrl}" width="400" height="600" frameborder="0" allow="microphone" style="border-radius:8px;box-shadow:0 4px 6px rgba(0,0,0,0.1);"></iframe>`;
+
+        document.getElementById('embedAgentDisplayName').textContent = selectedAgent.name;
+        document.getElementById('embedAgentDisplayType').textContent = `${selectedAgent.agentType} • ${selectedAgent.modelName}`;
+        document.getElementById('agentShareLink').value = shareUrl;
+        document.getElementById('agentEmbedCode').value = embedCode;
+    }
+
+    function copyShareLink() {
+        const input = document.getElementById('agentShareLink');
+        copyToClipboard(input.value);
+        showToast('Share link copied to clipboard!', 'success');
+    }
+
+    function copyEmbedCode() {
+        const input = document.getElementById('agentEmbedCode');
+        copyToClipboard(input.value);
+        showToast('Embed code copied to clipboard!', 'success');
+    }
+
+    function previewAgentEmbed() {
+        const shareUrl = document.getElementById('agentShareLink').value;
+        if (!shareUrl) {
+            showToast('Please generate the agent embed first', 'warning');
+            return;
+        }
+        // Open in new window with specific dimensions
+        const previewWindow = window.open(shareUrl, 'AgentPreview', 'width=450,height=650,resizable=yes,scrollbars=yes');
+        if (!previewWindow) {
+            showToast('Popup blocked! Please allow popups for this site.', 'warning');
+        }
+    }
+
+    function copyToClipboard(text) {
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(text);
+        } else {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+        }
+    }
+
+    // Update agent modal when opened
+    document.getElementById('embedAgentModal')?.addEventListener('show.bs.modal', function() {
+        generateAgentEmbed();
+    });
+
+    // Organization Management Functions
+    async function createOrganization(event) {
+        event.preventDefault();
+        const form = event.target;
+        const formData = new FormData(form);
+
+        try {
+            const response = await fetch('/Organization/Create', {
+                method: 'POST',
+                headers: {
+                    'RequestVerificationToken': form.querySelector('[name="__RequestVerificationToken"]').value
+                },
+                body: formData
+            });
+
+            const result = await response.json();
+            if (result.success) {
+                showToast('Organization created successfully!', 'success');
+                form.reset();
+                loadOrganizations();
+            } else {
+                showToast('Error: ' + result.error, 'danger');
+            }
+        } catch (error) {
+            showToast('Failed to create organization: ' + error.message, 'danger');
+        }
+    }
+
+    async function loadOrganizations() {
+        try {
+            const response = await fetch('/Organization/GetUserOrganizations');
+            const result = await response.json();
+
+            if (result.success && result.organizations) {
+                displayOrganizations(result.organizations);
+            }
+        } catch (error) {
+            console.error('Failed to load organizations:', error);
+        }
+    }
+
+    function displayOrganizations(organizations) {
+        const dropdown = document.getElementById('organizationDropdown');
+        const listContainer = document.getElementById('organizationsList');
+        const createSection = document.getElementById('createOrgSection');
+        const divider = document.getElementById('orgDivider');
+
+        if (organizations.length === 0) {
+            // Show create form if no organization exists
+            if (createSection) createSection.style.display = 'block';
+            if (divider) divider.style.display = 'block';
+            listContainer.innerHTML = '<div class="text-center text-muted py-3"><p class="small">No organization yet. Create one to get started!</p></div>';
+            return;
+        }
+
+        // Hide create form if organization already exists
+        if (createSection) createSection.style.display = 'none';
+        if (divider) divider.style.display = 'none';
+
+        // Since user can only have one organization, display it
+        const org = organizations[0];
+
+        // Update dropdown
+        let dropdownHTML = `
+            <li>
+                <a class="dropdown-item org-option active-org d-flex align-items-center gap-2" 
+                   href="#" data-org="${org.name}" data-org-id="${org.id}">
+                    <i class="bi bi-building" style="color:#667eea;font-size:0.8rem;"></i>
+                    <div>
+                        <div style="font-size:0.85rem;color:#2d3748;">${org.name}</div>
+                        <div class="text-muted" style="font-size:0.7rem;">${org.userRole} • ${org.workspaceCount} workspaces</div>
+                    </div>
+                </a>
+            </li>
+            <li><hr class="dropdown-divider my-1"></li>
+            <li>
+                <a class="dropdown-item d-flex align-items-center gap-2" href="#" data-bs-toggle="modal" data-bs-target="#organizationManagementModal" style="font-size:0.82rem;color:#667eea;">
+                    <i class="bi bi-gear me-1"></i>Manage Organization
+                </a>
+            </li>`;
+        dropdown.innerHTML = dropdownHTML;
+
+        // Update list
+        let listHTML = `
+            <div class="list-group-item">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div>
+                        <h6 class="fw-bold mb-1">${org.name}</h6>
+                        <p class="text-muted small mb-2">${org.description || 'No description'}</p>
+                        <div class="d-flex gap-3 small">
+                            <span><i class="bi bi-people me-1"></i>${org.memberCount} members</span>
+                            <span><i class="bi bi-grid me-1"></i>${org.workspaceCount} workspaces</span>
+                            ${org.industry ? `<span><i class="bi bi-briefcase me-1"></i>${org.industry}</span>` : ''}
+                        </div>
+                    </div>
+                    ${org.isOwner ? `
+                        <button class="btn btn-sm btn-outline-secondary" title="Manage Members" onclick="openOrgMemberModal(${org.id})">
+                            <i class="bi bi-person-plus me-1"></i>Add Members
+                        </button>
+                    ` : ''}
+                </div>
+                <div class="alert alert-info small mb-0">
+                    <i class="bi bi-info-circle me-1"></i>
+                    You are the ${org.userRole} of this organization. ${org.isOwner ? 'You can add members, create workspaces, and manage teams.' : 'Contact the owner to create workspaces or add members.'}
+                </div>
+            </div>`;
+        listContainer.innerHTML = listHTML;
+
+        // Set as active organization
+        document.getElementById('activeOrgName').textContent = org.name;
+
+        // Automatically set as active in session
+        setActiveOrganization(org.id);
+
+        // Reattach event listeners
+        document.querySelectorAll('.org-option').forEach(item => {
+            item.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelectorAll('.org-option').forEach(i => i.classList.remove('active-org'));
+                this.classList.add('active-org');
+                document.getElementById('activeOrgName').textContent = this.getAttribute('data-org');
+                const orgId = this.getAttribute('data-org-id');
+                if (orgId) setActiveOrganization(orgId);
+            });
+        });
+    }
+
+    async function setActiveOrganization(orgId) {
+        try {
+            const response = await fetch('/Organization/SetActive', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'RequestVerificationToken': document.querySelector('[name="__RequestVerificationToken"]').value
+                },
+                body: `id=${orgId}`
+            });
+
+            const result = await response.json();
+            if (result.success) {
+                loadWorkspaces();
+            }
+        } catch (error) {
+            console.error('Failed to set active organization:', error);
+        }
+    }
+
+    // Organization Member Management
+    function openOrgMemberModal(orgId) {
+        document.getElementById('orgMemberId').value = orgId;
+        const modal = new bootstrap.Modal(document.getElementById('orgMemberModal'));
+        modal.show();
+    }
+
+    async function addOrgMember(event) {
+        event.preventDefault();
+        const form = event.target;
+        const formData = new FormData(form);
+
+        try {
+            const response = await fetch('/Invitation/SendOrganizationInvite', {
+                method: 'POST',
+                headers: {
+                    'RequestVerificationToken': form.querySelector('[name="__RequestVerificationToken"]').value
+                },
+                body: formData
+            });
+
+            const result = await response.json();
+            if (result.success) {
+                if (result.userExists) {
+                    showToast('User added to organization successfully!', 'success');
+                } else {
+                    showToast(`Invitation sent to ${formData.get('email')}!`, 'success');
+                    // Optionally copy invite link to clipboard
+                    copyToClipboard(result.inviteLink);
+                    showToast('Invitation link copied to clipboard', 'info');
+                }
+                form.reset();
+                bootstrap.Modal.getInstance(document.getElementById('orgMemberModal')).hide();
+                loadOrganizations(); // Refresh organization to show updated member count
+            } else {
+                showToast('Error: ' + result.error, 'danger');
+            }
+        } catch (error) {
+            showToast('Failed to add organization member: ' + error.message, 'danger');
+        }
+    }
+
+    // Workspace Management Functions
+    async function createWorkspace(event) {
+        event.preventDefault();
+        const form = event.target;
+        const formData = new FormData(form);
+
+        try {
+            const response = await fetch('/Workspace/Create', {
+                method: 'POST',
+                headers: {
+                    'RequestVerificationToken': form.querySelector('[name="__RequestVerificationToken"]').value
+                },
+                body: formData
+            });
+
+            const result = await response.json();
+            if (result.success) {
+                showToast('Workspace created successfully!', 'success');
+                form.reset();
+                loadWorkspaces();
+                bootstrap.Modal.getInstance(document.getElementById('workspaceManagementModal')).hide();
+            } else {
+                showToast('Error: ' + result.error, 'danger');
+            }
+        } catch (error) {
+            showToast('Failed to create workspace: ' + error.message, 'danger');
+        }
+    }
+
+    async function loadWorkspaces() {
+        try {
+            const response = await fetch('/Workspace/GetUserWorkspaces');
+            const result = await response.json();
+
+            if (result.success && result.workspaces) {
+                displayWorkspaces(result.workspaces);
+            }
+        } catch (error) {
+            console.error('Failed to load workspaces:', error);
+        }
+    }
+
+    function displayWorkspaces(workspaces) {
+        const dropdown = document.getElementById('workspaceDropdown');
+        const listContainer = document.getElementById('workspacesList');
+
+        if (workspaces.length === 0) {
+            listContainer.innerHTML = '<div class="text-center text-muted py-3"><p class="small">No workspaces yet. Create one to get started!</p></div>';
+            return;
+        }
+
+        // Update dropdown
+        let dropdownHTML = '';
+        workspaces.forEach((ws, index) => {
+            dropdownHTML += `
+                <li>
+                    <a class="dropdown-item workspace-option ${index === 0 ? 'active-workspace' : ''} d-flex align-items-center gap-2" 
+                       href="#" data-workspace="${ws.name}">
+                        <i class="bi bi-grid-fill" style="color:#764ba2;font-size:0.8rem;"></i>
+                        <div>
+                            <div style="font-size:0.85rem;color:#2d3748;">${ws.name}</div>
+                            <div class="text-muted" style="font-size:0.7rem;">${ws.chatAgentContext} • ${ws.agentCount} agents</div>
+                        </div>
+                    </a>
+                </li>`;
+        });
+        dropdownHTML += `
+            <li><hr class="dropdown-divider my-1"></li>
+            <li>
+                <a class="dropdown-item d-flex align-items-center gap-2" href="#" data-bs-toggle="modal" data-bs-target="#agentManagementModal" style="font-size:0.82rem;color:#667eea;">
+                    <i class="bi bi-robot me-1"></i>Manage AI Agents
+                </a>
+            </li>
+            <li>
+                <a class="dropdown-item d-flex align-items-center gap-2" href="#" data-bs-toggle="modal" data-bs-target="#workspaceManagementModal" style="font-size:0.82rem;color:#764ba2;">
+                    <i class="bi bi-plus-circle me-1"></i>Create Workspace
+                </a>
+            </li>`;
+        dropdown.innerHTML = dropdownHTML;
+
+        // Update list
+        let listHTML = '';
+        workspaces.forEach(ws => {
+            listHTML += `
+                <div class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="fw-medium">${ws.name}</div>
+                        <small class="text-muted">${ws.chatAgentContext} • ${ws.agentCount} agents • ${ws.isActive ? 'Active' : 'Inactive'}</small>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-sm btn-outline-primary" title="Manage AI Agents" 
+                                onclick="openAgentModal(${ws.id})" style="border-color:#667eea;color:#667eea;">
+                            <i class="bi bi-robot"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-secondary" title="Edit" onclick="editWorkspace(${ws.id})">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        ${ws.isOwner ? `
+                            <button class="btn btn-sm btn-outline-danger" title="Delete" onclick="deleteWorkspace(${ws.id})">
+                                <i class="bi bi-trash3"></i>
+                            </button>
+                        ` : ''}
+                    </div>
+                </div>`;
+        });
+        listContainer.innerHTML = listHTML;
+
+        // Set first workspace as active
+        if (workspaces.length > 0) {
+            document.getElementById('activeWorkspaceName').textContent = workspaces[0].name;
+        }
+
+        // Reattach event listeners
+        document.querySelectorAll('.workspace-option').forEach(item => {
+            item.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelectorAll('.workspace-option').forEach(i => i.classList.remove('active-workspace'));
+                this.classList.add('active-workspace');
+                document.getElementById('activeWorkspaceName').textContent = this.getAttribute('data-workspace');
+            });
+        });
+    }
+
+    function deleteWorkspace(id) {
+        showConfirmModal(
+            'Delete Workspace',
+            'Are you sure you want to delete this workspace? All agents will be removed.',
+            async () => {
+                try {
+                    const response = await fetch('/Workspace/Delete', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'RequestVerificationToken': document.querySelector('[name="__RequestVerificationToken"]').value
+                        },
+                        body: `id=${id}`
+                    });
+
+                    const result = await response.json();
+                    if (result.success) {
+                        showToast('Workspace deleted successfully!', 'success');
+                        loadWorkspaces();
+                    } else {
+                        showToast('Error: ' + result.error, 'danger');
+                    }
+                } catch (error) {
+                    showToast('Failed to delete workspace: ' + error.message, 'danger');
+                }
+            }
+        );
+    }
+
+    // ── Agent Management Functions ───────────────────────────────────────
+    let currentAgentWorkspaceId = null;
+
+    // Helper function to open agent modal with pre-selected workspace
+    function openAgentModal(workspaceId = null) {
+        const modal = new bootstrap.Modal(document.getElementById('agentManagementModal'));
+        modal.show();
+
+        if (workspaceId) {
+            // Wait for modal to be shown, then set workspace and load agents
+            document.getElementById('agentManagementModal').addEventListener('shown.bs.modal', function() {
+                const select = document.getElementById('agentWorkspaceSelect');
+                select.value = workspaceId;
+                loadAgents();
+            }, { once: true });
+        }
+    }
+
+    // Populate workspace dropdown when agent modal opens
+    document.getElementById('agentManagementModal')?.addEventListener('show.bs.modal', function() {
+        populateAgentWorkspaceDropdown();
+    });
+
+    async function populateAgentWorkspaceDropdown() {
+        try {
+            const response = await fetch('/Workspace/GetUserWorkspaces');
+            const result = await response.json();
+
+            const select = document.getElementById('agentWorkspaceSelect');
+            select.innerHTML = '<option value="">-- Select a workspace --</option>';
+
+            if (result.success && result.workspaces) {
+                result.workspaces.forEach(ws => {
+                    const option = document.createElement('option');
+                    option.value = ws.id;
+                    option.textContent = `${ws.name} (${ws.agentCount} agents)`;
+                    select.appendChild(option);
+                });
+            }
+        } catch (error) {
+            console.error('Failed to load workspaces for agent management:', error);
+        }
+    }
+
+    async function loadAgents() {
+        const workspaceId = document.getElementById('agentWorkspaceSelect').value;
+        const content = document.getElementById('agentWorkspaceContent');
+
+        if (!workspaceId) {
+            content.style.display = 'none';
+            return;
+        }
+
+        currentAgentWorkspaceId = parseInt(workspaceId);
+        content.style.display = 'block';
+
+        try {
+            const response = await fetch(`/Agent/GetWorkspaceAgents?workspaceId=${workspaceId}`);
+            const result = await response.json();
+
+            if (result.success && result.agents) {
+                displayAgents(result.agents);
+            }
+        } catch (error) {
+            console.error('Failed to load agents:', error);
+        }
+    }
+
+    function displayAgents(agents) {
+        const container = document.getElementById('agentsList');
+
+        if (agents.length === 0) {
+            container.innerHTML = `
+                <div class="col-12 text-center text-muted py-3">
+                    <i class="bi bi-robot fs-2"></i>
+                    <p class="small mb-0">No agents yet. Create one to get started!</p>
+                </div>`;
+            return;
+        }
+
+        let html = '';
+        agents.forEach(agent => {
+            const agentTypeIcons = {
+                'general': 'robot',
+                'code': 'code-slash',
+                'writing': 'pen',
+                'data': 'graph-up',
+                'research': 'search',
+                'customer-service': 'headset'
+            };
+            const icon = agentTypeIcons[agent.agentType] || 'robot';
+            const statusBadge = agent.isActive 
+                ? '<span class="badge bg-success">Active</span>' 
+                : '<span class="badge bg-secondary">Inactive</span>';
+
+            html += `
+                <div class="col-md-6">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center" 
+                                         style="width:40px;height:40px;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);">
+                                        <i class="bi bi-${icon}" style="color:white;"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-0 fw-bold">${agent.name}</h6>
+                                        <small class="text-muted">${agent.agentType}</small>
+                                    </div>
+                                </div>
+                                ${statusBadge}
+                            </div>
+                            <p class="small text-muted mb-2">${agent.description || 'No description'}</p>
+                            <div class="d-flex gap-2 small text-muted mb-3">
+                                <span><i class="bi bi-cpu me-1"></i>${agent.modelName}</span>
+                                <span><i class="bi bi-thermometer-half me-1"></i>T:${agent.temperature}</span>
+                                <span><i class="bi bi-chat-dots me-1"></i>${agent.chatSessionCount} chats</span>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-sm btn-outline-secondary flex-grow-1" 
+                                        onclick="toggleAgentActive(${agent.id})" title="${agent.isActive ? 'Deactivate' : 'Activate'}">
+                                    <i class="bi bi-power"></i>
+                                </button>
+                                ${agent.isCreator ? `
+                                    <button class="btn btn-sm btn-outline-danger" 
+                                            onclick="deleteAgent(${agent.id})" title="Delete">
+                                        <i class="bi bi-trash3"></i>
+                                    </button>
+                                ` : ''}
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+        });
+
+        container.innerHTML = html;
+    }
+
+    async function createAgent(event) {
+        event.preventDefault();
+        const form = event.target;
+        const formData = new FormData(form);
+        formData.append('workspaceId', currentAgentWorkspaceId);
+
+        try {
+            const response = await fetch('/Agent/Create', {
+                method: 'POST',
+                headers: {
+                    'RequestVerificationToken': form.querySelector('[name="__RequestVerificationToken"]').value
+                },
+                body: formData
+            });
+
+            const result = await response.json();
+            if (result.success) {
+                showToast('AI Agent created successfully!', 'success');
+                form.reset();
+                loadAgents();
+                loadWorkspaces(); // Refresh workspace list to update agent count
+                loadAvailableAgents(); // Refresh agent selector
+            } else {
+                showToast('Error: ' + result.error, 'danger');
+            }
+        } catch (error) {
+            showToast('Failed to create agent: ' + error.message, 'danger');
+        }
+    }
+
+    async function toggleAgentActive(agentId) {
+        try {
+            const response = await fetch('/Agent/ToggleActive', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'RequestVerificationToken': document.querySelector('[name="__RequestVerificationToken"]').value
+                },
+                body: `id=${agentId}`
+            });
+
+            const result = await response.json();
+            if (result.success) {
+                loadAgents();
+                loadAvailableAgents(); // Refresh agent selector
+                showToast(result.isActive ? 'Agent activated' : 'Agent deactivated', 'success');
+            } else {
+                showToast('Error: ' + result.error, 'danger');
+            }
+        } catch (error) {
+            showToast('Failed to toggle agent status: ' + error.message, 'danger');
+        }
+    }
+
+    function deleteAgent(agentId) {
+        showConfirmModal(
+            'Delete AI Agent',
+            'Are you sure you want to delete this AI agent? All associated chat sessions will remain but won\'t be linked to this agent.',
+            async () => {
+                try {
+                    const response = await fetch('/Agent/Delete', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'RequestVerificationToken': document.querySelector('[name="__RequestVerificationToken"]').value
+                        },
+                        body: `id=${agentId}`
+                    });
+
+                    const result = await response.json();
+                    if (result.success) {
+                        showToast('Agent deleted successfully!', 'success');
+                        loadAgents();
+                        loadWorkspaces();
+                        loadAvailableAgents(); // Refresh agent selector
+                    } else {
+                        showToast('Error: ' + result.error, 'danger');
+                    }
+                } catch (error) {
+                    showToast('Failed to delete agent: ' + error.message, 'danger');
+                }
+            }
+        );
+    }
+
+    // ── Team Member Management Functions ─────────────────────────────────
+    async function createTeam(event) {
+        event.preventDefault();
+        const form = event.target;
+        const formData = new FormData(form);
+
+        try {
+            const response = await fetch('/Team/Create', {
+                method: 'POST',
+                headers: {
+                    'RequestVerificationToken': form.querySelector('[name="__RequestVerificationToken"]').value
+                },
+                body: formData
+            });
+
+            const result = await response.json();
+            if (result.success) {
+                showToast('Team created successfully!', 'success');
+                form.reset();
+                loadTeams();
+            } else {
+                showToast('Error: ' + result.error, 'danger');
+            }
+        } catch (error) {
+            showToast('Failed to create team: ' + error.message, 'danger');
+        }
+    }
+
+    function openAddMemberModal(teamId) {
+        document.getElementById('memberTeamId').value = teamId;
+        const modal = new bootstrap.Modal(document.getElementById('teamMemberModal'));
+        modal.show();
+    }
+
+    async function addTeamMember(event) {
+        event.preventDefault();
+        const form = event.target;
+        const formData = new FormData(form);
+
+        try {
+            const response = await fetch('/Invitation/SendTeamInvite', {
+                method: 'POST',
+                headers: {
+                    'RequestVerificationToken': form.querySelector('[name="__RequestVerificationToken"]').value
+                },
+                body: formData
+            });
+
+            const result = await response.json();
+            if (result.success) {
+                if (result.userExists) {
+                    showToast('User added to team successfully!', 'success');
+                } else {
+                    showToast(`Invitation sent to ${formData.get('email')}!`, 'success');
+                    // Optionally copy invite link to clipboard
+                    copyToClipboard(result.inviteLink);
+                    showToast('Invitation link copied to clipboard', 'info');
+                }
+                form.reset();
+                bootstrap.Modal.getInstance(document.getElementById('teamMemberModal')).hide();
+                loadTeams(); // Refresh team list
+            } else {
+                showToast('Error: ' + result.error, 'danger');
+            }
+        } catch (error) {
+            showToast('Failed to add team member: ' + error.message, 'danger');
+        }
+    }
+
+    async function loadTeams() {
+        try {
+            const response = await fetch('/Team/GetUserTeams');
+            const result = await response.json();
+
+            if (result.success && result.teams) {
+                displayTeams(result.teams);
+            }
+        } catch (error) {
+            console.error('Failed to load teams:', error);
+        }
+    }
+
+    function displayTeams(teams) {
+        const listContainer = document.getElementById('teamsList');
+
+        if (teams.length === 0) {
+            listContainer.innerHTML = '<div class="text-center text-muted py-3"><p class="small">No teams yet. Create one to get started!</p></div>';
+            return;
+        }
+
+        let html = '';
+        teams.forEach(team => {
+            html += `
+                <div class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="fw-medium">${team.name}</div>
+                        <small class="text-muted">${team.description || 'No description'} • ${team.memberCount} members</small>
+                    </div>
+                    <div class="d-flex gap-2">
+                        ${team.isOwner ? `
+                            <button class="btn btn-sm btn-outline-secondary" title="Workspace Permissions" onclick="manageTeamWorkspaces(${team.id}, '${team.name}')">
+                                <i class="bi bi-grid"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-secondary" title="Add Members" onclick="openAddMemberModal(${team.id})">
+                                <i class="bi bi-person-plus"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-secondary" title="Edit Team" onclick="editTeam(${team.id}, '${team.name}', '${team.description || ''}')">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" title="Delete Team" onclick="deleteTeam(${team.id})">
+                                <i class="bi bi-trash3"></i>
+                            </button>
+                        ` : `
+                            <button class="btn btn-sm btn-outline-secondary" title="View Members">
+                                <i class="bi bi-people"></i>
+                            </button>
+                        `}
+                    </div>
+                </div>`;
+        });
+
+        listContainer.innerHTML = html;
+    }
+
+    function editTeam(id, currentName, currentDesc) {
+        // Open edit modal with current values
+        document.getElementById('editTeamId').value = id;
+        document.getElementById('editTeamName').value = currentName;
+        document.getElementById('editTeamDesc').value = currentDesc || '';
+        const modal = new bootstrap.Modal(document.getElementById('editTeamModal'));
+        modal.show();
+    }
+
+    async function updateTeam(event) {
+        event.preventDefault();
+        const form = event.target;
+        const formData = new FormData(form);
+
+        try {
+            const response = await fetch('/Team/Update', {
+                method: 'POST',
+                headers: {
+                    'RequestVerificationToken': form.querySelector('[name="__RequestVerificationToken"]').value
+                },
+                body: formData
+            });
+
+            const result = await response.json();
+            if (result.success) {
+                showToast('Team updated successfully!', 'success');
+                bootstrap.Modal.getInstance(document.getElementById('editTeamModal')).hide();
+                loadTeams();
+            } else {
+                showToast('Error: ' + result.error, 'danger');
+            }
+        } catch (error) {
+            showToast('Failed to update team: ' + error.message, 'danger');
+        }
+    }
+
+    function deleteTeam(id) {
+        showConfirmModal(
+            'Delete Team',
+            'Are you sure you want to delete this team? All members and permissions will be removed.',
+            async () => {
+                try {
+                    const response = await fetch('/Team/Delete', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'RequestVerificationToken': document.querySelector('[name="__RequestVerificationToken"]').value
+                        },
+                        body: `id=${id}`
+                    });
+
+                    const result = await response.json();
+                    if (result.success) {
+                        showToast('Team deleted successfully!', 'success');
+                        loadTeams();
+                    } else {
+                        showToast('Error: ' + result.error, 'danger');
+                    }
+                } catch (error) {
+                    showToast('Failed to delete team: ' + error.message, 'danger');
+                }
+            }
+        );
+    }
+
+    function manageTeamWorkspaces(teamId, teamName) {
+        showToast('Team Workspace Permissions feature coming soon!', 'info');
+        // TODO: Open modal showing workspaces with grant/revoke buttons
+    }
+
+    // Load teams when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        loadTeams();
     });
 
     // ── Agent embed helpers ───────────────────────────────────────────────
@@ -302,6 +1859,598 @@
     function copyIframeCode() {
         const el = document.getElementById('embedIframeCode');
         navigator.clipboard?.writeText(el.value).catch(() => { el.select(); document.execCommand('copy'); });
+    }
+
+    // ── Toast Notification System ─────────────────────────────────────────
+    function showToast(message, type = 'info') {
+        const toastContainer = document.getElementById('toastContainer');
+        const toastId = 'toast_' + Date.now();
+
+        const bgColors = {
+            success: 'bg-success',
+            danger: 'bg-danger',
+            warning: 'bg-warning',
+            info: 'bg-info'
+        };
+
+        const icons = {
+            success: 'check-circle-fill',
+            danger: 'exclamation-circle-fill',
+            warning: 'exclamation-triangle-fill',
+            info: 'info-circle-fill'
+        };
+
+        const toastHTML = `
+            <div class="toast align-items-center text-white ${bgColors[type]} border-0" role="alert" id="${toastId}">
+                <div class="d-flex">
+                    <div class="toast-body d-flex align-items-center gap-2">
+                        <i class="bi bi-${icons[type]}"></i>
+                        ${message}
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                </div>
+            </div>
+        `;
+
+        toastContainer.insertAdjacentHTML('beforeend', toastHTML);
+        const toastElement = document.getElementById(toastId);
+        const toast = new bootstrap.Toast(toastElement, { autohide: true, delay: 3000 });
+        toast.show();
+
+        toastElement.addEventListener('hidden.bs.toast', function() {
+            toastElement.remove();
+        });
+    }
+
+    // ── Confirmation Modal System ─────────────────────────────────────────
+    let confirmedActionCallback = null;
+
+    function showConfirmModal(title, message, onConfirm) {
+        document.getElementById('confirmModalLabel').innerHTML = `<i class="bi bi-exclamation-triangle me-2"></i>${title}`;
+        document.getElementById('confirmModalMessage').textContent = message;
+        confirmedActionCallback = onConfirm;
+        const modal = new bootstrap.Modal(document.getElementById('confirmModal'));
+        modal.show();
+    }
+
+    async function executeConfirmedAction() {
+        if (confirmedActionCallback) {
+            bootstrap.Modal.getInstance(document.getElementById('confirmModal')).hide();
+            await confirmedActionCallback();
+            confirmedActionCallback = null;
+        }
+    }
+
+    // ── Clear All Sessions ─────────────────────────────────────────────────
+    function confirmClearAllSessions() {
+        showConfirmModal(
+            'Clear All Sessions',
+            'Are you sure you want to clear all conversation sessions? This action cannot be undone.',
+            () => {
+                // Clear from localStorage
+                if (typeof clearAllSessions === 'function') {
+                    clearAllSessions();
+                    showToast('All sessions cleared successfully!', 'success');
+                    // Clear UI and create new session
+                    renderSidebar();
+                    newChat();
+                } else {
+                    showToast('Session clear functionality not available', 'warning');
+                }
+            }
+        );
+    }
+
+    // ── Connect Data Source ─────────────────────────────────────────────────
+    let selectedProvider = null;
+    let allProviders = {};
+
+    async function connectDataSource() {
+        const modal = new bootstrap.Modal(document.getElementById('dataSourceModal'));
+        modal.show();
+
+        // Load providers from backend
+        await loadProviders();
+        displayProviderSelection();
+        loadConnectedDataSources();
+    }
+
+    async function loadProviders() {
+        try {
+            const response = await fetch('/DataSource/GetProviders');
+            const result = await response.json();
+
+            if (result.success && result.categories) {
+                allProviders = {};
+                result.categories.forEach(cat => {
+                    allProviders[cat.category] = cat.providers;
+                });
+            }
+        } catch (error) {
+            console.error('Failed to load providers:', error);
+        }
+    }
+
+    function displayProviderSelection() {
+        const container = document.getElementById('providerSelectionContainer');
+        if (!container) return;
+
+        let html = `
+            <div class="mb-3">
+                <input type="text" class="form-control" id="providerSearch" 
+                       placeholder="Search providers..." onkeyup="filterProviders()">
+            </div>
+            <div id="providerCategoriesContainer">`;
+
+        Object.keys(allProviders).forEach(category => {
+            html += `
+                <div class="provider-category mb-4">
+                    <h6 class="fw-semibold mb-3 text-muted">${category}</h6>
+                    <div class="row g-3">`;
+
+            allProviders[category].forEach(provider => {
+                html += `
+                    <div class="col-md-6 provider-card" data-provider-name="${provider.name.toLowerCase()}" data-provider-id="${provider.id}">
+                        <div class="card h-100" style="cursor:pointer;border:2px solid #e2e8f0;transition:all 0.2s;" 
+                             onclick="selectProvider('${provider.id}', '${escapeHtml(provider.name)}', '${category}')">
+                            <div class="card-body">
+                                <div class="d-flex align-items-start gap-3">
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" 
+                                         style="width:48px;height:48px;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);">
+                                        <i class="bi bi-${provider.icon}" style="color:white;font-size:1.2rem;"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <div class="fw-semibold">${provider.name}</div>
+                                        <small class="text-muted">${provider.description}</small>
+                                        ${provider.requiresOAuth ? '<div class="badge bg-info mt-1">OAuth Required</div>' : ''}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>`;
+            });
+
+            html += `
+                    </div>
+                </div>`;
+        });
+
+        html += '</div>';
+        container.innerHTML = html;
+    }
+
+    function filterProviders() {
+        const searchTerm = document.getElementById('providerSearch').value.toLowerCase();
+        const cards = document.querySelectorAll('.provider-card');
+
+        cards.forEach(card => {
+            const providerName = card.getAttribute('data-provider-name');
+            if (providerName.includes(searchTerm)) {
+                card.style.display = '';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    }
+
+    function selectProvider(providerId, providerName, category) {
+        selectedProvider = { id: providerId, name: providerName, category: category };
+
+        // Highlight selected card
+        document.querySelectorAll('.provider-card .card').forEach(card => {
+            card.style.borderColor = '#e2e8f0';
+            card.style.transform = 'scale(1)';
+        });
+
+        const selectedCard = document.querySelector(`[data-provider-id="${providerId}"] .card`);
+        if (selectedCard) {
+            selectedCard.style.borderColor = '#667eea';
+            selectedCard.style.transform = 'scale(1.02)';
+        }
+
+        // Show connection form
+        showConnectionForm();
+    }
+
+    async function showConnectionForm() {
+        const container = document.getElementById('connectionFormContainer');
+        if (!container || !selectedProvider) return;
+
+        // Get provider schema
+        try {
+            const response = await fetch(`/DataSource/GetProviderSchema?provider=${selectedProvider.id}`);
+            const result = await response.json();
+
+            if (result.success && result.schema) {
+                const schema = JSON.parse(result.schema);
+
+                let formHTML = `
+                    <div class="alert alert-info">
+                        <strong>Connecting to: ${selectedProvider.name}</strong>
+                        <button type="button" class="btn-close float-end" onclick="cancelProviderSelection()"></button>
+                    </div>
+                    <form id="connectionForm" onsubmit="submitConnection(event)">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="provider" value="${selectedProvider.id}">
+
+                        <div class="mb-3">
+                            <label class="form-label">Connection Name *</label>
+                            <input type="text" class="form-control" name="name" 
+                                   placeholder="e.g., Production Database" required>
+                        </div>`;
+
+                // Generate form fields based on schema
+                Object.keys(schema.properties).forEach(key => {
+                    const prop = schema.properties[key];
+                    const isRequired = schema.required && schema.required.includes(key);
+                    const inputType = prop.format === 'password' ? 'password' : 
+                                    prop.type === 'integer' ? 'number' : 'text';
+
+                    formHTML += `
+                        <div class="mb-3">
+                            <label class="form-label">${key.charAt(0).toUpperCase() + key.slice(1)} ${isRequired ? '*' : ''}</label>
+                            <input type="${inputType}" class="form-control" name="${key}" 
+                                   placeholder="${prop.description || ''}" 
+                                   value="${prop.default || ''}" 
+                                   ${isRequired ? 'required' : ''}>
+                            ${prop.description ? `<small class="text-muted">${prop.description}</small>` : ''}
+                        </div>`;
+                });
+
+                formHTML += `
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-outline-secondary" onclick="cancelProviderSelection()">
+                                Back to Providers
+                            </button>
+                            <button type="submit" class="btn btn-primary flex-grow-1" 
+                                    style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);border:none;">
+                                <i class="bi bi-plug me-1"></i>Test & Connect
+                            </button>
+                        </div>
+                    </form>`;
+
+                container.innerHTML = formHTML;
+                container.style.display = 'block';
+                document.getElementById('providerSelectionContainer').style.display = 'none';
+            }
+        } catch (error) {
+            showToast('Failed to load connection form', 'danger');
+        }
+    }
+
+    function cancelProviderSelection() {
+        selectedProvider = null;
+        document.getElementById('connectionFormContainer').style.display = 'none';
+        document.getElementById('providerSelectionContainer').style.display = 'block';
+
+        // Reset card highlights
+        document.querySelectorAll('.provider-card .card').forEach(card => {
+            card.style.borderColor = '#e2e8f0';
+            card.style.transform = 'scale(1)';
+        });
+    }
+
+    async function submitConnection(event) {
+        event.preventDefault();
+        const form = event.target;
+        const formData = new FormData(form);
+        const btn = form.querySelector('button[type="submit"]');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Connecting...';
+
+        try {
+            // Build connection string or config based on form data
+            const provider = formData.get('provider');
+            const name = formData.get('name');
+
+            // For SQL databases, build connection string
+            let connectionString = null;
+            let apiEndpoint = null;
+            let apiKey = null;
+            let username = null;
+            let password = null;
+            let additionalConfig = {};
+
+            // Extract fields based on provider type
+            for (let [key, value] of formData.entries()) {
+                if (key !== 'provider' && key !== 'name' && key !== '__RequestVerificationToken') {
+                    if (key === 'server' || key === 'host') {
+                        username = formData.get('username');
+                        password = formData.get('password');
+                        const db = formData.get('database');
+                        const port = formData.get('port');
+
+                        // Build connection string for SQL databases
+                        if (provider.includes('sql') || provider.includes('mysql') || provider.includes('postgre')) {
+                            if (provider === 'mysql') {
+                                connectionString = `Server=${value};${port ? `Port=${port};` : ''}Database=${db};User Id=${username};Password=${password};`;
+                            } else if (provider === 'postgresql') {
+                                connectionString = `Host=${value};${port ? `Port=${port};` : ''}Database=${db};Username=${username};Password=${password};`;
+                            } else {
+                                connectionString = `Server=${value};Database=${db};User Id=${username};Password=${password};Encrypt=True;TrustServerCertificate=False;`;
+                            }
+                        }
+                    } else if (key === 'accessKeyId' || key === 'secretAccessKey') {
+                        username = formData.get('accessKeyId');
+                        apiKey = formData.get('secretAccessKey');
+                        additionalConfig.region = formData.get('region');
+                    } else {
+                        additionalConfig[key] = value;
+                    }
+                }
+            }
+
+            const response = await fetch('/DataSource/Connect', {
+                method: 'POST',
+                headers: {
+                    'RequestVerificationToken': getAntiForgeryToken()
+                },
+                body: new URLSearchParams({
+                    provider: provider,
+                    name: name,
+                    connectionString: connectionString || '',
+                    apiEndpoint: apiEndpoint || '',
+                    apiKey: apiKey || '',
+                    username: username || '',
+                    password: password || '',
+                    additionalConfig: JSON.stringify(additionalConfig)
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                showToast(`Successfully connected to ${selectedProvider.name}!`, 'success');
+                form.reset();
+                cancelProviderSelection();
+                loadConnectedDataSources();
+                loadDataSources(); // Update status in sidebar
+            } else {
+                showToast('Connection failed: ' + (result.error || 'Unknown error'), 'danger');
+            }
+        } catch (error) {
+            showToast('Failed to connect: ' + error.message, 'danger');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-plug me-1"></i>Test & Connect';
+        }
+    }
+
+    async function loadConnectedDataSources() {
+        try {
+            const response = await fetch('/DataSource/GetConnections');
+            const result = await response.json();
+
+            if (!result.success) return;
+
+            const container = document.getElementById('dataSourcesList');
+            if (!container) return;
+
+            if (!result.connections || result.connections.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center text-muted py-3">
+                        <i class="bi bi-database fs-3"></i>
+                        <p class="small mb-0">No data sources connected yet</p>
+                    </div>`;
+                return;
+            }
+
+            const typeIcons = {
+                'SQL Databases': 'database-fill',
+                'NoSQL Databases': 'database',
+                'Cloud Storage': 'cloud-arrow-up',
+                'CRM & ERP': 'diagram-3',
+                'Analytics & Marketing': 'graph-up',
+                'APIs & Web Services': 'cloud-arrow-down',
+                'Streaming & Events': 'arrow-repeat',
+                'Files & Data Feeds': 'file-earmark-text',
+                'Financial Data': 'cash',
+                'Developer Tools': 'code-slash'
+            };
+
+            let html = '<div class="list-group">';
+            result.connections.forEach(conn => {
+                const icon = typeIcons[conn.sourceType] || 'database';
+                const date = new Date(conn.connectedAt).toLocaleDateString();
+                const statusColor = conn.lastSyncStatus === 'Connected' || conn.lastSyncStatus === 'Success' ? '#28a745' : 
+                                  conn.lastSyncStatus === 'Failed' ? '#dc3545' : '#ffc107';
+
+                html += `
+                    <div class="list-group-item">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" 
+                                 style="width:40px;height:40px;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);">
+                                <i class="bi bi-${icon}" style="color:white;"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="fw-medium">${escapeHtml(conn.name)}</div>
+                                <div class="small text-muted">
+                                    ${conn.provider} • ${conn.sourceType}
+                                    ${conn.lastSyncAt ? ' • Last sync: ' + new Date(conn.lastSyncAt).toLocaleString() : ''}
+                                </div>
+                                <div class="small mt-1">
+                                    <span class="badge" style="background-color:${statusColor};">
+                                        ${conn.lastSyncStatus || 'Unknown'}
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-sm btn-outline-primary" onclick="testConnection(${conn.id})" title="Test Connection">
+                                    <i class="bi bi-arrow-repeat"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-info" onclick="syncDataSource(${conn.id})" title="Sync">
+                                    <i class="bi bi-cloud-download"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" onclick="confirmRemoveDataSource(${conn.id})" title="Disconnect">
+                                    <i class="bi bi-trash3"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>`;
+            });
+            html += '</div>';
+
+            container.innerHTML = html;
+        } catch (error) {
+            console.error('Failed to load connected data sources:', error);
+        }
+    }
+
+    async function testConnection(connectionId) {
+        const btn = event.target.closest('button');
+        const originalHTML = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+
+        try {
+            const formData = new FormData();
+            formData.append('connectionId', connectionId);
+            formData.append('__RequestVerificationToken', getAntiForgeryToken());
+
+            const response = await fetch('/DataSource/TestConnection', {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                showToast('Connection test successful!', 'success');
+            } else {
+                showToast('Connection test failed: ' + (result.error || 'Unknown error'), 'danger');
+            }
+
+            loadConnectedDataSources(); // Refresh list
+        } catch (error) {
+            showToast('Failed to test connection: ' + error.message, 'danger');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = originalHTML;
+        }
+    }
+
+    async function syncDataSource(connectionId) {
+        const btn = event.target.closest('button');
+        const originalHTML = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+
+        try {
+            const formData = new FormData();
+            formData.append('connectionId', connectionId);
+            formData.append('__RequestVerificationToken', getAntiForgeryToken());
+
+            const response = await fetch('/DataSource/Sync', {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                showToast(`Sync successful! Processed ${result.recordsProcessed} records.`, 'success');
+            } else {
+                showToast('Sync failed: ' + (result.error || 'Unknown error'), 'danger');
+            }
+
+            loadConnectedDataSources(); // Refresh list
+        } catch (error) {
+            showToast('Failed to sync: ' + error.message, 'danger');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = originalHTML;
+        }
+    }
+
+    function confirmRemoveDataSource(id) {
+        showConfirmModal(
+            'Disconnect Data Source',
+            'Are you sure you want to disconnect this data source? This will not delete any data.',
+            () => removeDataSource(id)
+        );
+    }
+
+    async function removeDataSource(id) {
+        try {
+            const formData = new FormData();
+            formData.append('connectionId', id);
+            formData.append('__RequestVerificationToken', getAntiForgeryToken());
+
+            const response = await fetch('/DataSource/Disconnect', {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                showToast('Data source disconnected successfully!', 'success');
+                loadConnectedDataSources();
+                loadDataSources(); // Update sidebar status
+            } else {
+                showToast('Failed to disconnect: ' + (result.error || 'Unknown error'), 'danger');
+            }
+        } catch (error) {
+            showToast('Failed to disconnect: ' + error.message, 'danger');
+        }
+    }
+
+    async function loadDataSources() {
+        try {
+            const response = await fetch('/DataSource/GetConnections');
+            const result = await response.json();
+
+            if (!result.success) return;
+
+            const dataSources = result.connections || [];
+            const container = document.querySelector('[data-datasource-status]');
+
+            if (container) {
+                if (dataSources.length > 0) {
+                    const activeCount = dataSources.filter(ds => ds.lastSyncStatus === 'Connected' || ds.lastSyncStatus === 'Success').length;
+                    container.innerHTML = `
+                        <div class="d-flex align-items-center gap-2 mb-1" style="font-size:0.8rem;">
+                            <i class="bi bi-database-check" style="color:#28a745;"></i>
+                            <span>${activeCount} of ${dataSources.length} active</span>
+                        </div>`;
+                } else {
+                    container.innerHTML = `
+                        <div class="d-flex align-items-center gap-2 mb-1" style="font-size:0.8rem;">
+                            <i class="bi bi-database" style="color:#667eea;"></i>
+                            <span>No data sources connected</span>
+                        </div>`;
+                }
+            }
+        } catch (error) {
+            console.error('Failed to load data sources status:', error);
+        }
+    }
+        } catch (error) {
+            console.error('Failed to load data sources:', error);
+        }
+    }
+
+    function removeDataSource(id) {
+        try {
+            const dataSources = JSON.parse(localStorage.getItem('chatportal_datasources') || '[]');
+            const filtered = dataSources.filter(ds => ds.id !== id);
+            localStorage.setItem('chatportal_datasources', JSON.stringify(filtered));
+            showToast('Data source removed successfully!', 'success');
+            loadDataSources();
+        } catch (error) {
+            showToast('Failed to remove data source: ' + error.message, 'danger');
+        }
+    }
+
+    // Load data sources on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        loadDataSources();
+    });
+
+    // ── Edit Workspace (Placeholder) ───────────────────────────────────────
+    function editWorkspace(id) {
+        showToast('Workspace editing feature coming soon!', 'info');
+        // TODO: Open modal to edit workspace name, description, context
     }
 </script>
 <style>

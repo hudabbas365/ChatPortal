@@ -54,6 +54,16 @@ public class AppDbContext : DbContext
     public DbSet<Workspace> Workspaces { get; set; }
     public DbSet<FeatureToggle> FeatureToggles { get; set; }
 
+    // Organization management
+    public DbSet<Organization> Organizations { get; set; }
+    public DbSet<OrganizationMember> OrganizationMembers { get; set; }
+    public DbSet<Agent> Agents { get; set; }
+    public DbSet<Invitation> Invitations { get; set; }
+    public DbSet<TeamWorkspacePermission> TeamWorkspacePermissions { get; set; }
+
+    // Data Source Connections
+    public DbSet<DataSourceConnection> DataSourceConnections { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -119,6 +129,46 @@ public class AppDbContext : DbContext
             .WithMany()
             .HasForeignKey(w => w.OwnerId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<Workspace>()
+            .HasIndex(w => new { w.OrganizationId, w.Name })
+            .IsUnique();
+
+        modelBuilder.Entity<Organization>()
+            .HasOne(o => o.Owner)
+            .WithMany()
+            .HasForeignKey(o => o.OwnerId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<OrganizationMember>()
+            .HasOne(om => om.User)
+            .WithMany()
+            .HasForeignKey(om => om.UserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<Agent>()
+            .HasOne(a => a.Creator)
+            .WithMany()
+            .HasForeignKey(a => a.CreatedBy)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<Team>()
+            .HasOne(t => t.Organization)
+            .WithMany(o => o.Teams)
+            .HasForeignKey(t => t.OrganizationId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<Invitation>()
+            .HasOne(i => i.Inviter)
+            .WithMany()
+            .HasForeignKey(i => i.InvitedBy)
+            .OnDelete(DeleteBehavior.NoAction);
+
+        modelBuilder.Entity<TeamWorkspacePermission>()
+            .HasOne(twp => twp.Granter)
+            .WithMany()
+            .HasForeignKey(twp => twp.GrantedBy)
+            .OnDelete(DeleteBehavior.NoAction);
 
         modelBuilder.Entity<FeatureToggle>()
             .HasOne(f => f.CreatedByAdmin)

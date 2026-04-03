@@ -2,12 +2,12 @@
 {
     <div class="d-flex align-items-center gap-3">
         @await Component.InvokeAsync("Notification")
-        <a class="nav-link text-light" asp-controller="Dashboard" asp-action="Index">
+        <a class="nav-link" asp-controller="Dashboard" asp-action="Index" style="color:#2d3748;">
             <i class="bi bi-speedometer2 me-1"></i>Dashboard
         </a>
         <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
             @Html.AntiForgeryToken()
-            <button type="submit" class="btn btn-outline-light btn-sm">
+            <button type="submit" class="btn btn-outline-secondary btn-sm">
                 <i class="bi bi-box-arrow-right me-1"></i>Logout
             </button>
         </form>
@@ -16,7 +16,7 @@
 else
 {
     <div class="d-flex gap-2">
-        <a asp-controller="Account" asp-action="Login" class="btn btn-outline-light btn-sm">Login</a>
-        <a asp-controller="Account" asp-action="Register" class="btn btn-primary btn-sm">Get Started</a>
+        <a asp-controller="Account" asp-action="Login" class="btn btn-outline-secondary btn-sm">Login</a>
+        <a asp-controller="Account" asp-action="Register" class="btn btn-sm shadow-sm" style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:white;border:none;">Get Started</a>
     </div>
 }

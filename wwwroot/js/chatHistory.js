@@ -121,6 +121,15 @@ function deleteSession(sessionId) {
 }
 
 /**
+ * Clear all sessions from localStorage.
+ * Removes all conversation history permanently.
+ */
+function clearAllSessions() {
+    localStorage.removeItem(STORAGE_KEY);
+    currentSessionId = null;
+}
+
+/**
  * Search sessions by title (case-insensitive).
  * @param {string} query - Search string.
  * @returns {Array} Filtered array of sessions whose titles match the query.

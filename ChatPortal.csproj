@@ -8,8 +8,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="AWSSDK.S3" Version="3.7.307" />
     <PackageReference Include="ClosedXML" Version="0.104.1" />
     <PackageReference Include="CsvHelper" Version="33.0.1" />
+    <PackageReference Include="MongoDB.Driver" Version="2.24.0" />
+    <PackageReference Include="MySqlConnector" Version="2.3.5" />
+    <PackageReference Include="Npgsql" Version="8.0.2" />
     <PackageReference Include="Stripe.net" Version="45.4.0" />
     <PackageReference Include="PayPalServerSDK" Version="0.7.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.0" />

@@ -4,86 +4,293 @@
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<div class="auth-page d-flex align-items-center justify-content-center py-5" style="min-height:100vh;padding-top:100px;">
+<style>
+    .login-container {
+        min-height: 100vh;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .login-container::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -10%;
+        width: 600px;
+        height: 600px;
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.3), rgba(118, 75, 162, 0.3));
+        border-radius: 50%;
+        filter: blur(80px);
+        animation: float 6s ease-in-out infinite;
+    }
+
+    .login-container::after {
+        content: '';
+        position: absolute;
+        bottom: -30%;
+        left: -10%;
+        width: 500px;
+        height: 500px;
+        background: linear-gradient(135deg, rgba(118, 75, 162, 0.3), rgba(102, 126, 234, 0.3));
+        border-radius: 50%;
+        filter: blur(80px);
+        animation: float 8s ease-in-out infinite;
+        animation-delay: 2s;
+    }
+
+    @@keyframes float {
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(-20px); }
+    }
+
+    .glass-card {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 24px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+        overflow: hidden;
+        max-width: 1000px;
+        position: relative;
+        z-index: 1;
+    }
+
+    .brand-section {
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+        padding: 4rem 3rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        min-height: 600px;
+    }
+
+    .brand-logo {
+        font-size: 2.5rem;
+        font-weight: 800;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 1rem;
+    }
+
+    .brand-title {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #667eea;
+        margin-bottom: 1rem;
+        line-height: 1.2;
+    }
+
+    .brand-subtitle {
+        color: #6c757d;
+        font-size: 1rem;
+        line-height: 1.6;
+        margin-bottom: 2rem;
+    }
+
+    .brand-footer {
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+
+    .divider-line {
+        width: 1px;
+        background: linear-gradient(180deg, 
+            rgba(102, 126, 234, 0) 0%, 
+            rgba(102, 126, 234, 0.3) 50%, 
+            rgba(102, 126, 234, 0) 100%);
+        margin: 0 auto;
+    }
+
+    .login-section {
+        padding: 4rem 3rem;
+    }
+
+    .login-title {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #2d3748;
+        margin-bottom: 2rem;
+    }
+
+    .glass-input {
+        background: rgba(102, 126, 234, 0.05);
+        border: 1px solid rgba(102, 126, 234, 0.2);
+        border-radius: 50px;
+        padding: 0.9rem 1.5rem;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+    }
+
+    .glass-input:focus {
+        background: rgba(102, 126, 234, 0.08);
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        outline: none;
+    }
+
+    .glass-input::placeholder {
+        color: #a0aec0;
+    }
+
+    .glass-button {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        border-radius: 50px;
+        padding: 0.9rem 2rem;
+        font-size: 1rem;
+        font-weight: 600;
+        color: white;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    }
+
+    .glass-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    .microsoft-btn {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 50px;
+        padding: 0.9rem 1.5rem;
+        font-weight: 500;
+        color: #2d3748;
+        transition: all 0.3s ease;
+    }
+
+    .microsoft-btn:hover {
+        background: #f7fafc;
+        border-color: #cbd5e0;
+    }
+
+    .form-check-input:checked {
+        background-color: #667eea;
+        border-color: #667eea;
+    }
+
+    .demo-box {
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+        border: 1px solid rgba(102, 126, 234, 0.15);
+        border-radius: 12px;
+        padding: 1rem;
+    }
+
+    @@media (max-width: 991px) {
+        .brand-section {
+            min-height: auto;
+            padding: 3rem 2rem;
+        }
+
+        .login-section {
+            padding: 3rem 2rem;
+        }
+
+        .divider-line {
+            width: 100%;
+            height: 1px;
+            background: linear-gradient(90deg, 
+                rgba(102, 126, 234, 0) 0%, 
+                rgba(102, 126, 234, 0.3) 50%, 
+                rgba(102, 126, 234, 0) 100%);
+        }
+    }
+</style>
+
+<div class="login-container d-flex align-items-center justify-content-center py-5">
     <div class="container">
         <div class="row justify-content-center">
-            <div class="col-md-5">
-                <div class="card shadow-lg border-0 rounded-4">
-                    <div class="card-body p-5">
-                        <div class="text-center mb-4">
-                            <div class="rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
-                                 style="width:64px;height:64px;background:rgba(143,217,251,0.15);">
-                                <i class="bi bi-robot fs-2" style="color:var(--cp-accent,#8FD9FB);"></i>
+            <div class="col-12 col-xl-10">
+                <div class="glass-card">
+                    <div class="row g-0">
+                        <!-- Brand Section (Left Side) -->
+                        <div class="col-lg-5 d-flex">
+                            <div class="brand-section w-100">
+                                <div>
+                                    <div class="brand-logo">
+                                        <i class="bi bi-robot"></i> ChatPortal
+                                    </div>
+                                    <h1 class="brand-title">AI-Powered<br/>Conversations</h1>
+                                    <p class="brand-subtitle">
+                                        Experience the next generation of intelligent chatbots powered by advanced AI. 
+                                        Connect, collaborate, and create with our seamless chat platform designed for modern teams.
+                                    </p>
+                                </div>
+                                <div class="brand-footer">
+                                    <i class="bi bi-globe me-2"></i>www.chatportal.com
+                                </div>
                             </div>
-                            <h2 class="fw-bold">Welcome back</h2>
-                            <p class="text-muted">Sign in to your ChatPortal account</p>
                         </div>
 
-                        <!-- Office 365 Sign-In -->
-                        <a href="/Account/LoginMicrosoft" class="btn w-100 mb-3 d-flex align-items-center justify-content-center gap-2"
-                           style="background:#fff;border:1px solid #dee2e6;color:#333;font-weight:500;">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 23 23">
-                                <path fill="#f35325" d="M0 0h11v11H0z"/>
-                                <path fill="#81bc06" d="M12 0h11v11H12z"/>
-                                <path fill="#05a6f0" d="M0 12h11v11H0z"/>
-                                <path fill="#ffba08" d="M12 12h11v11H12z"/>
-                            </svg>
-                            Sign in with Microsoft / Office 365
-                        </a>
-
-                        <div class="d-flex align-items-center gap-2 mb-3">
-                            <hr class="flex-grow-1 m-0" />
-                            <span class="text-muted small">or</span>
-                            <hr class="flex-grow-1 m-0" />
+                        <!-- Divider -->
+                        <div class="col-lg-1 d-none d-lg-flex align-items-center justify-content-center px-0">
+                            <div class="divider-line" style="height: 80%;"></div>
                         </div>
 
-                        <form asp-action="Login" method="post">
-                            <input type="hidden" asp-for="ReturnUrl" />
-                            <div asp-validation-summary="ModelOnly" class="alert alert-danger small py-2"></div>
+                        <!-- Login Section (Right Side) -->
+                        <div class="col-lg-6">
+                            <div class="login-section">
+                                <h2 class="login-title">Login</h2>
 
-                            <div class="mb-3">
-                                <label asp-for="Email" class="form-label fw-medium">Email</label>
-                                <div class="input-group">
-                                    <span class="input-group-text bg-body-secondary border-end-0"><i class="bi bi-envelope text-muted"></i></span>
-                                    <input asp-for="Email" class="form-control border-start-0 ps-0" placeholder="you@example.com" />
+                                <!-- Office 365 Sign-In -->
+                                <a href="/Account/LoginMicrosoft" class="microsoft-btn w-100 mb-3 d-flex align-items-center justify-content-center gap-2 text-decoration-none">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 23 23">
+                                        <path fill="#f35325" d="M0 0h11v11H0z"/>
+                                        <path fill="#81bc06" d="M12 0h11v11H12z"/>
+                                        <path fill="#05a6f0" d="M0 12h11v11H0z"/>
+                                        <path fill="#ffba08" d="M12 12h11v11H12z"/>
+                                    </svg>
+                                    Sign in with Microsoft
+                                </a>
+
+                                <div class="d-flex align-items-center gap-2 mb-3">
+                                    <hr class="flex-grow-1 m-0" style="border-color: rgba(102, 126, 234, 0.2);" />
+                                    <span class="text-muted small">or</span>
+                                    <hr class="flex-grow-1 m-0" style="border-color: rgba(102, 126, 234, 0.2);" />
                                 </div>
-                                <span asp-validation-for="Email" class="text-danger small"></span>
-                            </div>
 
-                            <div class="mb-3">
-                                <div class="d-flex justify-content-between">
-                                    <label asp-for="Password" class="form-label fw-medium">Password</label>
-                                    <a href="#" class="small text-decoration-none" style="color:var(--cp-accent,#8FD9FB);">Forgot password?</a>
+                                <form asp-action="Login" method="post">
+                                    <input type="hidden" asp-for="ReturnUrl" />
+                                    <div asp-validation-summary="ModelOnly" class="alert alert-danger small py-2 rounded-3"></div>
+
+                                    <div class="mb-3">
+                                        <input asp-for="Email" class="form-control glass-input" placeholder="Username or Email" />
+                                        <span asp-validation-for="Email" class="text-danger small ms-3"></span>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <input asp-for="Password" class="form-control glass-input" placeholder="Password" />
+                                        <span asp-validation-for="Password" class="text-danger small ms-3"></span>
+                                    </div>
+
+                                    <div class="mb-4 d-flex align-items-center justify-content-between">
+                                        <div class="form-check">
+                                            <input asp-for="RememberMe" class="form-check-input" type="checkbox" />
+                                            <label asp-for="RememberMe" class="form-check-label small">Remember me</label>
+                                        </div>
+                                        <a href="#" class="small text-decoration-none" style="color: #667eea;">Forgot password?</a>
+                                    </div>
+
+                                    <button type="submit" class="glass-button w-100 mb-3">
+                                        Login
+                                    </button>
+
+                                    <div class="text-center">
+                                        <span class="text-muted small">Don't have an account? </span>
+                                        <a asp-action="Register" class="small fw-medium text-decoration-none" style="color: #667eea;">Sign up free</a>
+                                    </div>
+                                </form>
+
+                                <div class="mt-4 demo-box">
+                                    <p class="small mb-2 fw-semibold" style="color: #667eea;"><i class="bi bi-info-circle me-1"></i>Demo Credentials</p>
+                                    <p class="small mb-1">Admin: <code class="bg-white px-2 py-1 rounded">admin@chatportal.com</code> / <code class="bg-white px-2 py-1 rounded">Admin@123</code></p>
+                                    <p class="small mb-0">User: <code class="bg-white px-2 py-1 rounded">demo@chatportal.com</code> / <code class="bg-white px-2 py-1 rounded">Demo@123</code></p>
                                 </div>
-                                <div class="input-group">
-                                    <span class="input-group-text bg-body-secondary border-end-0"><i class="bi bi-lock text-muted"></i></span>
-                                    <input asp-for="Password" class="form-control border-start-0 ps-0" placeholder="••••••••" />
-                                </div>
-                                <span asp-validation-for="Password" class="text-danger small"></span>
                             </div>
-
-                            <div class="mb-4 d-flex align-items-center justify-content-between">
-                                <div class="form-check">
-                                    <input asp-for="RememberMe" class="form-check-input" type="checkbox" />
-                                    <label asp-for="RememberMe" class="form-check-label small">Remember me</label>
-                                </div>
-                            </div>
-
-                            <button type="submit" class="btn w-100 btn-lg mb-3"
-                                    style="background:var(--cp-accent,#8FD9FB);color:var(--cp-primary-text,#1a5276);font-weight:600;">
-                                <i class="bi bi-box-arrow-in-right me-2"></i>Sign In
-                            </button>
-
-                            <div class="text-center">
-                                <span class="text-muted small">Don't have an account? </span>
-                                <a asp-action="Register" class="small fw-medium text-decoration-none" style="color:var(--cp-accent,#8FD9FB);">Sign up free</a>
-                            </div>
-                        </form>
-
-                        <div class="mt-4 p-3 bg-body-secondary rounded-3">
-                            <p class="small text-muted mb-1 fw-medium">Demo credentials:</p>
-                            <p class="small mb-0">Admin: <code>admin@chatportal.com</code> / <code>Admin@123</code></p>
-                            <p class="small mb-0">User: <code>demo@chatportal.com</code> / <code>Demo@123</code></p>
                         </div>
                     </div>
                 </div>

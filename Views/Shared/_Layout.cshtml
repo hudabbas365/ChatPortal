@@ -17,10 +17,10 @@
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top shadow-sm">
+    <nav class="navbar navbar-expand-lg navbar-light bg-white fixed-top shadow-sm border-bottom">
         <div class="container-fluid px-4">
-            <a class="navbar-brand fw-bold fs-4" href="/">
-                <i class="bi bi-robot me-1" style="color:var(--cp-accent,#8FD9FB);"></i>ChatPortal
+            <a class="navbar-brand fw-bold fs-4" href="/" style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+                <i class="bi bi-robot me-1" style="color:#667eea;"></i>ChatPortal
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain">
                 <span class="navbar-toggler-icon"></span>
@@ -93,22 +93,24 @@
         @RenderBody()
     </main>
 
-    <footer class="footer bg-dark text-light py-4 mt-auto">
+    <footer class="footer py-4 mt-auto" style="background:linear-gradient(135deg,#f8f9fa 0%,#e8eaf6 100%);border-top:1px solid #e0e0e0;">
         <div class="container">
             <div class="row">
                 <div class="col-md-4 mb-3">
-                    <h6 class="fw-bold"><i class="bi bi-robot text-primary me-1"></i>ChatPortal</h6>
+                    <h6 class="fw-bold" style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+                        <i class="bi bi-robot me-1" style="color:#667eea;"></i>ChatPortal
+                    </h6>
                     <p class="text-muted small">AI-powered chat platform for individuals and teams.</p>
                 </div>
                 <div class="col-md-2 mb-3">
-                    <h6 class="fw-bold text-muted small text-uppercase">Product</h6>
+                    <h6 class="fw-bold text-secondary small text-uppercase">Product</h6>
                     <ul class="list-unstyled">
                         <li><a href="/pricing" class="text-muted text-decoration-none small">Pricing</a></li>
                         <li><a href="/chat" class="text-muted text-decoration-none small">Chat</a></li>
                     </ul>
                 </div>
                 <div class="col-md-2 mb-3">
-                    <h6 class="fw-bold text-muted small text-uppercase">Company</h6>
+                    <h6 class="fw-bold text-secondary small text-uppercase">Company</h6>
                     <ul class="list-unstyled">
                         <li><a href="/blog" class="text-muted text-decoration-none small">Blog</a></li>
                         <li><a href="/Pages/About" class="text-muted text-decoration-none small">About</a></li>
@@ -116,7 +118,7 @@
                     </ul>
                 </div>
                 <div class="col-md-2 mb-3">
-                    <h6 class="fw-bold text-muted small text-uppercase">Developers</h6>
+                    <h6 class="fw-bold text-secondary small text-uppercase">Developers</h6>
                     <ul class="list-unstyled">
                         <li><a href="/Pages/Docs" class="text-muted text-decoration-none small">API Docs</a></li>
                         <li><a href="/Pages/History" class="text-muted text-decoration-none small">Chat History</a></li>

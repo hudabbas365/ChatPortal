@@ -303,7 +303,7 @@
                 <div class="info-card card border-0 shadow-sm">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <span><i class="bi bi-people me-2"></i>Team Members</span>
-                        <button class="btn btn-sm btn-primary">
+                        <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#inviteTeamMemberModal">
                             <i class="bi bi-person-plus me-1"></i>Invite Member
                         </button>
                     </div>
@@ -333,7 +333,7 @@
                                     </td>
                                     <td><span class="badge rounded-pill" style="background:rgba(135,206,235,0.25);color:var(--cp-primary-text,#1a5276);">Admin</span></td>
                                     <td class="text-muted small">Jan 2025</td>
-                                    <td class="pe-4"><button class="btn btn-xs btn-outline-secondary btn-sm py-0 px-2">Edit</button></td>
+                                    <td class="pe-4"><button class="btn btn-xs btn-outline-secondary btn-sm py-0 px-2" onclick="editTeamMember(1, 'Admin User', 'admin@chatportal.com', 'Admin')">Edit</button></td>
                                 </tr>
                                 <tr>
                                     <td class="ps-4 py-3">
@@ -350,7 +350,7 @@
                                     </td>
                                     <td><span class="badge rounded-pill" style="background:rgba(0,150,136,0.1);color:#00695c;">Member</span></td>
                                     <td class="text-muted small">Jan 2025</td>
-                                    <td class="pe-4"><button class="btn btn-xs btn-outline-secondary btn-sm py-0 px-2">Edit</button></td>
+                                    <td class="pe-4"><button class="btn btn-xs btn-outline-secondary btn-sm py-0 px-2" onclick="editTeamMember(2, 'Demo User', 'demo@chatportal.com', 'Member')">Edit</button></td>
                                 </tr>
                             </tbody>
                         </table>
@@ -692,6 +692,84 @@
     </div>
 </div>
 
+<!-- Invite Team Member Modal -->
+<div class="modal fade" id="inviteTeamMemberModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-0 pb-2" style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);">
+                <h5 class="modal-title fw-bold text-white">
+                    <i class="bi bi-person-plus me-2"></i>Invite Team Member
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="inviteTeamMemberForm" onsubmit="inviteTeamMember(event)">
+                    @Html.AntiForgeryToken()
+                    <div class="mb-3">
+                        <label class="form-label">Email Address *</label>
+                        <input type="email" class="form-control" id="inviteMemberEmail" name="email" placeholder="user@example.com" required />
+                        <small class="text-muted">An invitation will be sent if the user doesn't exist</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Role</label>
+                        <select class="form-select" id="inviteMemberRole" name="role">
+                            <option value="Viewer">Viewer</option>
+                            <option value="Member" selected>Member</option>
+                            <option value="Contributor">Contributor</option>
+                            <option value="Admin">Admin</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn w-100" style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:white;">
+                        <i class="bi bi-send me-1"></i>Send Invitation
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Team Member Modal -->
+<div class="modal fade" id="editTeamMemberModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-0 pb-2" style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);">
+                <h5 class="modal-title fw-bold text-white">
+                    <i class="bi bi-pencil me-2"></i>Edit Team Member
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="editTeamMemberForm" onsubmit="updateTeamMember(event)">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" id="editMemberId" name="userId" />
+                    <div class="mb-3">
+                        <label class="form-label">Member</label>
+                        <div class="form-control-plaintext fw-medium" id="editMemberName">User Name</div>
+                        <small class="text-muted" id="editMemberEmail">user@example.com</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Role</label>
+                        <select class="form-select" id="editMemberRole" name="role">
+                            <option value="Viewer">Viewer</option>
+                            <option value="Member">Member</option>
+                            <option value="Contributor">Contributor</option>
+                            <option value="Admin">Admin</option>
+                        </select>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn flex-grow-1" style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:white;">
+                            <i class="bi bi-check-circle me-1"></i>Update Role
+                        </button>
+                        <button type="button" class="btn btn-outline-danger" onclick="removeTeamMember()">
+                            <i class="bi bi-trash3"></i>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     <script>
@@ -750,6 +828,212 @@
             function copyText(elementId) {
                 const el = document.getElementById(elementId);
                 navigator.clipboard?.writeText(el.value).catch(() => { el.select(); document.execCommand('copy'); });
+            }
+
+            // Team member management functions
+            async function inviteTeamMember(event) {
+                event.preventDefault();
+                const form = event.target;
+                const email = form.email.value;
+                const role = form.role.value;
+                const btn = form.querySelector('button[type="submit"]');
+                btn.disabled = true;
+
+                try {
+                    const formData = new FormData();
+                    formData.append('email', email);
+                    formData.append('role', role);
+                    formData.append('__RequestVerificationToken', getAntiForgeryToken());
+
+                    // Get active organization ID from session
+                    const orgResponse = await fetch('/Organization/GetUserOrganizations');
+                    const orgData = await orgResponse.json();
+
+                    if (orgData.success && orgData.organizations && orgData.organizations.length > 0) {
+                        const activeOrg = orgData.organizations[0]; // Use first organization
+                        formData.append('organizationId', activeOrg.id);
+
+                        const response = await fetch('/Organization/AddMember', {
+                            method: 'POST',
+                            body: formData
+                        });
+
+                        const data = await response.json();
+                        if (data.success) {
+                            showToast(data.message || `Invitation sent to ${email}`, 'success');
+                            form.reset();
+                            bootstrap.Modal.getInstance(document.getElementById('inviteTeamMemberModal')).hide();
+                            setTimeout(() => location.reload(), 1000); // Reload to show new member
+                        } else {
+                            showToast(data.error || 'Failed to send invitation', 'danger');
+                        }
+                    } else {
+                        showToast('No active organization found', 'danger');
+                    }
+                } catch (error) {
+                    showToast('An error occurred. Please try again.', 'danger');
+                    console.error('Error inviting member:', error);
+                } finally {
+                    btn.disabled = false;
+                }
+            }
+
+            function editTeamMember(userId, name, email, currentRole) {
+                document.getElementById('editMemberId').value = userId;
+                document.getElementById('editMemberName').textContent = name;
+                document.getElementById('editMemberEmail').textContent = email;
+                document.getElementById('editMemberRole').value = currentRole;
+                const modal = new bootstrap.Modal(document.getElementById('editTeamMemberModal'));
+                modal.show();
+            }
+
+            async function updateTeamMember(event) {
+                event.preventDefault();
+                const form = event.target;
+                const userId = form.userId.value;
+                const role = form.role.value;
+                const btn = form.querySelector('button[type="submit"]');
+                btn.disabled = true;
+
+                try {
+                    const formData = new FormData();
+                    formData.append('userId', userId);
+                    formData.append('role', role);
+                    formData.append('__RequestVerificationToken', getAntiForgeryToken());
+
+                    // Get active organization ID from session
+                    const orgResponse = await fetch('/Organization/GetUserOrganizations');
+                    const orgData = await orgResponse.json();
+
+                    if (orgData.success && orgData.organizations && orgData.organizations.length > 0) {
+                        const activeOrg = orgData.organizations[0];
+                        formData.append('organizationId', activeOrg.id);
+
+                        const response = await fetch('/Organization/UpdateMemberRole', {
+                            method: 'POST',
+                            body: formData
+                        });
+
+                        const data = await response.json();
+                        if (data.success) {
+                            showToast(data.message || 'Member role updated successfully', 'success');
+                            bootstrap.Modal.getInstance(document.getElementById('editTeamMemberModal')).hide();
+                            setTimeout(() => location.reload(), 1000); // Reload to show updated role
+                        } else {
+                            showToast(data.error || 'Failed to update role', 'danger');
+                        }
+                    } else {
+                        showToast('No active organization found', 'danger');
+                    }
+                } catch (error) {
+                    showToast('An error occurred. Please try again.', 'danger');
+                    console.error('Error updating member:', error);
+                } finally {
+                    btn.disabled = false;
+                }
+            }
+
+            function removeTeamMember() {
+                const userId = document.getElementById('editMemberId').value;
+                const userName = document.getElementById('editMemberName').textContent;
+
+                // Create confirmation modal content
+                const confirmTitle = 'Remove Team Member';
+                const confirmMessage = `Are you sure you want to remove ${userName} from the organization? This action cannot be undone.`;
+
+                // Show confirmation modal
+                if (!window.showConfirmModal) {
+                    // Fallback if modal not available
+                    if (!confirm(confirmMessage)) return;
+                    performRemoveMember(userId);
+                } else {
+                    showConfirmModal(confirmTitle, confirmMessage, () => performRemoveMember(userId));
+                }
+            }
+
+            async function performRemoveMember(userId) {
+                try {
+                    const formData = new FormData();
+                    formData.append('userId', userId);
+                    formData.append('__RequestVerificationToken', getAntiForgeryToken());
+
+                    // Get active organization ID from session
+                    const orgResponse = await fetch('/Organization/GetUserOrganizations');
+                    const orgData = await orgResponse.json();
+
+                    if (orgData.success && orgData.organizations && orgData.organizations.length > 0) {
+                        const activeOrg = orgData.organizations[0];
+                        formData.append('organizationId', activeOrg.id);
+
+                        const response = await fetch('/Organization/RemoveMember', {
+                            method: 'POST',
+                            body: formData
+                        });
+
+                        const data = await response.json();
+                        if (data.success) {
+                            showToast(data.message || 'Team member removed successfully', 'success');
+                            bootstrap.Modal.getInstance(document.getElementById('editTeamMemberModal')).hide();
+                            setTimeout(() => location.reload(), 1000); // Reload to remove from list
+                        } else {
+                            showToast(data.error || 'Failed to remove member', 'danger');
+                        }
+                    } else {
+                        showToast('No active organization found', 'danger');
+                    }
+                } catch (error) {
+                    showToast('An error occurred. Please try again.', 'danger');
+                    console.error('Error removing member:', error);
+                }
+            }
+
+            // Toast notification system
+            function showToast(message, type = 'info') {
+                const toastContainer = document.getElementById('toastContainer') || createToastContainer();
+                const toastId = 'toast_' + Date.now();
+
+                const bgColors = {
+                    success: 'bg-success',
+                    danger: 'bg-danger',
+                    warning: 'bg-warning',
+                    info: 'bg-info'
+                };
+
+                const icons = {
+                    success: 'check-circle-fill',
+                    danger: 'exclamation-circle-fill',
+                    warning: 'exclamation-triangle-fill',
+                    info: 'info-circle-fill'
+                };
+
+                const toastHTML = `
+                    <div class="toast align-items-center text-white ${bgColors[type]} border-0" role="alert" id="${toastId}">
+                        <div class="d-flex">
+                            <div class="toast-body d-flex align-items-center gap-2">
+                                <i class="bi bi-${icons[type]}"></i>
+                                ${message}
+                            </div>
+                            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                        </div>
+                    </div>
+                `;
+
+                toastContainer.insertAdjacentHTML('beforeend', toastHTML);
+                const toastElement = document.getElementById(toastId);
+                const toast = new bootstrap.Toast(toastElement, { autohide: true, delay: 3000 });
+                toast.show();
+
+                toastElement.addEventListener('hidden.bs.toast', function() {
+                    toastElement.remove();
+                });
+            }
+
+            function createToastContainer() {
+                const container = document.createElement('div');
+                container.id = 'toastContainer';
+                container.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+                document.body.appendChild(container);
+                return container;
             }
             </text>
         }

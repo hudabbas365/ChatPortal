@@ -130,10 +130,10 @@
             </div>
         </div>
 
-        <!-- Connect Database Card -->
+        <!-- Connect Data Source Card -->
         <div class="col-12">
             <div class="card-soft p-4 mb-2">
-                <h5 class="fw-bold mb-3"><i class="bi bi-server me-2 text-warning"></i>Connect Database</h5>
+                <h5 class="fw-bold mb-3"><i class="bi bi-plugin me-2 text-warning"></i>Connect Data Source</h5>
                 <form asp-action="ConnectDatabase" method="post" id="dbConnectForm">
                     @Html.AntiForgeryToken()
                     <div class="row g-3">
@@ -143,10 +143,13 @@
                         </div>
                         <div class="col-md-2">
                             <label class="form-label fw-medium">Type</label>
-                            <select name="SourceType" id="dbSourceType" class="form-select" onchange="toggleOracleNote()">
-                                <option value="SqlServer">SQL Server</option>
-                                <option value="Oracle" disabled title="Oracle support coming soon">Oracle (Soon)</option>
-                            </select>
+                            <div class="input-group">
+                                <input type="text" name="SourceType" id="dbSourceType" class="form-control" readonly 
+                                       value="SQL Server" placeholder="Select..." required />
+                                <button class="btn btn-outline-secondary" type="button" data-bs-toggle="modal" data-bs-target="#dataSourceModal">
+                                    <i class="bi bi-chevron-down"></i>
+                                </button>
+                            </div>
                         </div>
                         <div class="col-md-5">
                             <label class="form-label fw-medium">Connection String</label>
@@ -219,8 +222,195 @@
     </div>
 </div>
 
+<!-- Data Source Selection Modal -->
+<div class="modal fade" id="dataSourceModal" tabindex="-1" aria-labelledby="dataSourceModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="dataSourceModalLabel">
+                    <i class="bi bi-database-fill me-2"></i>Select Data Source Type
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <input type="text" id="dataSourceSearch" class="form-control mb-3" placeholder="Search data sources..." />
+
+                <div id="dataSourceCategories">
+                    <!-- Relational Databases -->
+                    <div class="mb-4">
+                        <h6 class="fw-bold text-primary mb-3"><i class="bi bi-server me-2"></i>Relational Databases</h6>
+                        <div class="row g-2">
+                            <div class="col-md-6"><button type="button" class="btn btn-outline-primary w-100 text-start data-source-btn" data-source="SqlServer">Microsoft SQL Server / Azure SQL</button></div>
+                            <div class="col-md-6"><button type="button" class="btn btn-outline-primary w-100 text-start data-source-btn" data-source="MySQL">MySQL</button></div>
+                            <div class="col-md-6"><button type="button" class="btn btn-outline-primary w-100 text-start data-source-btn" data-source="PostgreSQL">PostgreSQL</button></div>
+                            <div class="col-md-6"><button type="button" class="btn btn-outline-primary w-100 text-start data-source-btn" data-source="Oracle">Oracle Database</button></div>
+                            <div class="col-md-6"><button type="button" class="btn btn-outline-primary w-100 text-start data-source-btn" data-source="Db2">IBM Db2</button></div>
+                            <div class="col-md-6"><button type="button" class="btn btn-outline-primary w-100 text-start data-source-btn" data-source="Teradata">Teradata</button></div>
+                        </div>
+                    </div>
+
+                    <!-- Cloud Data Warehouses -->
+                    <div class="mb-4">
+                        <h6 class="fw-bold text-success mb-3"><i class="bi bi-cloud-fill me-2"></i>Cloud Data Warehouses</h6>
+                        <div class="row g-2">
+                            <div class="col-md-6"><button type="button" class="btn btn-outline-success w-100 text-start data-source-btn" data-source="Snowflake">Snowflake</button></div>
+                            <div class="col-md-6"><button type="button" class="btn btn-outline-success w-100 text-start data-source-btn" data-source="AmazonRedshift">Amazon Redshift</button></div>
+                            <div class="col-md-6"><button type="button" class="btn btn-outline-success w-100 text-start data-source-btn" data-source="GoogleBigQuery">Google BigQuery</button></div>
+                            <div class="col-md-6"><button type="button" class="btn btn-outline-success w-100 text-start data-source-btn" data-source="AmazonRDS">Amazon RDS</button></div>
+                        </div>
+                    </div>
+
+                    <!-- NoSQL & Document Databases -->
+                    <div class="mb-4">
+                        <h6 class="fw-bold text-warning mb-3"><i class="bi bi-collection me-2"></i>NoSQL & Document Databases</h6>
+                        <div class="row g-2">
+                            <div class="col-md-6"><button type="button" class="btn btn-outline-warning w-100 text-start data-source-btn" data-source="MongoDBAtlas">MongoDB Atlas</button></div>
+                            <div class="col-md-6"><button type="button" class="btn btn-outline-warning w-100 text-start data-source-btn" data-source="CosmosDB">Cosmos DB (Azure)</button></div>
+                            <div class="col-md-6"><button type="button" class="btn btn-outline-warning w-100 text-start data-source-btn" data-source="DynamoDB">DynamoDB (AWS)</button></div>
+                            <div class="col-md-6"><button type="button" class="btn btn-outline-warning w-100 text-start data-source-btn" data-source="Cassandra">Cassandra</button></div>
+                            <div class="col-md-6"><button type="button" class="btn btn-outline-warning w-100 text-start data-source-btn" data-source="Firestore">Firestore (Google)</button></div>
+                        </div>
+                    </div>
+
+                    <!-- Cloud Storage & Files -->
+                    <div class="mb-4">
+                        <h6 class="fw-bold text-info mb-3"><i class="bi bi-folder-fill me-2"></i>Cloud Storage & Files</h6>
+                        <div class="row g-2">
+                            <div class="col-md-6"><button type="button" class="btn btn-outline-info w-100 text-start data-source-btn" data-source="SharePointOnline">SharePoint Online</button></div>
+                            <div class="col-md-6"><button type="button" class="btn btn-outline-info w-100 text-start data-source-btn" data-source="OneDrive">OneDrive</button></div>
+                            <div class="col-md-6"><button type="button" class="btn btn-outline-info w-100 text-start data-source-btn" data-source="GoogleDrive">Google Drive</button></div>
+                            <div class="col-md-6"><button type="button" class="btn btn-outline-info w-100 text-start data-source-btn" data-source="GoogleSheets">Google Sheets</button></div>
+                            <div class="col-md-6"><button type="button" class="btn btn-outline-info w-100 text-start data-source-btn" data-source="Dropbox">Dropbox</button></div>
+                            <div class="col-md-6"><button type="button" class="btn btn-outline-info w-100 text-start data-source-btn" data-source="Box">Box</button></div>
+                            <div class="col-md-6"><button type="button" class="btn btn-outline-info w-100 text-start data-source-btn" data-source="AzureBlobStorage">Azure Blob Storage</button></div>
+                            <div class="col-md-6"><button type="button" class="btn btn-outline-info w-100 text-start data-source-btn" data-source="AmazonS3">Amazon S3</button></div>
+                        </div>
+                    </div>
+
+                    <!-- Enterprise & CRM -->
+                    <div class="mb-4">
+                        <h6 class="fw-bold text-danger mb-3"><i class="bi bi-building me-2"></i>Enterprise & CRM Systems</h6>
+                        <div class="row g-2">
+                            <div class="col-md-6"><button type="button" class="btn btn-outline-danger w-100 text-start data-source-btn" data-source="Salesforce">Salesforce</button></div>
+                            <div class="col-md-6"><button type="button" class="btn btn-outline-danger w-100 text-start data-source-btn" data-source="Dynamics365">Dynamics 365</button></div>
+                            <div class="col-md-6"><button type="button" class="btn btn-outline-danger w-100 text-start data-source-btn" data-source="SAPERP">SAP ERP / BW</button></div>
+                            <div class="col-md-6"><button type="button" class="btn btn-outline-danger w-100 text-start data-source-btn" data-source="SAPHANA">SAP HANA</button></div>
+                            <div class="col-md-6"><button type="button" class="btn btn-outline-danger w-100 text-start data-source-btn" data-source="OracleNetSuite">Oracle NetSuite</button></div>
+                            <div class="col-md-6"><button type="button" class="btn btn-outline-danger w-100 text-start data-source-btn" data-source="Workday">Workday</button></div>
+                            <div class="col-md-6"><button type="button" class="btn btn-outline-danger w-100 text-start data-source-btn" data-source="ServiceNow">ServiceNow</button></div>
+                            <div class="col-md-6"><button type="button" class="btn btn-outline-danger w-100 text-start data-source-btn" data-source="Jira">Jira</button></div>
+                            <div class="col-md-6"><button type="button" class="btn btn-outline-danger w-100 text-start data-source-btn" data-source="Zendesk">Zendesk</button></div>
+                        </div>
+                    </div>
+
+                    <!-- Marketing & Analytics -->
+                    <div class="mb-4">
+                        <h6 class="fw-bold text-secondary mb-3"><i class="bi bi-graph-up me-2"></i>Marketing & Analytics</h6>
+                        <div class="row g-2">
+                            <div class="col-md-6"><button type="button" class="btn btn-outline-secondary w-100 text-start data-source-btn" data-source="GoogleAnalytics">Google Analytics</button></div>
+                            <div class="col-md-6"><button type="button" class="btn btn-outline-secondary w-100 text-start data-source-btn" data-source="AdobeAnalytics">Adobe Analytics</button></div>
+                            <div class="col-md-6"><button type="button" class="btn btn-outline-secondary w-100 text-start data-source-btn" data-source="HubSpot">HubSpot</button></div>
+                            <div class="col-md-6"><button type="button" class="btn btn-outline-secondary w-100 text-start data-source-btn" data-source="Marketo">Marketo</button></div>
+                            <div class="col-md-6"><button type="button" class="btn btn-outline-secondary w-100 text-start data-source-btn" data-source="Mailchimp">Mailchimp</button></div>
+                            <div class="col-md-6"><button type="button" class="btn btn-outline-secondary w-100 text-start data-source-btn" data-source="LinkedInAds">LinkedIn Ads</button></div>
+                            <div class="col-md-6"><button type="button" class="btn btn-outline-secondary w-100 text-start data-source-btn" data-source="FacebookAds">Facebook Ads</button></div>
+                            <div class="col-md-6"><button type="button" class="btn btn-outline-secondary w-100 text-start data-source-btn" data-source="TwitterAds">Twitter Ads</button></div>
+                        </div>
+                    </div>
+
+                    <!-- APIs & Web Data -->
+                    <div class="mb-4">
+                        <h6 class="fw-bold text-dark mb-3"><i class="bi bi-globe me-2"></i>APIs & Web Data</h6>
+                        <div class="row g-2">
+                            <div class="col-md-6"><button type="button" class="btn btn-outline-dark w-100 text-start data-source-btn" data-source="RESTAPI">REST APIs</button></div>
+                            <div class="col-md-6"><button type="button" class="btn btn-outline-dark w-100 text-start data-source-btn" data-source="GraphQLAPI">GraphQL APIs</button></div>
+                            <div class="col-md-6"><button type="button" class="btn btn-outline-dark w-100 text-start data-source-btn" data-source="SOAPAPI">SOAP APIs</button></div>
+                            <div class="col-md-6"><button type="button" class="btn btn-outline-dark w-100 text-start data-source-btn" data-source="WebData">Public Web Data</button></div>
+                            <div class="col-md-6"><button type="button" class="btn btn-outline-dark w-100 text-start data-source-btn" data-source="OpenData">Open Data Portals</button></div>
+                            <div class="col-md-6"><button type="button" class="btn btn-outline-dark w-100 text-start data-source-btn" data-source="OData">OData Feeds</button></div>
+                            <div class="col-md-6"><button type="button" class="btn btn-outline-dark w-100 text-start data-source-btn" data-source="GitHubAPI">GitHub API</button></div>
+                        </div>
+                    </div>
+
+                    <!-- Streaming & Real-time Data -->
+                    <div class="mb-4">
+                        <h6 class="fw-bold text-purple mb-3"><i class="bi bi-broadcast me-2"></i>Streaming & Real-time Data</h6>
+                        <div class="row g-2">
+                            <div class="col-md-6"><button type="button" class="btn btn-outline-purple w-100 text-start data-source-btn" data-source="ApacheKafka">Apache Kafka</button></div>
+                            <div class="col-md-6"><button type="button" class="btn btn-outline-purple w-100 text-start data-source-btn" data-source="RabbitMQ">RabbitMQ</button></div>
+                            <div class="col-md-6"><button type="button" class="btn btn-outline-purple w-100 text-start data-source-btn" data-source="AzureEventHub">Azure Event Hub</button></div>
+                            <div class="col-md-6"><button type="button" class="btn btn-outline-purple w-100 text-start data-source-btn" data-source="AWSKinesis">AWS Kinesis</button></div>
+                            <div class="col-md-6"><button type="button" class="btn btn-outline-purple w-100 text-start data-source-btn" data-source="IoTHub">IoT Hub (Azure)</button></div>
+                            <div class="col-md-6"><button type="button" class="btn btn-outline-purple w-100 text-start data-source-btn" data-source="MQTT">MQTT Brokers</button></div>
+                        </div>
+                    </div>
+
+                    <!-- Files & Big Data -->
+                    <div class="mb-4">
+                        <h6 class="fw-bold text-teal mb-3"><i class="bi bi-file-earmark-text me-2"></i>Files & Big Data</h6>
+                        <div class="row g-2">
+                            <div class="col-md-6"><button type="button" class="btn btn-outline-teal w-100 text-start data-source-btn" data-source="ExcelOnline">Excel Online (Office 365)</button></div>
+                            <div class="col-md-6"><button type="button" class="btn btn-outline-teal w-100 text-start data-source-btn" data-source="CSVFiles">CSV/JSON/XML Files</button></div>
+                            <div class="col-md-6"><button type="button" class="btn btn-outline-teal w-100 text-start data-source-btn" data-source="Hadoop">Hadoop/HDFS</button></div>
+                        </div>
+                    </div>
+
+                    <!-- Financial Data -->
+                    <div class="mb-4">
+                        <h6 class="fw-bold text-success mb-3"><i class="bi bi-currency-dollar me-2"></i>Financial Data</h6>
+                        <div class="row g-2">
+                            <div class="col-md-6"><button type="button" class="btn btn-outline-success w-100 text-start data-source-btn" data-source="Bloomberg">Bloomberg Feeds</button></div>
+                            <div class="col-md-6"><button type="button" class="btn btn-outline-success w-100 text-start data-source-btn" data-source="Refinitiv">Refinitiv Feeds</button></div>
+                            <div class="col-md-6"><button type="button" class="btn btn-outline-success w-100 text-start data-source-btn" data-source="YahooFinance">Yahoo Finance APIs</button></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
+<style>
+    .text-purple { color: #6f42c1; }
+    .btn-outline-purple { color: #6f42c1; border-color: #6f42c1; }
+    .btn-outline-purple:hover { background-color: #6f42c1; color: white; }
+    .text-teal { color: #20c997; }
+    .btn-outline-teal { color: #20c997; border-color: #20c997; }
+    .btn-outline-teal:hover { background-color: #20c997; color: white; }
+    .data-source-btn { font-size: 0.9rem; padding: 0.5rem; }
+    .data-source-btn:hover { font-weight: 600; }
+</style>
 <script>
+    // Data source selection
+    document.querySelectorAll('.data-source-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const sourceType = this.getAttribute('data-source');
+            const displayName = this.textContent;
+            document.getElementById('dbSourceType').value = displayName;
+
+            // Close modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('dataSourceModal'));
+            modal.hide();
+        });
+    });
+
+    // Search functionality
+    document.getElementById('dataSourceSearch').addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase();
+        document.querySelectorAll('.data-source-btn').forEach(btn => {
+            const text = btn.textContent.toLowerCase();
+            const col = btn.closest('.col-md-6');
+            col.style.display = text.includes(searchTerm) ? '' : 'none';
+        });
+
+        // Hide categories with no visible items
+        document.querySelectorAll('#dataSourceCategories > div').forEach(category => {
+            const visibleButtons = category.querySelectorAll('.col-md-6:not([style*="display: none"])');
+            category.style.display = visibleButtons.length > 0 ? '' : 'none';
+        });
+    });
+
     function testConnection() {
         const sourceType = document.getElementById('dbSourceType').value;
         const cs = document.querySelector('[name="ConnectionString"]').value;

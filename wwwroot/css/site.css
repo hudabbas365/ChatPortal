@@ -1,13 +1,12 @@
 /* ChatPortal - Main Stylesheet */
 
 :root {
-    --cp-primary: #ADD8E6;
-    --cp-secondary: #B0E0E6;
-    --cp-accent: #8FD9FB;
-    --cp-header: #87CEEB;
-    --cp-primary-text: #1a5276;
-    --cp-dark: #0d1117;
-    --cp-sidebar-width: 260px;
+    --cp-primary: #667eea;
+    --cp-secondary: #764ba2;
+    --cp-accent: #8b7ed6;
+    --cp-light: #f8f9fa;
+    --cp-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --cp-sidebar-width: 280px;
 }
 
 body {
@@ -22,7 +21,7 @@ body {
 
 /* Text gradient */
 .text-gradient {
-    background: linear-gradient(135deg, var(--cp-accent), var(--cp-header));
+    background: linear-gradient(135deg, #667eea, #764ba2);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -30,7 +29,7 @@ body {
 
 /* Hero section */
 .hero-section {
-    background: linear-gradient(135deg, #0d1117 0%, #161b22 50%, #0d1117 100%);
+    background: linear-gradient(135deg,#f8f9fa 0%,#e3f2fd 50%,#f3e5f5 100%);
 }
 
 /* Section spacing */
@@ -68,15 +67,16 @@ body {
 }
 
 .session-item:hover {
-    background: rgba(255,255,255,0.07) !important;
+    background: rgba(102,126,234,0.08) !important;
 }
 
 .session-item.active {
-    background: rgba(143, 217, 251, 0.25) !important;
+    background: rgba(102,126,234,0.15) !important;
+    border-left: 3px solid #667eea !important;
 }
 
 .chat-messages {
-    background: var(--bs-body-bg);
+    background: #fafafa;
 }
 
 /* Chat bubbles */
@@ -85,14 +85,15 @@ body {
 }
 
 .chat-bubble-user {
-    background: var(--cp-accent);
-    color: var(--cp-primary-text);
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
     border-bottom-right-radius: 4px !important;
 }
 
 .chat-bubble-ai {
-    background: var(--bs-secondary-bg);
-    color: var(--bs-body-color);
+    background: white;
+    color: #2d3748;
+    border: 1px solid #e2e8f0;
     border-bottom-left-radius: 4px !important;
 }
 

@@ -1,15 +1,24 @@
 using ChatPortal.ViewModels;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace ChatPortal.Controllers;
 
+[Authorize] // Dashboard requires authentication
 public class DashboardController : Controller
 {
+    private int GetUserId() =>
+        int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : 0;
+
     public IActionResult Index()
     {
+        var userId = GetUserId();
+        var userName = User.Identity?.Name ?? "User";
+
         var vm = new DashboardViewModel
         {
-            UserName = "Demo User",
+            UserName = userName,
             TotalChats = 24,
             CreditsUsed = 350,
             CreditsRemaining = 650,
