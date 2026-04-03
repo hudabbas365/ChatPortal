@@ -4,10 +4,12 @@ public class StructuredAIResponse
 {
     public bool Success { get; set; }
     public string? Query { get; set; }
+    public string? QueryDescription { get; set; }
     public object? Result { get; set; }
     public string? Narrative { get; set; }
     public List<string> Prompts { get; set; } = new();
     public List<string> Examples { get; set; } = new();
+    public List<string> Suggestions { get; set; } = new();
     public ChartData? ChartData { get; set; }
     public string? Error { get; set; }
     public int CreditsUsed { get; set; }

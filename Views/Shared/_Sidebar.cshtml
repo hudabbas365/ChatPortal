@@ -1,11 +1,33 @@
+@using System.Security.Claims
+@{
+    var userName = User.Identity?.IsAuthenticated == true
+        ? (User.FindFirstValue("FirstName") ?? User.FindFirstValue(ClaimTypes.Name) ?? User.Identity.Name ?? "User")
+        : "User";
+    var isAdmin = User.IsInRole("Admin") || User.IsInRole("Super Admin");
+}
+
 <div class="sidebar d-flex flex-column p-3 shadow-sm" style="width:260px;min-height:100vh;background:linear-gradient(180deg,#f8f9fa 0%,#e8eaf6 100%);">
-    <div class="mb-4 pb-3 border-bottom">
+    <div class="mb-3 pb-3 border-bottom">
         <a href="/" class="text-decoration-none fw-bold fs-5" style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
             <i class="bi bi-robot me-2" style="color:#667eea;"></i>ChatPortal
         </a>
     </div>
+
+    @if (User.Identity?.IsAuthenticated == true)
+    {
+        <div class="d-flex align-items-center gap-2 mb-3 px-1">
+            <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:34px;height:34px;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);">
+                <span class="text-white fw-bold" style="font-size:13px;">@(userName.Length > 0 ? userName[0].ToString().ToUpper() : "U")</span>
+            </div>
+            <div class="overflow-hidden">
+                <div class="fw-semibold text-truncate" style="font-size:13px;color:#2d3748;">@userName</div>
+                <a asp-controller="Dashboard" asp-action="Index" class="text-decoration-none" style="font-size:11px;color:#667eea;">Dashboard</a>
+            </div>
+        </div>
+    }
+
     <nav class="flex-grow-1">
-        <ul class="nav flex-column gap-2">
+        <ul class="nav flex-column gap-1">
             <li class="nav-item">
                 <a class="nav-link d-flex align-items-center gap-3 rounded-3 px-3 py-2 sidebar-link" asp-controller="Dashboard" asp-action="Index" style="color:#4a5568;">
                     <i class="bi bi-speedometer2 fs-5"></i>
@@ -25,20 +47,45 @@
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link d-flex align-items-center gap-3 rounded-3 px-3 py-2 sidebar-link" asp-controller="Account" asp-action="Settings" style="color:#4a5568;">
-                    <i class="bi bi-gear fs-5"></i>
-                    <span class="fw-medium">Settings</span>
+                <a class="nav-link d-flex align-items-center gap-3 rounded-3 px-3 py-2 sidebar-link" asp-controller="Pricing" asp-action="Index" style="color:#4a5568;">
+                    <i class="bi bi-tag fs-5"></i>
+                    <span class="fw-medium">Pricing</span>
                 </a>
             </li>
+            <li class="nav-item">
+                <a class="nav-link d-flex align-items-center gap-3 rounded-3 px-3 py-2 sidebar-link" asp-controller="Account" asp-action="Credits" style="color:#4a5568;">
+                    <i class="bi bi-lightning-charge fs-5"></i>
+                    <span class="fw-medium">Credits</span>
+                </a>
+            </li>
+            @if (isAdmin)
+            {
+                <li class="nav-item">
+                    <a class="nav-link d-flex align-items-center gap-3 rounded-3 px-3 py-2 sidebar-link" asp-controller="Admin" asp-action="Index" style="color:#4a5568;">
+                        <i class="bi bi-shield-lock fs-5"></i>
+                        <span class="fw-medium">Admin</span>
+                    </a>
+                </li>
+            }
         </ul>
     </nav>
-    <div class="mt-auto pt-3 border-top">
-        <div class="p-3 rounded-3 mb-3" style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);">
-            <div class="text-white">
-                <div class="small opacity-90 mb-1">Your Plan</div>
-                <div class="fw-bold">Pro Account</div>
+
+    <div class="mt-3 pt-3 border-top">
+        @if (User.Identity?.IsAuthenticated == true)
+        {
+            <div class="p-3 rounded-3 mb-3" style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);">
+                <div class="text-white">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <div class="small opacity-90">Credits Balance</div>
+                        <i class="bi bi-lightning-charge-fill small"></i>
+                    </div>
+                    <div id="sidebar-credits-balance" class="fw-bold fs-5">—</div>
+                    <div class="small opacity-75 mt-1">
+                        <a asp-controller="Account" asp-action="Credits" class="text-white text-decoration-none opacity-90">Buy more →</a>
+                    </div>
+                </div>
             </div>
-        </div>
+        }
         <form asp-controller="Account" asp-action="Logout" method="post">
             @Html.AntiForgeryToken()
             <button type="submit" class="btn btn-outline-secondary w-100 rounded-3">
@@ -61,3 +108,19 @@
         color: white !important;
     }
 </style>
+
+<script>
+(function () {
+    // Load credits balance into sidebar
+    fetch('/Account/GetCreditsBalance', { credentials: 'same-origin' })
+        .then(r => r.ok ? r.json() : null)
+        .then(data => {
+            if (data && data.balance !== undefined) {
+                var el = document.getElementById('sidebar-credits-balance');
+                if (el) el.textContent = data.balance.toLocaleString();
+            }
+        })
+        .catch(() => {
+            console.warn('Unable to load credits balance');
+        });
+</script>

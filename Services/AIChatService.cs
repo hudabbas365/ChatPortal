@@ -22,13 +22,13 @@ public class AIChatService : IAIChatService
             var aiSettings = _configuration.GetSection("AiSettings");
             var apiKey = aiSettings["ApiKey"];
 
-            if (string.IsNullOrEmpty(apiKey) || apiKey == "your-openai-api-key-here")
+            if (string.IsNullOrEmpty(apiKey) || apiKey == "your-cohere-api-key-here")
             {
                 // Return stub response for demo
                 await Task.Delay(500);
                 var lastMessage = request.Messages.LastOrDefault();
                 var userContent = lastMessage != default ? lastMessage.Content : "your message";
-                return new ChatResponse(true, $"This is a demo response to: \"{userContent}\". Configure your OpenAI API key to get real AI responses.", 42, null);
+                return new ChatResponse(true, $"This is a demo response to: \"{userContent}\". Configure your Cohere API key to get real AI responses.", 42, null);
             }
 
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
@@ -42,27 +42,39 @@ public class AIChatService : IAIChatService
 
             var payload = new
             {
-                model = request.Model ?? "gpt-3.5-turbo",
-                messages,
-                max_tokens = 1024
+                model = request.Model ?? aiSettings["DefaultModel"] ?? "command-r-plus",
+                messages
             };
 
             var json = JsonSerializer.Serialize(payload);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
-            var response = await _httpClient.PostAsync($"{aiSettings["BaseUrl"]}/v1/chat/completions", content);
+            var baseUrl = aiSettings["BaseUrl"] ?? "https://api.cohere.com";
+            var response = await _httpClient.PostAsync($"{baseUrl}/v2/chat", content);
 
             if (!response.IsSuccessStatusCode)
                 return new ChatResponse(false, null, 0, $"API error: {response.StatusCode}");
 
             var responseJson = await response.Content.ReadAsStringAsync();
             using var doc = JsonDocument.Parse(responseJson);
+
+            // Cohere v2 response: message.content[0].text
             var text = doc.RootElement
-                .GetProperty("choices")[0]
                 .GetProperty("message")
-                .GetProperty("content")
+                .GetProperty("content")[0]
+                .GetProperty("text")
                 .GetString() ?? "";
 
-            var tokens = doc.RootElement.GetProperty("usage").GetProperty("total_tokens").GetInt32();
+            // Approximate token count from usage if available
+            var tokens = 0;
+            if (doc.RootElement.TryGetProperty("usage", out var usage) &&
+                usage.TryGetProperty("tokens", out var tokensEl))
+            {
+                tokensEl.TryGetProperty("input_tokens", out var inputTokens);
+                tokensEl.TryGetProperty("output_tokens", out var outputTokens);
+                tokens = (inputTokens.ValueKind == JsonValueKind.Number ? inputTokens.GetInt32() : 0)
+                       + (outputTokens.ValueKind == JsonValueKind.Number ? outputTokens.GetInt32() : 0);
+            }
+
             return new ChatResponse(true, text, tokens, null);
         }
         catch (Exception ex)
@@ -73,6 +85,6 @@ public class AIChatService : IAIChatService
 
     public Task<IEnumerable<string>> GetAvailableModelsAsync()
     {
-        return Task.FromResult<IEnumerable<string>>(new[] { "gpt-3.5-turbo", "gpt-4" });
+        return Task.FromResult<IEnumerable<string>>(new[] { "command-r-plus", "command-r", "command" });
     }
 }

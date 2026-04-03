@@ -18,6 +18,10 @@ public class Agent
     [ForeignKey("WorkspaceId")]
     public virtual Workspace Workspace { get; set; } = null!;
 
+    public int? DataSourceId { get; set; }
+    [ForeignKey("DataSourceId")]
+    public virtual UserDataSource? DataSource { get; set; }
+
     [MaxLength(50)]
     public string AgentType { get; set; } = "general"; // general, code, writing, data, research, customer-service
 

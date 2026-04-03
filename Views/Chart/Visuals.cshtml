@@ -1,0 +1,112 @@
+@using System.Text.Json
+@model List<ChatPortal.Models.Entities.PinnedChart>
+@{
+    ViewData["Title"] = "All Pinned Visuals";
+}
+
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1"><i class="bi bi-pin-angle me-2" style="color:#667eea;"></i>Pinned Visuals</h2>
+            <p class="text-muted mb-0">All your pinned charts and visualisations</p>
+        </div>
+        <a asp-action="Index" class="btn btn-outline-secondary rounded-3">
+            <i class="bi bi-arrow-left me-1"></i>Back to Dashboards
+        </a>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="text-center py-5">
+            <i class="bi bi-pin display-1 text-muted"></i>
+            <h4 class="mt-3 text-muted">No pinned visuals yet</h4>
+            <p class="text-muted">Pin charts from your query results in the Chat section to display them here.</p>
+            <a asp-controller="Chat" asp-action="Index" class="btn btn-primary mt-2">Go to Chat</a>
+        </div>
+    }
+    else
+    {
+        <div class="row g-4" id="visualsGrid">
+            @foreach (var chart in Model)
+            {
+                <div class="col-md-6 col-xl-4" id="chart-card-@chart.Id">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center pt-3 px-3 pb-0">
+                            <h6 class="fw-semibold mb-0">@chart.Title</h6>
+                            <button class="btn btn-sm btn-outline-danger" onclick="unpinChart(@chart.Id)" title="Unpin">
+                                <i class="bi bi-pin-angle-fill"></i>
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="canvas-@chart.Id" height="250"></canvas>
+                        </div>
+                        <div class="card-footer bg-transparent border-0 pb-3 px-3">
+                            <small class="text-muted">
+                                <i class="bi bi-calendar3 me-1"></i>Pinned @chart.CreatedAt.ToString("MMM dd, yyyy HH:mm")
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@section Scripts {
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+(function () {
+    var charts = @Html.Raw(JsonSerializer.Serialize(Model.Select(c => new {
+        id = c.Id,
+        chartDataJson = c.ChartDataJson
+    })));
+
+    charts.forEach(function (item) {
+        if (!item.chartDataJson) return;
+        try {
+            var data = JSON.parse(item.chartDataJson);
+            var ctx = document.getElementById('canvas-' + item.id);
+            if (!ctx) return;
+            new Chart(ctx, {
+                type: data.chartType || 'bar',
+                data: {
+                    labels: data.labels || [],
+                    datasets: data.datasets || []
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { position: 'top' }
+                    }
+                }
+            });
+        } catch (e) {
+            console.warn('Could not render chart ' + item.id, e);
+        }
+    });
+})();
+
+function unpinChart(pinnedChartId) {
+    if (!confirm('Remove this pinned chart?')) return;
+
+    fetch('/Chart/Unpin', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+        },
+        body: `pinnedChartId=${pinnedChartId}`
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            var card = document.getElementById('chart-card-' + pinnedChartId);
+            if (card) card.remove();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    });
+}
+</script>
+@Html.AntiForgeryToken()
+}

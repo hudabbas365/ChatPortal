@@ -70,7 +70,7 @@ public class DataChatService : IDataChatService
             }
 
             var sampleJson = JsonSerializer.Serialize(sampleData.Take(20));
-            var response = await CallAIForStructuredResponseAsync(userQuestion, ds.SourceType, ds.SchemaSnapshot, sampleJson);
+            var response = await CallAIForStructuredResponseAsync(userQuestion, ds.SourceType, ds.SchemaSnapshot, sampleJson, null, ds.Name);
             response.CreditsUsed = creditCost;
             return response;
         }
@@ -87,54 +87,89 @@ public class DataChatService : IDataChatService
     }
 
     private async Task<StructuredAIResponse> CallAIForStructuredResponseAsync(
-        string question, string sourceType, string? schema, string sampleData)
+        string question, string sourceType, string? schema, string sampleData,
+        string? agentName = null, string? dataSourceName = null)
     {
         var aiSettings = _configuration.GetSection("AiSettings");
         var apiKey = aiSettings["ApiKey"];
 
-        if (string.IsNullOrEmpty(apiKey) || apiKey == "your-openai-api-key-here")
+        if (string.IsNullOrEmpty(apiKey) || apiKey == "your-cohere-api-key-here")
         {
             return BuildDemoResponse(question, sourceType);
         }
 
-        var systemPrompt = BuildSystemPrompt(sourceType, schema);
+        var systemPrompt = BuildSystemPrompt(sourceType, schema, agentName, dataSourceName);
         var userPrompt = $"Question: {question}\n\nSample data (first 20 rows):\n{sampleData}\n\n" +
-                         "Respond ONLY with a valid JSON object matching the StructuredAIResponse schema.";
+                         "Respond ONLY with a valid JSON object in this exact format:\n" +
+                         "{\n  \"QueryDescription\": \"...\",\n  \"Query\": \"...\",\n  \"Suggestions\": [\"...\", \"...\", \"...\"]\n}";
 
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
 
         var payload = new
         {
-            model = aiSettings["DefaultModel"] ?? "gpt-3.5-turbo",
+            model = aiSettings["DefaultModel"] ?? "command-r-plus",
             messages = new[]
             {
                 new { role = "system", content = systemPrompt },
                 new { role = "user", content = userPrompt }
-            },
-            max_tokens = 2048,
-            temperature = 0.3
+            }
         };
 
         var json = JsonSerializer.Serialize(payload);
         var content = new StringContent(json, Encoding.UTF8, "application/json");
-        var httpResponse = await _httpClient.PostAsync($"{aiSettings["BaseUrl"]}/v1/chat/completions", content);
+        var baseUrl = aiSettings["BaseUrl"] ?? "https://api.cohere.com";
+        var httpResponse = await _httpClient.PostAsync($"{baseUrl}/v2/chat", content);
 
         if (!httpResponse.IsSuccessStatusCode)
             return BuildDemoResponse(question, sourceType);
 
         var responseJson = await httpResponse.Content.ReadAsStringAsync();
         using var doc = JsonDocument.Parse(responseJson);
+
+        // Cohere v2 response: message.content[0].text
         var text = doc.RootElement
-            .GetProperty("choices")[0]
             .GetProperty("message")
-            .GetProperty("content")
+            .GetProperty("content")[0]
+            .GetProperty("text")
             .GetString() ?? "{}";
 
         try
         {
-            var structured = JsonSerializer.Deserialize<StructuredAIResponse>(text,
-                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-            return structured ?? BuildDemoResponse(question, sourceType);
+            // Strip markdown code fences if present
+            var jsonText = text.Trim();
+            if (jsonText.StartsWith("```"))
+            {
+                var start = jsonText.IndexOf('{');
+                var end = jsonText.LastIndexOf('}');
+                if (start >= 0 && end > start)
+                    jsonText = jsonText[start..(end + 1)];
+            }
+            else
+            {
+                // Trim any trailing backticks
+                jsonText = jsonText.TrimEnd('`').Trim();
+            }
+
+            using var parsed = JsonDocument.Parse(jsonText);
+            var root = parsed.RootElement;
+
+            var queryDescription = root.TryGetProperty("QueryDescription", out var qd) ? qd.GetString() : null;
+            var query = root.TryGetProperty("Query", out var q) ? q.GetString() : null;
+            var suggestions = new List<string>();
+            if (root.TryGetProperty("Suggestions", out var sugg) && sugg.ValueKind == JsonValueKind.Array)
+                foreach (var s in sugg.EnumerateArray())
+                    suggestions.Add(s.GetString() ?? "");
+
+            return new StructuredAIResponse
+            {
+                Success = true,
+                QueryDescription = queryDescription,
+                Query = query,
+                Narrative = queryDescription,
+                Suggestions = suggestions,
+                Prompts = suggestions,
+                Examples = GetExamples(sourceType)
+            };
         }
         catch
         {
@@ -148,8 +183,17 @@ public class DataChatService : IDataChatService
         }
     }
 
-    private static string BuildSystemPrompt(string sourceType, string? schema)
+    private static string BuildSystemPrompt(string sourceType, string? schema,
+        string? agentName = null, string? dataSourceName = null)
     {
+        if (!string.IsNullOrEmpty(agentName) && !string.IsNullOrEmpty(dataSourceName))
+        {
+            return $"You are an AI Agent for {agentName}.\n" +
+                   $"Generate queries for {dataSourceName} using the following tables/views:\n" +
+                   $"{schema ?? "unknown"}.\n" +
+                   "Maintain relationships between tables if they exist.";
+        }
+
         var queryLang = sourceType switch
         {
             "SqlServer" => "T-SQL",
@@ -157,26 +201,10 @@ public class DataChatService : IDataChatService
             _ => "natural language / LINQ"
         };
 
-        return $$"""
-You are an expert data analyst. The user has a {{sourceType}} data source.
-Schema: {{schema ?? "unknown"}}
-
-Respond ONLY with a JSON object in this exact format:
-{
-  "success": true,
-  "query": "the {{queryLang}} query or expression used",
-  "result": [/* array of result rows */],
-  "narrative": "human-readable explanation of the result",
-  "prompts": ["follow-up question 1", "follow-up question 2", "follow-up question 3"],
-  "examples": ["example query 1", "example query 2", "example query 3"],
-  "chartData": {
-    "chartType": "bar",
-    "labels": ["label1","label2"],
-    "datasets": [{ "label": "Value", "data": [1,2], "backgroundColor": "rgba(173,216,230,0.7)" }]
-  }
-}
-Return chartData only when there are numeric results suitable for charting. Use pastel colors.
-""";
+        return $"You are an expert data analyst. The user has a {sourceType} data source.\n" +
+               $"Generate {queryLang} queries using the following schema:\n" +
+               $"{schema ?? "unknown"}.\n" +
+               "Maintain relationships between tables if they exist.";
     }
 
     private StructuredAIResponse BuildDemoResponse(string question, string sourceType)
@@ -188,23 +216,27 @@ Return chartData only when there are numeric results suitable for charting. Use 
             _ => "data.Where(x => ...).Take(10)"
         };
 
+        var suggestions = new List<string>
+        {
+            "Show the top 10 records",
+            "What is the average value?",
+            "Group by category and count"
+        };
+
         return new StructuredAIResponse
         {
             Success = true,
             Query = queryLang,
-            Narrative = $"Demo mode: This is a simulated response for your question \"{question}\". Configure your OpenAI API key to get real AI-powered insights from your data.",
+            QueryDescription = $"Demo mode: This is a simulated response for your question \"{question}\". Configure your Cohere API key to get real AI-powered insights from your data.",
+            Narrative = $"Demo mode: This is a simulated response for your question \"{question}\". Configure your Cohere API key to get real AI-powered insights from your data.",
             Result = new List<Dictionary<string, object>>
             {
                 new() { ["Column1"] = "Sample A", ["Value"] = 42 },
                 new() { ["Column1"] = "Sample B", ["Value"] = 78 },
                 new() { ["Column1"] = "Sample C", ["Value"] = 35 }
             },
-            Prompts = new List<string>
-            {
-                "Show the top 10 records",
-                "What is the average value?",
-                "Group by category and count"
-            },
+            Suggestions = suggestions,
+            Prompts = suggestions,
             Examples = GetExamples(sourceType),
             ChartData = new ChartData
             {

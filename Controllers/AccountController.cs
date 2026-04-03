@@ -1,5 +1,6 @@
 using ChatPortal.Services;
 using ChatPortal.ViewModels;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 
@@ -10,12 +11,14 @@ public class AccountController : Controller
     private readonly IUserService _userService;
     private readonly IJwtService _jwtService;
     private readonly ILogger<AccountController> _logger;
+    private readonly ICreditService _creditService;
 
-    public AccountController(IUserService userService, IJwtService jwtService, ILogger<AccountController> logger)
+    public AccountController(IUserService userService, IJwtService jwtService, ILogger<AccountController> logger, ICreditService creditService)
     {
         _userService = userService;
         _jwtService = jwtService;
         _logger = logger;
+        _creditService = creditService;
     }
 
     [HttpGet]
@@ -145,5 +148,31 @@ public class AccountController : Controller
             _logger.LogError(ex, "Failed to generate embed token for user {UserId}", userId);
             return StatusCode(500, new { success = false, error = "Failed to generate embed token. Please try again." });
         }
+    }
+
+    // GET: Account/GetCreditsBalance
+    [HttpGet]
+    [Authorize]
+    public async Task<IActionResult> GetCreditsBalance()
+    {
+        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!int.TryParse(userIdStr, out var userId))
+            return Json(new { balance = 0 });
+
+        var balance = await _creditService.GetBalanceAsync(userId);
+        return Json(new { balance });
+    }
+
+    // GET: Account/Credits
+    [Authorize]
+    public async Task<IActionResult> Credits()
+    {
+        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!int.TryParse(userIdStr, out var userId))
+            return RedirectToAction("Login");
+
+        var balance = await _creditService.GetBalanceAsync(userId);
+        ViewBag.CreditsBalance = balance;
+        return View();
     }
 }

@@ -15,6 +15,7 @@ public class ErrorController : Controller
             500 => "Internal server error",
             _ => "An error occurred"
         };
+        ViewBag.RequestId = TempData["RequestId"];
         return View();
     }
 
@@ -23,6 +24,7 @@ public class ErrorController : Controller
     {
         ViewBag.StatusCode = 500;
         ViewBag.Message = "An internal server error occurred.";
+        ViewBag.RequestId = TempData["RequestId"];
         return View("Index");
     }
 }
