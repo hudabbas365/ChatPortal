@@ -1,0 +1,116 @@
+@{
+    ViewData["Title"] = "Organization Activity";
+    var org = ViewBag.Organization as ChatPortal.Models.Entities.Organization;
+    var recentQueryCount = (int)(ViewBag.RecentQueryCount ?? 0);
+    var daysSince = ViewBag.DaysSinceActivity as int?;
+    var isInactive = (bool)(ViewBag.IsInactive ?? false);
+}
+
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1">
+                <i class="bi bi-activity me-2" style="color:#667eea;"></i>@org?.Name
+            </h2>
+            <p class="text-muted mb-0">30-day activity report</p>
+        </div>
+        <a asp-action="ManageOrganizations" class="btn btn-outline-secondary rounded-3">
+            <i class="bi bi-arrow-left me-1"></i>Back to Organizations
+        </a>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center p-4">
+                    <i class="bi bi-people display-4 mb-2" style="color:#667eea;"></i>
+                    <div class="fw-bold fs-3">@(org?.Members?.Count ?? 0)</div>
+                    <div class="text-muted small">Total Members</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center p-4">
+                    <i class="bi bi-database display-4 mb-2" style="color:#28a745;"></i>
+                    <div class="fw-bold fs-3">@recentQueryCount</div>
+                    <div class="text-muted small">Queries (30d)</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center p-4">
+                    @if (daysSince.HasValue)
+                    {
+                        <i class="bi bi-clock display-4 mb-2" style="color:@(isInactive ? "#dc3545" : "#ffc107");"></i>
+                        <div class="fw-bold fs-3">@daysSince</div>
+                        <div class="text-muted small">Days Since Activity</div>
+                    }
+                    else
+                    {
+                        <i class="bi bi-clock display-4 mb-2 text-muted"></i>
+                        <div class="fw-bold fs-3">—</div>
+                        <div class="text-muted small">No Activity Recorded</div>
+                    }
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center p-4">
+                    @if (isInactive)
+                    {
+                        <i class="bi bi-exclamation-triangle display-4 mb-2 text-warning"></i>
+                        <div class="fw-bold fs-5 text-warning">Inactive</div>
+                        <div class="text-muted small">30+ days inactive</div>
+                    }
+                    else
+                    {
+                        <i class="bi bi-check-circle display-4 mb-2 text-success"></i>
+                        <div class="fw-bold fs-5 text-success">Active</div>
+                        <div class="text-muted small">Recently active</div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (isInactive)
+    {
+        <div class="card border-0 shadow-sm border-warning">
+            <div class="card-body p-4">
+                <h5 class="fw-bold text-warning mb-3">
+                    <i class="bi bi-exclamation-triangle me-2"></i>Retention Action Required
+                </h5>
+                <p class="text-muted mb-4">This organization has been inactive for 30+ days. Select an action:</p>
+                <div class="d-flex gap-3 flex-wrap">
+                    <form asp-action="RetentionAction" method="post" onsubmit="return confirm('Block this organization?')">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="organizationId" value="@org?.Id" />
+                        <input type="hidden" name="action" value="block" />
+                        <button type="submit" class="btn btn-warning">
+                            <i class="bi bi-slash-circle me-2"></i>Block Organization
+                        </button>
+                    </form>
+                    <form asp-action="RetentionAction" method="post" onsubmit="return confirm('Archive this organization?')">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="organizationId" value="@org?.Id" />
+                        <input type="hidden" name="action" value="archive" />
+                        <button type="submit" class="btn btn-outline-secondary">
+                            <i class="bi bi-archive me-2"></i>Archive Organization
+                        </button>
+                    </form>
+                    <form asp-action="RetentionAction" method="post" onsubmit="return confirm('PERMANENTLY DELETE this organization? This cannot be undone.')">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="organizationId" value="@org?.Id" />
+                        <input type="hidden" name="action" value="delete" />
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-trash me-2"></i>Delete Organization
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    }
+</div>

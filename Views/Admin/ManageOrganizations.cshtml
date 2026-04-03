@@ -1,0 +1,99 @@
+@{
+    ViewData["Title"] = "Manage Organizations";
+    var organizations = ViewBag.Organizations as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+    var thirtyDaysAgo = DateTime.UtcNow.AddDays(-30);
+}
+
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1"><i class="bi bi-building me-2" style="color:#667eea;"></i>Manage Organizations</h2>
+            <p class="text-muted mb-0">Monitor and manage all organizations in the system</p>
+        </div>
+        <a asp-action="Index" class="btn btn-outline-secondary rounded-3">
+            <i class="bi bi-arrow-left me-1"></i>Back to Admin
+        </a>
+    </div>
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="px-4 py-3">Organization</th>
+                            <th>Owner</th>
+                            <th>Members</th>
+                            <th>Created</th>
+                            <th>Last Activity</th>
+                            <th>Status</th>
+                            <th class="px-4">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in organizations)
+                        {
+                            var org = item.Organization;
+                            bool isInactive = item.IsInactive;
+                            <tr>
+                                <td class="px-4 py-3">
+                                    <div class="fw-semibold">@org.Name</div>
+                                    @if (!string.IsNullOrEmpty(org.Description))
+                                    {
+                                        <div class="text-muted small text-truncate" style="max-width:200px;">@org.Description</div>
+                                    }
+                                </td>
+                                <td>@org.Owner?.Email</td>
+                                <td><span class="badge bg-light text-dark border">@item.MemberCount</span></td>
+                                <td class="small text-muted">@org.CreatedAt.ToString("MMM dd, yyyy")</td>
+                                <td class="small">
+                                    @if (org.LastActivityAt != null)
+                                    {
+                                        <span>@(((DateTime)org.LastActivityAt).ToString("MMM dd, yyyy"))</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">Never</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (!org.IsActive)
+                                    {
+                                        <span class="badge bg-danger">Blocked</span>
+                                    }
+                                    else if (isInactive)
+                                    {
+                                        <span class="badge bg-warning text-dark">Inactive (30d+)</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-success">Active</span>
+                                    }
+                                </td>
+                                <td class="px-4">
+                                    <div class="d-flex gap-2">
+                                        <a asp-action="OrganizationActivity" asp-route-id="@org.Id" class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-activity"></i>
+                                        </a>
+                                        @if (isInactive)
+                                        {
+                                            <form asp-action="RetentionAction" method="post" class="d-inline"
+                                                  onsubmit="return confirm('Archive this organization?')">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="organizationId" value="@org.Id" />
+                                                <input type="hidden" name="action" value="archive" />
+                                                <button type="submit" class="btn btn-sm btn-outline-warning">
+                                                    <i class="bi bi-archive"></i>
+                                                </button>
+                                            </form>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

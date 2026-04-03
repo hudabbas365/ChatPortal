@@ -70,6 +70,9 @@ public class AppDbContext : DbContext
     // Team workspace permissions
     public DbSet<TeamWorkspacePermission> TeamWorkspacePermissions { get; set; }
 
+    // Error logging
+    public DbSet<ErrorLog> ErrorLogs { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -145,6 +148,10 @@ public class AppDbContext : DbContext
             .WithMany()
             .HasForeignKey(o => o.OwnerId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<Organization>()
+            .HasIndex(o => o.UniqueId)
+            .IsUnique();
 
         modelBuilder.Entity<OrganizationMember>()
             .HasOne(om => om.User)

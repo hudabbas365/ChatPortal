@@ -169,6 +169,13 @@ public class WorkspaceController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Update(int id, string name, string? description, string context, bool isActive)
     {
+        // Edit Workspace feature is coming soon
+        return Json(new { success = false, error = "Coming Soon - Edit Workspace feature is under development" });
+    }
+
+    // POST: Workspace/UpdateInternal (internal implementation, not exposed to users)
+    private async Task<IActionResult> UpdateInternal(int id, string name, string? description, string context, bool isActive)
+    {
         try
         {
             var userId = GetUserId();

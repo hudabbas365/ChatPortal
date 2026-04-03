@@ -269,4 +269,93 @@ public class AgentController : Controller
             return Json(new { success = false, error = ex.Message });
         }
     }
+
+    // POST: Agent/BindDataSource
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> BindDataSource(int agentId, int dataSourceId)
+    {
+        try
+        {
+            var userId = GetUserId();
+            var agent = await _context.Agents
+                .Include(a => a.Workspace)
+                .ThenInclude(w => w.Organization)
+                .FirstOrDefaultAsync(a => a.Id == agentId);
+
+            if (agent == null)
+                return Json(new { success = false, error = "Agent not found" });
+
+            var isOwner = agent.Workspace.Organization.OwnerId == userId;
+            var isCreator = agent.CreatedBy == userId;
+
+            if (!isOwner && !isCreator)
+                return Json(new { success = false, error = "You don't have permission to modify this agent" });
+
+            var dataSource = await _context.UserDataSources
+                .FirstOrDefaultAsync(ds => ds.Id == dataSourceId && ds.UserId == userId);
+
+            if (dataSource == null)
+                return Json(new { success = false, error = "Data source not found or access denied" });
+
+            // Auto-generate system prompt from the spec template
+            var systemPrompt = $"You are an AI Agent for {agent.Name}.\n" +
+                               $"Generate queries for {dataSource.Name} using the following tables/views:\n" +
+                               $"{dataSource.SchemaSnapshot ?? "No schema available"}.\n" +
+                               "Maintain relationships between tables if they exist.";
+
+            agent.DataSourceId = dataSourceId;
+            agent.SystemPrompt = systemPrompt;
+            agent.UpdatedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+
+            return Json(new
+            {
+                success = true,
+                message = "Data source bound successfully",
+                systemMessage = systemPrompt
+            });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, error = ex.Message });
+        }
+    }
+
+    // POST: Agent/UnbindDataSource
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UnbindDataSource(int agentId)
+    {
+        try
+        {
+            var userId = GetUserId();
+            var agent = await _context.Agents
+                .Include(a => a.Workspace)
+                .ThenInclude(w => w.Organization)
+                .FirstOrDefaultAsync(a => a.Id == agentId);
+
+            if (agent == null)
+                return Json(new { success = false, error = "Agent not found" });
+
+            var isOwner = agent.Workspace.Organization.OwnerId == userId;
+            var isCreator = agent.CreatedBy == userId;
+
+            if (!isOwner && !isCreator)
+                return Json(new { success = false, error = "You don't have permission to modify this agent" });
+
+            agent.DataSourceId = null;
+            agent.SystemPrompt = null;
+            agent.UpdatedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+
+            return Json(new { success = true, message = "Data source unbound successfully" });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, error = ex.Message });
+        }
+    }
 }

@@ -33,6 +33,11 @@ public class UserDataSource
     [MaxLength(1000)]
     public string? FilePath { get; set; }
 
+    /// <summary>Organization that owns this data source.</summary>
+    public int? OrganizationId { get; set; }
+    [ForeignKey("OrganizationId")]
+    public virtual Organization? Organization { get; set; }
+
     /// <summary>Active, Error, Pending</summary>
     [Required, MaxLength(50)]
     public string Status { get; set; } = "Pending";

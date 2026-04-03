@@ -30,6 +30,12 @@ public class Organization
 
     public bool IsActive { get; set; } = true;
 
+    /// <summary>Unique business identifier (GUID) — additive, int Id remains the PK for EF.</summary>
+    public Guid UniqueId { get; set; } = Guid.NewGuid();
+
+    /// <summary>Tracks the last time any activity occurred in this organization (used for 30-day retention policy).</summary>
+    public DateTime? LastActivityAt { get; set; }
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 

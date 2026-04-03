@@ -1,0 +1,58 @@
+@{
+    ViewData["Title"] = "Credits";
+    var balance = (int)(ViewBag.CreditsBalance ?? 0);
+}
+
+<div class="container py-4">
+    <h2 class="fw-bold mb-1"><i class="bi bi-lightning-charge me-2" style="color:#667eea;"></i>Credits</h2>
+    <p class="text-muted mb-4">Manage your AI query credits</p>
+
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm" style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);">
+                <div class="card-body text-white p-4">
+                    <div class="small opacity-80 mb-1">Current Balance</div>
+                    <div class="display-4 fw-bold">@balance.ToString("N0")</div>
+                    <div class="small opacity-80 mt-1">credits available</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h5 class="fw-semibold mb-3">Purchase Credits</h5>
+    <div class="row g-3">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center p-4">
+                    <i class="bi bi-lightning display-4 mb-3" style="color:#667eea;"></i>
+                    <h5 class="fw-bold">Starter</h5>
+                    <p class="text-muted">100 AI query credits</p>
+                    <div class="fw-bold fs-4 mb-3">$4.99</div>
+                    <a asp-controller="Pricing" asp-action="Index" class="btn btn-outline-primary w-100">Buy Now</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100" style="border:2px solid #667eea !important;">
+                <div class="card-body text-center p-4">
+                    <i class="bi bi-lightning-charge-fill display-4 mb-3" style="color:#667eea;"></i>
+                    <h5 class="fw-bold">Standard</h5>
+                    <p class="text-muted">500 AI query credits</p>
+                    <div class="fw-bold fs-4 mb-3">$19.99</div>
+                    <a asp-controller="Pricing" asp-action="Index" class="btn btn-primary w-100">Buy Now</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center p-4">
+                    <i class="bi bi-stars display-4 mb-3" style="color:#667eea;"></i>
+                    <h5 class="fw-bold">Professional</h5>
+                    <p class="text-muted">2000 AI query credits</p>
+                    <div class="fw-bold fs-4 mb-3">$59.99</div>
+                    <a asp-controller="Pricing" asp-action="Index" class="btn btn-outline-primary w-100">Buy Now</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
