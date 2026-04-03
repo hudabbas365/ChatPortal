@@ -105,6 +105,20 @@ public class AccountController : Controller
     }
 
     /// <summary>
+    /// Redirects to the Microsoft Identity Platform for Office 365 authentication.
+    /// This is a stub that shows a not-yet-configured message until MSAL is integrated.
+    /// </summary>
+    [HttpGet]
+    public IActionResult LoginMicrosoft(string? returnUrl = null)
+    {
+        // When Microsoft Identity / MSAL is configured, this action would
+        // use Challenge("AzureAD") to initiate the OAuth2 flow.
+        // For now we surface a clear message so users understand the intent.
+        TempData["Error"] = "Microsoft / Office 365 sign-in is not yet configured for this environment. Please use email and password to sign in.";
+        return RedirectToAction("Login", new { returnUrl });
+    }
+
+    /// <summary>
     /// Generates a short-lived JWT embed token for the authenticated user so they
     /// can publish their chat interface as an iframe on external websites.
     /// </summary>
