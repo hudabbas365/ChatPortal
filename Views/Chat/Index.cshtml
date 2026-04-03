@@ -10,9 +10,40 @@
 
     <!-- ── Left Sidebar: Conversation History ── -->
     <div class="chat-sidebar bg-dark text-white d-flex flex-column border-end border-secondary border-opacity-25" style="width:280px;flex-shrink:0;">
+
+        <!-- Workspace Selector -->
+        <div class="p-3 border-bottom border-secondary border-opacity-25">
+            <label class="text-muted mb-1 d-block" style="font-size:0.68rem;text-transform:uppercase;letter-spacing:0.08em;font-weight:600;">Workspace</label>
+            <div class="dropdown w-100">
+                <button class="btn btn-sm w-100 text-start d-flex align-items-center justify-content-between"
+                        style="background:rgba(143,217,251,0.12);border:1px solid rgba(143,217,251,0.25);color:#fff;"
+                        type="button" data-bs-toggle="dropdown">
+                    <span><i class="bi bi-grid-fill me-2" style="color:#8FD9FB;font-size:0.8rem;"></i><span id="activeWorkspaceName">General Workspace</span></span>
+                    <i class="bi bi-chevron-down" style="font-size:0.7rem;opacity:0.6;"></i>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-dark w-100 shadow">
+                    <li>
+                        <a class="dropdown-item workspace-option active-workspace d-flex align-items-center gap-2" href="#" data-workspace="General Workspace">
+                            <i class="bi bi-grid-fill" style="color:#8FD9FB;font-size:0.8rem;"></i>
+                            <div>
+                                <div style="font-size:0.85rem;">General Workspace</div>
+                                <div class="text-muted" style="font-size:0.7rem;">General Purpose Agent</div>
+                            </div>
+                        </a>
+                    </li>
+                    <li><hr class="dropdown-divider my-1"></li>
+                    <li>
+                        <a class="dropdown-item d-flex align-items-center gap-2 text-muted" href="/Account/Settings" style="font-size:0.82rem;">
+                            <i class="bi bi-plus-circle me-1"></i>Manage Workspaces
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
         <!-- New Chat + Search -->
         <div class="p-3 border-bottom border-secondary border-opacity-25">
-            <button class="btn btn-primary w-100 mb-2" onclick="newChat()">
+            <button class="btn w-100 mb-2" style="background:var(--cp-accent);color:var(--cp-primary-text,#1a5276);font-weight:600;" onclick="newChat()">
                 <i class="bi bi-plus-lg me-2"></i>New Chat
             </button>
             <div class="input-group input-group-sm">
@@ -30,13 +61,17 @@
         <!-- User Info -->
         <div class="p-3 border-top border-secondary border-opacity-25">
             <div class="d-flex align-items-center gap-2">
-                <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center flex-shrink-0" style="width:32px;height:32px;">
-                    <i class="bi bi-person text-white small"></i>
+                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                     style="width:32px;height:32px;background:rgba(143,217,251,0.25);">
+                    <i class="bi bi-person" style="color:#8FD9FB;font-size:0.9rem;"></i>
                 </div>
-                <div class="overflow-hidden">
+                <div class="overflow-hidden flex-grow-1">
                     <div class="small fw-medium text-truncate">Demo User</div>
                     <div class="text-muted" style="font-size:0.7rem;">Free Plan</div>
                 </div>
+                <a href="/Account/Settings" class="text-muted" title="Settings" style="font-size:0.85rem;">
+                    <i class="bi bi-gear"></i>
+                </a>
             </div>
         </div>
     </div>
@@ -46,12 +81,13 @@
         <!-- Chat Header -->
         <div class="chat-header d-flex align-items-center justify-content-between p-3 border-bottom bg-body shadow-sm">
             <div class="d-flex align-items-center gap-3">
-                <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center" style="width:40px;height:40px;">
-                    <i class="bi bi-robot text-white"></i>
+                <div class="rounded-circle d-flex align-items-center justify-content-center"
+                     style="width:40px;height:40px;background:rgba(143,217,251,0.2);">
+                    <i class="bi bi-robot" style="color:var(--cp-accent,#8FD9FB);font-size:1.1rem;"></i>
                 </div>
                 <div>
                     <div class="fw-medium">ChatPortal AI</div>
-                    <div class="text-success small"><i class="bi bi-circle-fill me-1" style="font-size:0.5rem;"></i>Ready</div>
+                    <div class="small" style="color:#2ecc71;"><i class="bi bi-circle-fill me-1" style="font-size:0.45rem;vertical-align:middle;"></i>Ready</div>
                 </div>
             </div>
             <div class="d-flex gap-2 align-items-center flex-wrap">
@@ -72,7 +108,7 @@
                 <!-- Publish as iframe (agents only) -->
                 @if (User.IsInRole("Agent") || User.Identity?.IsAuthenticated == true)
                 {
-                    <button class="btn btn-sm btn-outline-primary" title="Publish conversation as iframe"
+                    <button class="btn btn-sm btn-outline-secondary" title="Publish conversation as iframe"
                             data-bs-toggle="modal" data-bs-target="#embedModal">
                         <i class="bi bi-code-slash"></i>
                     </button>
@@ -113,7 +149,7 @@
                             title="Voice input (Web Speech API)" onclick="toggleMic()">
                         <i class="bi bi-mic-fill" id="micIcon"></i>
                     </button>
-                    <button class="btn btn-primary px-4" id="sendBtn" onclick="sendMessage()">
+                    <button class="btn px-4" id="sendBtn" style="background:var(--cp-accent);color:var(--cp-primary-text,#1a5276);" onclick="sendMessage()">
                         <i class="bi bi-send-fill"></i>
                     </button>
                 </div>
@@ -148,7 +184,7 @@
         <div class="modal-content border-0 shadow">
             <div class="modal-header border-0 pb-0">
                 <h5 class="modal-title fw-bold" id="embedModalLabel">
-                    <i class="bi bi-code-slash me-2 text-primary"></i>Publish Conversation as iFrame
+                    <i class="bi bi-code-slash me-2" style="color:var(--cp-accent);"></i>Publish Conversation as iFrame
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
@@ -215,12 +251,22 @@
     connection.start().catch(err => console.warn("SignalR:", err));
     connection.on("ReceiveMessage", (role, content) => appendMessage(role, content));
 
+    // Workspace switcher
+    document.querySelectorAll('.workspace-option').forEach(item => {
+        item.addEventListener('click', function (e) {
+            e.preventDefault();
+            document.querySelectorAll('.workspace-option').forEach(i => i.classList.remove('active-workspace'));
+            this.classList.add('active-workspace');
+            document.getElementById('activeWorkspaceName').textContent = this.dataset.workspace;
+        });
+    });
+
     // ── Agent embed helpers ───────────────────────────────────────────────
     async function generateEmbedToken() {
         const btn = document.getElementById('generateEmbedTokenBtn');
         const status = document.getElementById('embedTokenStatus');
         btn.disabled = true;
-        status.textContent = 'Generating…';
+        status.textContent = 'Generating\u2026';
         try {
             const resp = await fetch('/Account/GenerateEmbedToken', {
                 method: 'POST',
@@ -262,18 +308,21 @@
     /* Session sidebar styles */
     .session-item { transition: background 0.15s; }
     .session-item:hover { background: rgba(255,255,255,0.07); }
-    .session-active { background: rgba(13,110,253,0.18) !important; }
+    .session-active { background: rgba(143,217,251,0.2) !important; }
+
+    /* Workspace dropdown active */
+    .active-workspace { background: rgba(143,217,251,0.15) !important; }
 
     /* Right panel slide */
     #rightPanel.panel-open { width: 300px !important; opacity: 1 !important; }
 
-    /* Chat bubbles */
+    /* Chat bubbles with new palette */
     .chat-bubble-ai { background: var(--bs-secondary-bg); }
-    .chat-bubble-user { background: #0d6efd; color: #fff; }
+    .chat-bubble-user { background: #8FD9FB; color: #1a5276; }
     .chat-bubble-ai pre { background: #1e1e2e; color: #cdd6f4; padding: 0.75rem; border-radius: 0.5rem; overflow-x: auto; }
     .chat-bubble-ai code { background: rgba(0,0,0,0.15); padding: 0.1em 0.35em; border-radius: 3px; font-size: 0.85em; }
     .chat-bubble-ai table { width: 100%; font-size: 0.82rem; }
-    .chat-bubble-ai blockquote { border-left: 3px solid #0d6efd; padding-left: 0.75rem; color: #6c757d; }
+    .chat-bubble-ai blockquote { border-left: 3px solid #8FD9FB; padding-left: 0.75rem; color: #6c757d; }
 
     /* Typing indicator */
     .typing-indicator { display: flex; gap: 4px; padding: 4px 0; }
@@ -287,3 +336,4 @@
     #sessionSearch:focus { background: rgba(255,255,255,0.12) !important; color: #fff !important; box-shadow: none; outline: none; }
 </style>
 }
+

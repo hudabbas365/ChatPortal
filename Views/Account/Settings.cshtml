@@ -2,20 +2,99 @@
 @{
     ViewData["Title"] = "Settings";
     Layout = "~/Views/Shared/_Layout.cshtml";
+    var userRole = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value ?? "";
+    bool isAdmin = userRole == "Admin" || userRole == "Super Admin";
+    bool isSuperAdmin = userRole == "Super Admin";
 }
 
-<div class="container py-5">
-    <div class="row">
-        <div class="col-lg-3 mb-4">
-            <partial name="_Sidebar" />
-        </div>
-        <div class="col-lg-9">
-            <h3 class="fw-bold mb-4">Account Settings</h3>
+<style>
+    .settings-layout { display: flex; min-height: calc(100vh - 56px); }
+    .settings-nav { width: 240px; flex-shrink: 0; background: var(--bs-body-bg); border-right: 1px solid var(--bs-border-color); padding: 1.5rem 0; position: sticky; top: 56px; height: calc(100vh - 56px); overflow-y: auto; }
+    .settings-nav .nav-link { color: var(--bs-body-color); padding: 0.55rem 1.5rem; border-radius: 0; border-left: 3px solid transparent; font-size: 0.9rem; }
+    .settings-nav .nav-link:hover { background: rgba(143,217,251,0.12); color: var(--bs-body-color); }
+    .settings-nav .nav-link.active { border-left-color: var(--cp-accent); background: rgba(143,217,251,0.15); color: var(--bs-body-color); font-weight: 600; }
+    .settings-nav .nav-section { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--bs-secondary-color); padding: 1rem 1.5rem 0.25rem; }
+    .settings-content { flex: 1; padding: 2rem; max-width: 860px; }
+    .settings-section { display: none; }
+    .settings-section.active { display: block; }
+    .section-header { border-left: 4px solid var(--cp-accent); padding-left: 0.75rem; margin-bottom: 1.5rem; }
+    .section-header h4 { margin-bottom: 0.1rem; font-weight: 700; }
+    .section-header p { margin-bottom: 0; color: var(--bs-secondary-color); font-size: 0.88rem; }
+    .info-card { border: 1px solid var(--bs-border-color); border-radius: 0.75rem; }
+    .info-card .card-header { background: rgba(135,206,235,0.12); border-bottom: 1px solid var(--bs-border-color); padding: 0.75rem 1.25rem; font-weight: 600; font-size: 0.9rem; }
+    .badge-role { font-size: 0.78rem; padding: 0.3em 0.65em; }
+    .toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 0; border-bottom: 1px solid var(--bs-border-color); }
+    .toggle-row:last-child { border-bottom: none; }
+    .metric-card { border-radius: 0.75rem; border: 1px solid var(--bs-border-color); padding: 1rem 1.25rem; }
+    .metric-card .metric-value { font-size: 1.6rem; font-weight: 700; color: var(--cp-primary-text, #1a5276); }
+    .metric-card .metric-label { font-size: 0.8rem; color: var(--bs-secondary-color); }
+</style>
 
-            <div class="card border-0 shadow-sm rounded-4 mb-4">
-                <div class="card-header bg-transparent border-0 pt-4 px-4">
-                    <h5 class="fw-bold mb-0">Profile Information</h5>
-                </div>
+<div class="settings-layout">
+
+    <!-- ── Left navigation ── -->
+    <nav class="settings-nav">
+        <div class="nav-section">Account</div>
+        <a class="nav-link active" href="#" data-section="profile">
+            <i class="bi bi-person me-2"></i>Profile Information
+        </a>
+        <a class="nav-link" href="#" data-section="password">
+            <i class="bi bi-shield-lock me-2"></i>Password &amp; Security
+        </a>
+        <a class="nav-link" href="#" data-section="notifications">
+            <i class="bi bi-bell me-2"></i>Notification Preferences
+        </a>
+
+        <div class="nav-section">Workspace</div>
+        <a class="nav-link" href="#" data-section="workspaces">
+            <i class="bi bi-grid me-2"></i>Workspace Management
+        </a>
+        @if (isAdmin)
+        {
+            <a class="nav-link" href="#" data-section="teams">
+                <i class="bi bi-people me-2"></i>Teams &amp; Roles
+            </a>
+        }
+
+        @if (isAdmin)
+        {
+            <div class="nav-section">Administration</div>
+            <a class="nav-link" href="#" data-section="audit">
+                <i class="bi bi-journal-text me-2"></i>Audit Logs
+            </a>
+        }
+        @if (isSuperAdmin)
+        {
+            <a class="nav-link" href="#" data-section="billing">
+                <i class="bi bi-credit-card me-2"></i>Billing &amp; Subscriptions
+            </a>
+            <a class="nav-link" href="#" data-section="features">
+                <i class="bi bi-toggles me-2"></i>Feature Toggles
+            </a>
+            <a class="nav-link" href="#" data-section="powerbi">
+                <i class="bi bi-bar-chart-line me-2"></i>Power BI Administration
+            </a>
+        }
+
+        @if (User.Identity?.IsAuthenticated == true)
+        {
+            <div class="nav-section">Developer</div>
+            <a class="nav-link" href="#" data-section="embed">
+                <i class="bi bi-code-slash me-2"></i>Embed &amp; iFrame
+            </a>
+        }
+    </nav>
+
+    <!-- ── Main content ── -->
+    <div class="settings-content">
+
+        <!-- Profile Information -->
+        <div class="settings-section active" id="section-profile">
+            <div class="section-header">
+                <h4>Profile Information</h4>
+                <p>Manage your public display name, email, and avatar.</p>
+            </div>
+            <div class="info-card card border-0 shadow-sm mb-4">
                 <div class="card-body p-4">
                     <form asp-action="Settings" method="post">
                         <div asp-validation-summary="ModelOnly" class="alert alert-danger small py-2"></div>
@@ -32,7 +111,7 @@
                             </div>
                         </div>
                         <div class="mb-3">
-                            <label asp-for="Email" class="form-label fw-medium">Email</label>
+                            <label asp-for="Email" class="form-label fw-medium">Email Address</label>
                             <input asp-for="Email" class="form-control" />
                             <span asp-validation-for="Email" class="text-danger small"></span>
                         </div>
@@ -46,11 +125,16 @@
                     </form>
                 </div>
             </div>
+        </div>
 
-            <div class="card border-0 shadow-sm rounded-4">
-                <div class="card-header bg-transparent border-0 pt-4 px-4">
-                    <h5 class="fw-bold mb-0">Change Password</h5>
-                </div>
+        <!-- Password & Security -->
+        <div class="settings-section" id="section-password">
+            <div class="section-header">
+                <h4>Password &amp; Security</h4>
+                <p>Change your password and manage connected authentication methods.</p>
+            </div>
+            <div class="info-card card border-0 shadow-sm mb-4">
+                <div class="card-header"><i class="bi bi-key me-2"></i>Change Password</div>
                 <div class="card-body p-4">
                     <form asp-action="Settings" method="post">
                         <div class="mb-3">
@@ -71,17 +155,473 @@
                     </form>
                 </div>
             </div>
-
-            @if (ViewBag.IsAgent == true || User.Identity?.IsAuthenticated == true)
-            {
-                <div class="card border-0 shadow-sm rounded-4 mt-4">
-                    <div class="card-header bg-transparent border-0 pt-4 px-4">
-                        <h5 class="fw-bold mb-0"><i class="bi bi-code-slash me-2 text-primary"></i>Embed &amp; iFrame Publishing</h5>
+            <div class="info-card card border-0 shadow-sm">
+                <div class="card-header"><i class="bi bi-microsoft me-2"></i>Connected Accounts</div>
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <div class="fw-medium">Microsoft / Office 365</div>
+                            <div class="text-muted small">Sign in with your organizational account</div>
+                        </div>
+                        <a href="/Account/LoginMicrosoft" class="btn btn-sm btn-outline-secondary">
+                            <i class="bi bi-microsoft me-1"></i>Connect
+                        </a>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Notification Preferences -->
+        <div class="settings-section" id="section-notifications">
+            <div class="section-header">
+                <h4>Notification Preferences</h4>
+                <p>Control which notifications you receive and how they are delivered.</p>
+            </div>
+            <div class="info-card card border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <div class="toggle-row">
+                        <div>
+                            <div class="fw-medium">System Announcements</div>
+                            <div class="text-muted small">Maintenance windows and product updates</div>
+                        </div>
+                        <div class="form-check form-switch mb-0">
+                            <input class="form-check-input" type="checkbox" checked />
+                        </div>
+                    </div>
+                    <div class="toggle-row">
+                        <div>
+                            <div class="fw-medium">Chat Mentions</div>
+                            <div class="text-muted small">When someone mentions you in a workspace</div>
+                        </div>
+                        <div class="form-check form-switch mb-0">
+                            <input class="form-check-input" type="checkbox" checked />
+                        </div>
+                    </div>
+                    <div class="toggle-row">
+                        <div>
+                            <div class="fw-medium">Workspace Invites</div>
+                            <div class="text-muted small">When you are invited to a team or workspace</div>
+                        </div>
+                        <div class="form-check form-switch mb-0">
+                            <input class="form-check-input" type="checkbox" checked />
+                        </div>
+                    </div>
+                    <div class="toggle-row">
+                        <div>
+                            <div class="fw-medium">Billing Alerts</div>
+                            <div class="text-muted small">Credit limit warnings and payment confirmations</div>
+                        </div>
+                        <div class="form-check form-switch mb-0">
+                            <input class="form-check-input" type="checkbox" />
+                        </div>
+                    </div>
+                    <div class="toggle-row">
+                        <div>
+                            <div class="fw-medium">Security Alerts</div>
+                            <div class="text-muted small">Login from new device or suspicious activity</div>
+                        </div>
+                        <div class="form-check form-switch mb-0">
+                            <input class="form-check-input" type="checkbox" checked />
+                        </div>
+                    </div>
+                    <div class="pt-3">
+                        <button class="btn btn-primary btn-sm">
+                            <i class="bi bi-check-lg me-1"></i>Save Preferences
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Workspace Management -->
+        <div class="settings-section" id="section-workspaces">
+            <div class="section-header">
+                <h4>Workspace Management</h4>
+                <p>Create and manage workspaces for team collaboration with dedicated Chat Agents.</p>
+            </div>
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <span class="text-muted small">Workspaces you own or manage</span>
+                <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#createWorkspaceModal">
+                    <i class="bi bi-plus-lg me-1"></i>New Workspace
+                </button>
+            </div>
+            <div class="info-card card border-0 shadow-sm mb-3">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center gap-3 mb-1">
+                        <div class="rounded-2 d-flex align-items-center justify-content-center flex-shrink-0"
+                             style="width:40px;height:40px;background:rgba(135,206,235,0.2);">
+                            <i class="bi bi-grid-fill" style="color:var(--cp-header);"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="fw-semibold">General Workspace</div>
+                            <div class="text-muted small">Default workspace · Chat Agent: General</div>
+                        </div>
+                        <span class="badge bg-success badge-role">Active</span>
+                        <button class="btn btn-sm btn-outline-secondary">
+                            <i class="bi bi-gear"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <p class="text-muted small">
+                <i class="bi bi-info-circle me-1"></i>
+                Each workspace includes a dedicated Chat Agent with its own context and history.
+                Paid plans support multiple workspaces with advanced collaboration features.
+            </p>
+        </div>
+
+        <!-- Teams & Roles (Admin only) -->
+        @if (isAdmin)
+        {
+            <div class="settings-section" id="section-teams">
+                <div class="section-header">
+                    <h4>Teams &amp; Role Management</h4>
+                    <p>Assign roles to team members. Role-based access controls what each user can see and do.</p>
+                </div>
+                <div class="info-card card border-0 shadow-sm mb-4">
+                    <div class="card-header"><i class="bi bi-diagram-3 me-2"></i>Role Hierarchy</div>
                     <div class="card-body p-4">
-                        <p class="text-muted small mb-3">
-                            Generate an embed token to publish your ChatPortal conversation as an iFrame on any external website.
-                        </p>
+                        <div class="row g-3">
+                            @foreach (var (roleName, roleDesc, roleColor) in new[] {
+                                ("Viewer", "Dashboards, reports, announcements", "#6c757d"),
+                                ("Member", "+ Chat, tasks, shared workspaces", "#0dcaf0"),
+                                ("Contributor", "+ Create and edit workspace content", "#198754"),
+                                ("Admin", "+ User management, workspace settings", "var(--cp-accent)"),
+                                ("Super Admin", "Full access: billing, feature toggles, tenant settings", "var(--cp-header)")
+                            })
+                            {
+                                <div class="col-md-4">
+                                    <div class="p-3 rounded-3 border h-100" style="border-left: 3px solid @roleColor !important;">
+                                        <div class="fw-semibold small mb-1">@roleName</div>
+                                        <div class="text-muted" style="font-size:0.78rem;">@roleDesc</div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+                <div class="info-card card border-0 shadow-sm">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span><i class="bi bi-people me-2"></i>Team Members</span>
+                        <button class="btn btn-sm btn-primary">
+                            <i class="bi bi-person-plus me-1"></i>Invite Member
+                        </button>
+                    </div>
+                    <div class="card-body p-0">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="ps-4 py-3">Member</th>
+                                    <th>Role</th>
+                                    <th>Joined</th>
+                                    <th class="pe-4">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="ps-4 py-3">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center"
+                                                 style="width:32px;height:32px;background:rgba(143,217,251,0.3)!important;">
+                                                <i class="bi bi-person" style="color:var(--cp-primary-text,#1a5276);font-size:0.85rem;"></i>
+                                            </div>
+                                            <div>
+                                                <div class="fw-medium small">Admin User</div>
+                                                <div class="text-muted" style="font-size:0.75rem;">admin@chatportal.com</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td><span class="badge rounded-pill" style="background:rgba(135,206,235,0.25);color:var(--cp-primary-text,#1a5276);">Admin</span></td>
+                                    <td class="text-muted small">Jan 2025</td>
+                                    <td class="pe-4"><button class="btn btn-xs btn-outline-secondary btn-sm py-0 px-2">Edit</button></td>
+                                </tr>
+                                <tr>
+                                    <td class="ps-4 py-3">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="rounded-circle d-flex align-items-center justify-content-center"
+                                                 style="width:32px;height:32px;background:rgba(176,224,230,0.3);">
+                                                <i class="bi bi-person" style="color:var(--cp-primary-text,#1a5276);font-size:0.85rem;"></i>
+                                            </div>
+                                            <div>
+                                                <div class="fw-medium small">Demo User</div>
+                                                <div class="text-muted" style="font-size:0.75rem;">demo@chatportal.com</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td><span class="badge rounded-pill" style="background:rgba(0,150,136,0.1);color:#00695c;">Member</span></td>
+                                    <td class="text-muted small">Jan 2025</td>
+                                    <td class="pe-4"><button class="btn btn-xs btn-outline-secondary btn-sm py-0 px-2">Edit</button></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <!-- Audit Logs (Admin only) -->
+        @if (isAdmin)
+        {
+            <div class="settings-section" id="section-audit">
+                <div class="section-header">
+                    <h4>Audit Logs</h4>
+                    <p>Track user actions for compliance, security, and governance.</p>
+                </div>
+                <div class="d-flex gap-2 mb-3">
+                    <input type="text" class="form-control form-control-sm" placeholder="Search audit logs…" style="max-width:280px;" />
+                    <select class="form-select form-select-sm" style="max-width:160px;">
+                        <option>All Actions</option>
+                        <option>Login</option>
+                        <option>Settings Change</option>
+                        <option>Data Access</option>
+                        <option>Role Change</option>
+                    </select>
+                    <button class="btn btn-sm btn-outline-secondary">
+                        <i class="bi bi-download me-1"></i>Export CSV
+                    </button>
+                </div>
+                <div class="info-card card border-0 shadow-sm">
+                    <div class="card-body p-0">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="ps-4 py-3">Timestamp</th>
+                                    <th>User</th>
+                                    <th>Action</th>
+                                    <th class="pe-4">Details</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="ps-4 py-3 text-muted small">2025-01-15 09:32</td>
+                                    <td class="small">admin@chatportal.com</td>
+                                    <td><span class="badge bg-info text-dark">Login</span></td>
+                                    <td class="pe-4 text-muted small">Successful login from 192.168.1.1</td>
+                                </tr>
+                                <tr>
+                                    <td class="ps-4 py-3 text-muted small">2025-01-15 09:45</td>
+                                    <td class="small">admin@chatportal.com</td>
+                                    <td><span class="badge bg-warning text-dark">Settings Change</span></td>
+                                    <td class="pe-4 text-muted small">Updated team member role</td>
+                                </tr>
+                                <tr>
+                                    <td class="ps-4 py-3 text-muted small">2025-01-15 10:12</td>
+                                    <td class="small">demo@chatportal.com</td>
+                                    <td><span class="badge bg-primary">Data Access</span></td>
+                                    <td class="pe-4 text-muted small">Viewed report: Q4 Analysis</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <!-- Billing & Subscriptions (Super Admin only) -->
+        @if (isSuperAdmin)
+        {
+            <div class="settings-section" id="section-billing">
+                <div class="section-header">
+                    <h4>Billing &amp; Subscriptions</h4>
+                    <p>Manage subscription plans, credit packages, and payment history.</p>
+                </div>
+                <div class="row g-3 mb-4">
+                    <div class="col-md-3">
+                        <div class="metric-card">
+                            <div class="metric-value">Pro</div>
+                            <div class="metric-label">Current Plan</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="metric-card">
+                            <div class="metric-value">850</div>
+                            <div class="metric-label">Credits Remaining</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="metric-card">
+                            <div class="metric-value">$19.99</div>
+                            <div class="metric-label">Next Bill</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="metric-card">
+                            <div class="metric-value">Feb 1</div>
+                            <div class="metric-label">Renewal Date</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="info-card card border-0 shadow-sm mb-4">
+                    <div class="card-header"><i class="bi bi-receipt me-2"></i>Payment History</div>
+                    <div class="card-body p-0">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="ps-4 py-3">Date</th>
+                                    <th>Description</th>
+                                    <th>Amount</th>
+                                    <th class="pe-4">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="ps-4 py-3 text-muted small">Jan 1, 2025</td>
+                                    <td class="small">Pro Plan – Monthly</td>
+                                    <td class="small fw-medium">$19.99</td>
+                                    <td class="pe-4"><span class="badge bg-success">Paid</span></td>
+                                </tr>
+                                <tr>
+                                    <td class="ps-4 py-3 text-muted small">Dec 1, 2024</td>
+                                    <td class="small">Pro Plan – Monthly</td>
+                                    <td class="small fw-medium">$19.99</td>
+                                    <td class="pe-4"><span class="badge bg-success">Paid</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="/Payment/SelectPlan" class="btn btn-primary btn-sm">
+                        <i class="bi bi-arrow-up-circle me-1"></i>Upgrade Plan
+                    </a>
+                    <button class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-download me-1"></i>Download Invoice
+                    </button>
+                </div>
+            </div>
+
+            <!-- Feature Toggles (Super Admin only) -->
+            <div class="settings-section" id="section-features">
+                <div class="section-header">
+                    <h4>Feature Toggles</h4>
+                    <p>Enable or disable features for the entire tenant, specific teams, or individuals.</p>
+                </div>
+                <div class="info-card card border-0 shadow-sm">
+                    <div class="card-body p-4">
+                        <div class="toggle-row">
+                            <div>
+                                <div class="fw-medium">AI Integrations</div>
+                                <div class="text-muted small">Allow users to query external AI models</div>
+                            </div>
+                            <div class="form-check form-switch mb-0">
+                                <input class="form-check-input" type="checkbox" checked />
+                            </div>
+                        </div>
+                        <div class="toggle-row">
+                            <div>
+                                <div class="fw-medium">External Sharing</div>
+                                <div class="text-muted small">Allow workspace content to be shared outside the tenant</div>
+                            </div>
+                            <div class="form-check form-switch mb-0">
+                                <input class="form-check-input" type="checkbox" />
+                            </div>
+                        </div>
+                        <div class="toggle-row">
+                            <div>
+                                <div class="fw-medium">Power BI Embedding</div>
+                                <div class="text-muted small">Enable iFrame embedding of reports</div>
+                            </div>
+                            <div class="form-check form-switch mb-0">
+                                <input class="form-check-input" type="checkbox" checked />
+                            </div>
+                        </div>
+                        <div class="toggle-row">
+                            <div>
+                                <div class="fw-medium">Preview Features</div>
+                                <div class="text-muted small">Enable early-access experimental features for this tenant</div>
+                            </div>
+                            <div class="form-check form-switch mb-0">
+                                <input class="form-check-input" type="checkbox" />
+                            </div>
+                        </div>
+                        <div class="toggle-row">
+                            <div>
+                                <div class="fw-medium">Office 365 Authentication</div>
+                                <div class="text-muted small">Allow users to sign in with Microsoft accounts</div>
+                            </div>
+                            <div class="form-check form-switch mb-0">
+                                <input class="form-check-input" type="checkbox" checked />
+                            </div>
+                        </div>
+                        <div class="pt-3">
+                            <button class="btn btn-primary btn-sm">
+                                <i class="bi bi-check-lg me-1"></i>Save Feature Settings
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Power BI Administration (Super Admin only) -->
+            <div class="settings-section" id="section-powerbi">
+                <div class="section-header">
+                    <h4>Power BI Administration</h4>
+                    <p>Usage metrics, capacity management, security, and monitoring for your Power BI tenant.</p>
+                </div>
+                <div class="row g-3 mb-4">
+                    <div class="col-md-3">
+                        <div class="metric-card">
+                            <div class="metric-value">24</div>
+                            <div class="metric-label">Active Reports</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="metric-card">
+                            <div class="metric-value">8</div>
+                            <div class="metric-label">Datasets</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="metric-card">
+                            <div class="metric-value">3</div>
+                            <div class="metric-label">Workspaces</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="metric-card">
+                            <div class="metric-value">99.8%</div>
+                            <div class="metric-label">SLA Uptime</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row g-3">
+                    @foreach (var (icon, title, desc) in new[] {
+                        ("bi-graph-up", "Usage Metrics", "Track report, dataset, and workspace activity"),
+                        ("bi-shield-check", "Security &amp; Compliance", "Authentication, conditional access, encryption"),
+                        ("bi-cpu", "Capacity Management", "Assign Premium capacities and optimize workloads"),
+                        ("bi-bell-fill", "Monitoring &amp; Alerts", "SLA breaches, refresh failures, capacity overload")
+                    })
+                    {
+                        <div class="col-md-6">
+                            <div class="info-card card border-0 shadow-sm h-100">
+                                <div class="card-body p-4">
+                                    <div class="d-flex align-items-start gap-3">
+                                        <div class="rounded-2 p-2 flex-shrink-0" style="background:rgba(135,206,235,0.15);">
+                                            <i class="bi @icon fs-5" style="color:var(--cp-header);"></i>
+                                        </div>
+                                        <div>
+                                            <div class="fw-semibold mb-1">@Html.Raw(title)</div>
+                                            <div class="text-muted small">@desc</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+
+        <!-- Embed & iFrame -->
+        @if (User.Identity?.IsAuthenticated == true)
+        {
+            <div class="settings-section" id="section-embed">
+                <div class="section-header">
+                    <h4>Embed &amp; iFrame Publishing</h4>
+                    <p>Generate an embed token to publish your ChatPortal conversation as an iFrame on any external website.</p>
+                </div>
+                <div class="info-card card border-0 shadow-sm">
+                    <div class="card-body p-4">
                         <div class="d-flex gap-2 mb-3">
                             <button class="btn btn-primary btn-sm" id="settingsGenerateTokenBtn" onclick="settingsGenerateToken()">
                                 <i class="bi bi-key me-1"></i>Generate Embed Token
@@ -109,16 +649,68 @@
                         </div>
                     </div>
                 </div>
-            }
+            </div>
+        }
+
+    </div>
+</div>
+
+<!-- Create Workspace Modal -->
+<div class="modal fade" id="createWorkspaceModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-bold"><i class="bi bi-grid me-2" style="color:var(--cp-header);"></i>New Workspace</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label fw-medium">Workspace Name</label>
+                    <input type="text" class="form-control" placeholder="e.g. Marketing Team" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-medium">Description</label>
+                    <textarea class="form-control" rows="2" placeholder="What is this workspace for?"></textarea>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-medium">Chat Agent Context</label>
+                    <select class="form-select">
+                        <option value="general">General Purpose</option>
+                        <option value="data-analysis">Data Analysis</option>
+                        <option value="code">Code Assistant</option>
+                        <option value="support">Customer Support</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary">
+                    <i class="bi bi-plus-lg me-1"></i>Create Workspace
+                </button>
+            </div>
         </div>
     </div>
 </div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
-    @if (ViewBag.IsAgent == true || User.Identity?.IsAuthenticated == true)
-    {
-        <script>
+    <script>
+        // Settings tab navigation
+        document.querySelectorAll('.settings-nav .nav-link').forEach(link => {
+            link.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = this.dataset.section;
+                document.querySelectorAll('.settings-nav .nav-link').forEach(l => l.classList.remove('active'));
+                this.classList.add('active');
+                document.querySelectorAll('.settings-section').forEach(s => s.classList.remove('active'));
+                const section = document.getElementById('section-' + target);
+                if (section) section.classList.add('active');
+            });
+        });
+
+        @if (User.Identity?.IsAuthenticated == true)
+        {
+            <text>
             function getAntiForgeryToken() {
                 return document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? '';
             }
@@ -127,7 +719,7 @@
                 const btn = document.getElementById('settingsGenerateTokenBtn');
                 const status = document.getElementById('settingsTokenStatus');
                 btn.disabled = true;
-                status.textContent = 'Generating…';
+                status.textContent = 'Generating\u2026';
                 try {
                     const resp = await fetch('/Account/GenerateEmbedToken', {
                         method: 'POST',
@@ -159,6 +751,8 @@
                 const el = document.getElementById(elementId);
                 navigator.clipboard?.writeText(el.value).catch(() => { el.select(); document.execCommand('copy'); });
             }
-        </script>
-    }
+            </text>
+        }
+    </script>
 }
+

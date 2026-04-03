@@ -21,6 +21,11 @@ public class ChatSession
     [ForeignKey("ModelId")]
     public virtual AIModel? Model { get; set; }
 
+    public int? WorkspaceId { get; set; }
+
+    [ForeignKey("WorkspaceId")]
+    public virtual Workspace? Workspace { get; set; }
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
     public bool IsArchived { get; set; } = false;

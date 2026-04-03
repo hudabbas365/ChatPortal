@@ -1,7 +1,11 @@
 /* ChatPortal - Main Stylesheet */
 
 :root {
-    --cp-primary: #0d6efd;
+    --cp-primary: #ADD8E6;
+    --cp-secondary: #B0E0E6;
+    --cp-accent: #8FD9FB;
+    --cp-header: #87CEEB;
+    --cp-primary-text: #1a5276;
     --cp-dark: #0d1117;
     --cp-sidebar-width: 260px;
 }
@@ -18,7 +22,7 @@ body {
 
 /* Text gradient */
 .text-gradient {
-    background: linear-gradient(135deg, #0d6efd, #6610f2);
+    background: linear-gradient(135deg, var(--cp-accent), var(--cp-header));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -68,7 +72,7 @@ body {
 }
 
 .session-item.active {
-    background: rgba(13, 110, 253, 0.2) !important;
+    background: rgba(143, 217, 251, 0.25) !important;
 }
 
 .chat-messages {
@@ -81,8 +85,8 @@ body {
 }
 
 .chat-bubble-user {
-    background: var(--cp-primary);
-    color: #fff;
+    background: var(--cp-accent);
+    color: var(--cp-primary-text);
     border-bottom-right-radius: 4px !important;
 }
 

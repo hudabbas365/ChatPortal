@@ -50,13 +50,21 @@ public class AppDbContext : DbContext
     public DbSet<Announcement> Announcements { get; set; }
     public DbSet<AnnouncementReadStatus> AnnouncementReadStatuses { get; set; }
 
+    // Workspace and feature management
+    public DbSet<Workspace> Workspaces { get; set; }
+    public DbSet<FeatureToggle> FeatureToggles { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
 
         modelBuilder.Entity<Role>().HasData(
             new Role { Id = 1, Name = "Admin", Description = "Administrator" },
-            new Role { Id = 2, Name = "User", Description = "Regular User" }
+            new Role { Id = 2, Name = "User", Description = "Regular User" },
+            new Role { Id = 3, Name = "Viewer", Description = "Read-only access to dashboards and reports" },
+            new Role { Id = 4, Name = "Member", Description = "Access to chat, tasks, and shared workspaces" },
+            new Role { Id = 5, Name = "Contributor", Description = "Can create and edit content in workspaces" },
+            new Role { Id = 6, Name = "Super Admin", Description = "Full tenant-wide access including billing and feature toggles" }
         );
 
         modelBuilder.Entity<AIModel>().HasData(
@@ -105,6 +113,18 @@ public class AppDbContext : DbContext
             .WithMany()
             .HasForeignKey(a => a.CreatedByAdminId)
             .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<Workspace>()
+            .HasOne(w => w.Owner)
+            .WithMany()
+            .HasForeignKey(w => w.OwnerId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<FeatureToggle>()
+            .HasOne(f => f.CreatedByAdmin)
+            .WithMany()
+            .HasForeignKey(f => f.CreatedByAdminId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         modelBuilder.Entity<CreditPackage>().HasData(
             new CreditPackage { Id = 1, Name = "Starter", Description = "100 AI query credits", Credits = 100, Price = 4.99m, IsActive = true },
