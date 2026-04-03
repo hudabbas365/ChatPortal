@@ -1,0 +1,93 @@
+@{
+    Layout = null;
+}
+
+<div class="modal fade" id="createDataSourceModal" tabindex="-1" aria-labelledby="createDataSourceModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content" style="border-radius:16px; border:none; box-shadow: 0 8px 40px rgba(0,0,0,0.15);">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold" id="createDataSourceModalLabel">
+                    <i class="bi bi-plug-fill me-2 text-primary"></i>Choose a Connector
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body pt-2">
+                <p class="text-muted small mb-4">Select the type of data source you want to connect to.</p>
+                <div class="row g-3">
+                    <!-- SQL Server -->
+                    <div class="col-md-4">
+                        <a href="/DataConnection/CreateDatabase?type=SqlServer" class="text-decoration-none">
+                            <div class="connector-card p-3 rounded-3 border text-center h-100" style="cursor:pointer; transition: all 0.2s;">
+                                <div class="connector-icon mb-2" style="font-size:2.2rem;">🗄️</div>
+                                <div class="fw-semibold">SQL Server</div>
+                                <div class="text-muted small mt-1">Microsoft SQL Server &amp; Azure SQL</div>
+                            </div>
+                        </a>
+                    </div>
+                    <!-- PostgreSQL -->
+                    <div class="col-md-4">
+                        <a href="/DataConnection/CreateDatabase?type=PostgreSQL" class="text-decoration-none">
+                            <div class="connector-card p-3 rounded-3 border text-center h-100" style="cursor:pointer; transition: all 0.2s;">
+                                <div class="connector-icon mb-2" style="font-size:2.2rem;">🐘</div>
+                                <div class="fw-semibold">PostgreSQL</div>
+                                <div class="text-muted small mt-1">Open-source relational database</div>
+                            </div>
+                        </a>
+                    </div>
+                    <!-- MySQL -->
+                    <div class="col-md-4">
+                        <a href="/DataConnection/CreateDatabase?type=MySQL" class="text-decoration-none">
+                            <div class="connector-card p-3 rounded-3 border text-center h-100" style="cursor:pointer; transition: all 0.2s;">
+                                <div class="connector-icon mb-2" style="font-size:2.2rem;">🐬</div>
+                                <div class="fw-semibold">MySQL</div>
+                                <div class="text-muted small mt-1">MySQL &amp; MariaDB</div>
+                            </div>
+                        </a>
+                    </div>
+                    <!-- MongoDB -->
+                    <div class="col-md-4">
+                        <a href="/DataConnection/CreateDatabase?type=MongoDB" class="text-decoration-none">
+                            <div class="connector-card p-3 rounded-3 border text-center h-100" style="cursor:pointer; transition: all 0.2s;">
+                                <div class="connector-icon mb-2" style="font-size:2.2rem;">🍃</div>
+                                <div class="fw-semibold">MongoDB</div>
+                                <div class="text-muted small mt-1">Document-based NoSQL database</div>
+                            </div>
+                        </a>
+                    </div>
+                    <!-- Oracle -->
+                    <div class="col-md-4">
+                        <a href="/DataConnection/CreateDatabase?type=Oracle" class="text-decoration-none">
+                            <div class="connector-card p-3 rounded-3 border text-center h-100" style="cursor:pointer; transition: all 0.2s;">
+                                <div class="connector-icon mb-2" style="font-size:2.2rem;">☁️</div>
+                                <div class="fw-semibold">Oracle</div>
+                                <div class="text-muted small mt-1">Oracle Database</div>
+                            </div>
+                        </a>
+                    </div>
+                    <!-- Excel/CSV -->
+                    <div class="col-md-4">
+                        <a href="/DataConnection/CreateFile" class="text-decoration-none">
+                            <div class="connector-card p-3 rounded-3 border text-center h-100" style="cursor:pointer; transition: all 0.2s;">
+                                <div class="connector-icon mb-2" style="font-size:2.2rem;">📊</div>
+                                <div class="fw-semibold">Excel / CSV</div>
+                                <div class="text-muted small mt-1">Upload spreadsheets and CSV files</div>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .connector-card:hover {
+        background: #f0f4ff;
+        border-color: #6c63ff !important;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 16px rgba(108,99,255,0.15);
+    }
+</style>

@@ -1,104 +1,117 @@
-@model ChatPortal.ViewModels.DashboardViewModel
+@model List<ChatPortal.Models.Entities.Dashboard>
 @{
-    ViewData["Title"] = "Dashboard";
+    ViewData["Title"] = "My Dashboards";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<div class="container-fluid py-4" style="padding-top:76px!important;">
-    <div class="row">
-        <div class="col-lg-2 d-none d-lg-block">
-            <partial name="_Sidebar" />
-        </div>
-        <div class="col-lg-10">
-            <!-- Page Header -->
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <div>
-                    <h3 class="fw-bold mb-0">Dashboard</h3>
-                    <p class="text-muted small mb-0">Welcome back, @Model.UserName!</p>
-                </div>
-                <a asp-controller="Chat" asp-action="Index" class="btn btn-primary">
-                    <i class="bi bi-plus-lg me-1"></i>New Chat
-                </a>
+<div class="page-hero py-4 mb-4" style="background: linear-gradient(135deg, #E8F0FE 0%, #F3E8FF 100%);">
+    <div class="container">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+            <div>
+                <h1 class="h3 fw-bold mb-1"><i class="bi bi-grid-fill me-2 text-primary"></i>My Dashboards</h1>
+                <p class="text-muted mb-0">Create and manage your data dashboards.</p>
             </div>
-
-            <!-- Stats Cards -->
-            <div class="row g-3 mb-4">
-                @foreach (var stat in Model.Stats)
-                {
-                    <div class="col-md-3">
-                        <div class="card border-0 shadow-sm rounded-4 h-100">
-                            <div class="card-body p-4">
-                                <div class="d-flex justify-content-between align-items-start">
-                                    <div>
-                                        <p class="text-muted small mb-1">@stat.Label</p>
-                                        <h3 class="fw-bold mb-0">@stat.Value</h3>
-                                    </div>
-                                    <div class="bg-@stat.Color bg-opacity-10 text-@stat.Color rounded-3 d-flex align-items-center justify-content-center" style="width:48px;height:48px;">
-                                        <i class="bi @stat.Icon fs-5"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                }
-            </div>
-
-            <!-- Credits & Plan -->
-            <div class="row g-3 mb-4">
-                <div class="col-md-8">
-                    <div class="card border-0 shadow-sm rounded-4">
-                        <div class="card-body p-4">
-                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                <h6 class="fw-bold mb-0">Credit Usage</h6>
-                                <span class="badge bg-primary">@Model.PlanName Plan</span>
-                            </div>
-                            <div class="progress mb-2" style="height:10px;">
-                                <div class="progress-bar bg-primary rounded-pill" style="width:@(Model.CreditsUsed * 100 / (Model.CreditsUsed + Model.CreditsRemaining))%"></div>
-                            </div>
-                            <div class="d-flex justify-content-between small text-muted">
-                                <span>@Model.CreditsUsed used</span>
-                                <span>@Model.CreditsRemaining remaining</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="card border-0 shadow-sm rounded-4 h-100" style="background:linear-gradient(135deg,#0d6efd,#6610f2);">
-                        <div class="card-body p-4 text-white">
-                            <h6 class="fw-bold mb-1">Upgrade Plan</h6>
-                            <p class="small opacity-75 mb-3">Get more credits &amp; features</p>
-                            <a asp-controller="Pricing" asp-action="Index" class="btn btn-light btn-sm">
-                                View Plans
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Recent Activity -->
-            <div class="card border-0 shadow-sm rounded-4">
-                <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0">
-                    <h6 class="fw-bold">Recent Activity</h6>
-                </div>
-                <div class="card-body p-4">
-                    <div class="list-group list-group-flush">
-                        @foreach (var activity in Model.RecentActivity)
-                        {
-                            <div class="list-group-item px-0 py-3 border-0 border-bottom">
-                                <div class="d-flex align-items-center gap-3">
-                                    <div class="bg-body-secondary rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:40px;height:40px;">
-                                        <i class="bi @activity.Icon text-primary"></i>
-                                    </div>
-                                    <div class="flex-grow-1">
-                                        <div class="fw-medium small">@activity.Action</div>
-                                    </div>
-                                    <small class="text-muted">@activity.Time</small>
-                                </div>
-                            </div>
-                        }
-                    </div>
-                </div>
-            </div>
+            <a asp-action="Create" class="btn btn-primary">
+                <i class="bi bi-plus-lg me-1"></i>New Dashboard
+            </a>
         </div>
     </div>
 </div>
+
+<div class="container pb-5">
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show">
+            <i class="bi bi-check-circle me-2"></i>@TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (Model == null || !Model.Any())
+    {
+        <div class="text-center py-5">
+            <i class="bi bi-grid display-1 text-muted opacity-25"></i>
+            <h4 class="mt-3 text-muted">No dashboards yet</h4>
+            <p class="text-muted">Create a dashboard and pin charts from your data queries.</p>
+            <a asp-action="Create" class="btn btn-primary">
+                <i class="bi bi-plus-lg me-1"></i>Create Dashboard
+            </a>
+        </div>
+    }
+    else
+    {
+        <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4">
+            @foreach (var dashboard in Model)
+            {
+                <div class="col">
+                    <div class="card h-100 border-0 shadow-sm" style="border-radius:12px;">
+                        <div class="card-body">
+                            <div class="d-flex align-items-start justify-content-between">
+                                <div>
+                                    <h5 class="fw-bold mb-1">@dashboard.Title</h5>
+                                    @if (!string.IsNullOrEmpty(dashboard.Description))
+                                    {
+                                        <p class="text-muted small mb-2">@dashboard.Description</p>
+                                    }
+                                </div>
+                                @if (dashboard.IsPublic && !dashboard.IsRevoked)
+                                {
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle ms-2">
+                                        <i class="bi bi-globe2 me-1"></i>Public
+                                    </span>
+                                }
+                            </div>
+                            <div class="text-muted small mt-2">
+                                <i class="bi bi-bar-chart me-1"></i>@dashboard.PinnedCharts.Count charts
+                                &nbsp;·&nbsp;
+                                <i class="bi bi-calendar me-1"></i>@dashboard.CreatedAt.ToString("MMM dd, yyyy")
+                            </div>
+                        </div>
+                        <div class="card-footer bg-transparent border-0 pt-0 pb-3 px-3">
+                            <div class="d-flex gap-2 flex-wrap">
+                                <a asp-action="View" asp-route-id="@dashboard.Id" class="btn btn-primary btn-sm">
+                                    <i class="bi bi-eye me-1"></i>View
+                                </a>
+                                <a asp-action="Edit" asp-route-id="@dashboard.Id" class="btn btn-outline-secondary btn-sm">
+                                    <i class="bi bi-pencil me-1"></i>Edit
+                                </a>
+                                @if (!dashboard.IsPublic || dashboard.IsRevoked)
+                                {
+                                    <form method="post" asp-action="Share" asp-route-id="@dashboard.Id" class="d-inline">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn btn-outline-success btn-sm">
+                                            <i class="bi bi-share me-1"></i>Share
+                                        </button>
+                                    </form>
+                                }
+                                else
+                                {
+                                    <button class="btn btn-outline-info btn-sm" onclick="copyEmbedCode('@dashboard.PublicSlug')" title="Copy embed code">
+                                        <i class="bi bi-code-slash me-1"></i>Embed
+                                    </button>
+                                }
+                                <form method="post" asp-action="Delete" asp-route-id="@dashboard.Id" class="d-inline">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-outline-danger btn-sm" onclick="return confirm('Delete this dashboard?')">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@section Scripts {
+<script>
+function copyEmbedCode(slug) {
+    const code = `<iframe src="${window.location.origin}/embed/dashboard/${slug}" width="100%" height="600" frameborder="0"></iframe>`;
+    navigator.clipboard.writeText(code).then(() => {
+        alert('Embed code copied to clipboard!');
+    });
+}
+</script>
+}

@@ -1,0 +1,109 @@
+@model List<ChatPortal.Models.Entities.Dashboard>
+@{
+    ViewData["Title"] = "Shared Embeds";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="page-hero py-4 mb-4" style="background: linear-gradient(135deg,#fee2e2 0%,#fef3c7 100%);">
+    <div class="container">
+        <div class="d-flex align-items-center justify-content-between">
+            <div>
+                <h1 class="h3 fw-bold mb-1"><i class="bi bi-shield-check me-2 text-danger"></i>Shared Embeds</h1>
+                <p class="text-muted mb-0">Review and manage all publicly shared dashboards and embeds.</p>
+            </div>
+            <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-arrow-left me-1"></i>Back to Admin
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="container pb-5">
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show">
+            <i class="bi bi-check-circle me-2"></i>@TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show">
+            <i class="bi bi-exclamation-circle me-2"></i>@TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (Model == null || !Model.Any())
+    {
+        <div class="text-center py-5">
+            <i class="bi bi-shield display-1 text-muted opacity-25"></i>
+            <h4 class="mt-3 text-muted">No shared dashboards</h4>
+            <p class="text-muted">No users have publicly shared dashboards yet.</p>
+        </div>
+    }
+    else
+    {
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Title</th>
+                                <th>Owner</th>
+                                <th>Public URL</th>
+                                <th>Charts</th>
+                                <th>Shared At</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var d in Model)
+                            {
+                                <tr>
+                                    <td class="fw-semibold">@d.Title</td>
+                                    <td class="text-muted small">@(d.User?.Email ?? "Unknown")</td>
+                                    <td>
+                                        <a href="/embed/dashboard/@d.PublicSlug" target="_blank" class="small text-truncate d-inline-block" style="max-width:200px;">
+                                            /embed/dashboard/@d.PublicSlug
+                                        </a>
+                                    </td>
+                                    <td>@d.PinnedCharts.Count</td>
+                                    <td class="text-muted small text-nowrap">@d.UpdatedAt.ToString("MMM dd, yyyy")</td>
+                                    <td>
+                                        @if (d.IsRevoked)
+                                        {
+                                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle">Revoked</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-success-subtle text-success border border-success-subtle">Active</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (!d.IsRevoked)
+                                        {
+                                            <form method="post" asp-action="RevokeEmbed" asp-route-id="@d.Id" class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="btn btn-outline-danger btn-sm"
+                                                        onclick="return confirm('Revoke this embed? Users will no longer be able to access the public URL.')">
+                                                    <i class="bi bi-slash-circle me-1"></i>Revoke
+                                                </button>
+                                            </form>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted small">Revoked</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    }
+</div>
