@@ -165,6 +165,9 @@ public class DataConnectionService : IDataConnectionService
         if (string.IsNullOrWhiteSpace(connectionString))
             throw new ArgumentException("Connection string cannot be empty.");
 
+        if (connectionString.Length > 2000)
+            throw new ArgumentException("Connection string is too long.");
+
         var tables = new List<string>();
 
         switch (sourceType)

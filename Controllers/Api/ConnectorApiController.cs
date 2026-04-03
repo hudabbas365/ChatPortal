@@ -58,6 +58,9 @@ public class ConnectorApiController : ControllerBase
         if (string.IsNullOrWhiteSpace(table))
             return BadRequest(new { success = false, error = "Table parameter is required." });
 
+        if (!IsValidIdentifier(table))
+            return BadRequest(new { success = false, error = "Invalid table name." });
+
         limit = Math.Clamp(limit, 1, 500);
 
         try
@@ -65,12 +68,17 @@ public class ConnectorApiController : ControllerBase
             var ds = await _dataConnection.GetDataSourceAsync(dataSourceId, userId.Value);
             if (ds == null) return NotFound(new { success = false, error = "Data source not found." });
 
+            // Validate the requested table exists in the data source schema
+            var schema = await _dataConnection.GetSchemaAsync(dataSourceId, userId.Value);
+            if (schema.Count > 0 && !schema.ContainsKey(table))
+                return BadRequest(new { success = false, error = "Table not found in data source." });
+
             string query = ds.SourceType switch
             {
-                "SqlServer" => $"SELECT TOP {limit} * FROM {table}",
-                "PostgreSQL" => $"SELECT * FROM {table} LIMIT {limit}",
-                "MySQL" => $"SELECT * FROM {table} LIMIT {limit}",
-                "Oracle" => $"SELECT * FROM {table} FETCH FIRST {limit} ROWS ONLY",
+                "SqlServer" => $"SELECT TOP {limit} * FROM [{table.Replace("]", "")}]",
+                "PostgreSQL" => $"SELECT * FROM \"{table.Replace("\"", "")}\" LIMIT {limit}",
+                "MySQL" => $"SELECT * FROM `{table.Replace("`", "")}` LIMIT {limit}",
+                "Oracle" => $"SELECT * FROM \"{table.Replace("\"", "")}\" FETCH FIRST {limit} ROWS ONLY",
                 _ => table
             };
 
@@ -83,7 +91,8 @@ public class ConnectorApiController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error fetching data from {Table} in data source {DataSourceId}", table, dataSourceId);
+            _logger.LogError(ex, "Error fetching data from {Table} in data source {DataSourceId}",
+                SanitizeForLog(table), dataSourceId);
             return StatusCode(500, new { success = false, error = "An error occurred fetching data." });
         }
     }
@@ -150,6 +159,18 @@ public class ConnectorApiController : ControllerBase
             return StatusCode(500, new { success = false, error = "An error occurred checking connection status." });
         }
     }
+
+    /// <summary>Validates that an identifier contains only safe characters (letters, digits, dot, underscore, hyphen, space).</summary>
+    private static bool IsValidIdentifier(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value) || value.Length > 256)
+            return false;
+        return System.Text.RegularExpressions.Regex.IsMatch(value, @"^[\w\s.\-]+$");
+    }
+
+    /// <summary>Removes newlines and control characters from user-supplied strings before logging.</summary>
+    private static string SanitizeForLog(string value) =>
+        value.Replace('\n', '_').Replace('\r', '_').Replace('\t', '_');
 }
 
 public record QueryRequest(string Query);
