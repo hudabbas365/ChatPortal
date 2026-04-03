@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using ChatPortal.Data;
 using ChatPortal.Models.Entities;
+using ChatPortal.Services;
 using ChatPortal.Services.DataSourceConnectors;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
@@ -13,11 +14,13 @@ namespace ChatPortal.Controllers
     {
         private readonly AppDbContext _context;
         private readonly IServiceProvider _serviceProvider;
+        private readonly IEncryptionService _encryption;
 
-        public DataSourceController(AppDbContext context, IServiceProvider serviceProvider)
+        public DataSourceController(AppDbContext context, IServiceProvider serviceProvider, IEncryptionService encryption)
         {
             _context = context;
             _serviceProvider = serviceProvider;
+            _encryption = encryption;
         }
 
         private int GetUserId()
@@ -131,11 +134,12 @@ namespace ChatPortal.Controllers
                     Name = name,
                     SourceType = providerInfo.Category,
                     Provider = provider,
-                    ConnectionString = connectionString,
+                    ConnectionString = connectionString != null ? _encryption.Encrypt(connectionString) : null,
                     ApiEndpoint = apiEndpoint,
-                    ApiKey = apiKey,
+                    ApiKey = apiKey != null ? _encryption.Encrypt(apiKey) : null,
+                    AccessToken = null,
                     Username = username,
-                    PasswordHash = password, // TODO: Hash the password
+                    PasswordHash = password != null ? _encryption.Encrypt(password) : null,
                     AdditionalConfig = additionalConfig,
                     IsActive = true,
                     ConnectedAt = DateTime.UtcNow

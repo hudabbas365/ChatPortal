@@ -52,6 +52,8 @@ builder.Services.AddScoped<IDataChatService, DataChatService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IQueryHistoryService, QueryHistoryService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
+builder.Services.AddDataProtection();
+builder.Services.AddSingleton<IEncryptionService, EncryptionService>();
 builder.Services.AddHttpClient<IAIChatService, AIChatService>();
 builder.Services.AddHttpClient<IDataChatService, DataChatService>();
 builder.Services.AddControllersWithViews(options =>

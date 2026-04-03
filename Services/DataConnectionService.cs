@@ -22,15 +22,17 @@ public class DataConnectionService : IDataConnectionService
     private readonly AppDbContext _db;
     private readonly IWebHostEnvironment _env;
     private readonly ILogger<DataConnectionService> _logger;
+    private readonly IEncryptionService _encryption;
 
     private static readonly string[] AllowedExtensions = { ".xlsx", ".xls", ".csv" };
     private const long MaxFileSizeBytes = 50 * 1024 * 1024;
 
-    public DataConnectionService(AppDbContext db, IWebHostEnvironment env, ILogger<DataConnectionService> logger)
+    public DataConnectionService(AppDbContext db, IWebHostEnvironment env, ILogger<DataConnectionService> logger, IEncryptionService encryption)
     {
         _db = db;
         _env = env;
         _logger = logger;
+        _encryption = encryption;
     }
 
     public async Task<List<UserDataSource>> GetUserDataSourcesAsync(int userId)
@@ -94,7 +96,7 @@ public class DataConnectionService : IDataConnectionService
             UserId = userId,
             Name = name,
             SourceType = sourceType,
-            ConnectionDetails = connectionString,
+            ConnectionDetails = _encryption.Encrypt(connectionString),
             SchemaSnapshot = JsonSerializer.Serialize(tables),
             Status = "Active"
         };
@@ -275,7 +277,7 @@ public class DataConnectionService : IDataConnectionService
             return ds.SourceType == "CSV" ? GetCsvSchema(fullPath) : GetExcelSchema(fullPath);
         }
 
-        var tables = await GetAvailableTablesAsync(ds.SourceType, ds.ConnectionDetails!);
+        var tables = await GetAvailableTablesAsync(ds.SourceType, _encryption.Decrypt(ds.ConnectionDetails!));
         foreach (var t in tables)
             schema[t] = new List<string>();
 
@@ -334,14 +336,16 @@ public class DataConnectionService : IDataConnectionService
         var ds = await _db.UserDataSources.FirstOrDefaultAsync(d => d.Id == dataSourceId && d.UserId == userId)
             ?? throw new KeyNotFoundException("Data source not found or access denied.");
 
+        var connectionDetails = ds.ConnectionDetails != null ? _encryption.Decrypt(ds.ConnectionDetails) : null;
+
         return ds.SourceType switch
         {
-            "SqlServer" => await QuerySqlServerAsync(ds.ConnectionDetails!, query),
-            "PostgreSQL" => await QueryPostgreSQLAsync(ds.ConnectionDetails!, query),
-            "MySQL" => await QueryMySQLAsync(ds.ConnectionDetails!, query),
-            "MongoDB" => await QueryMongoDBAsync(ds.ConnectionDetails!, query),
-            "Oracle" => await QueryOracleAsync(ds.ConnectionDetails!, query),
-            "Elasticsearch" => await QueryElasticsearchAsync(ds.ConnectionDetails!, query),
+            "SqlServer" => await QuerySqlServerAsync(connectionDetails!, query),
+            "PostgreSQL" => await QueryPostgreSQLAsync(connectionDetails!, query),
+            "MySQL" => await QueryMySQLAsync(connectionDetails!, query),
+            "MongoDB" => await QueryMongoDBAsync(connectionDetails!, query),
+            "Oracle" => await QueryOracleAsync(connectionDetails!, query),
+            "Elasticsearch" => await QueryElasticsearchAsync(connectionDetails!, query),
             "Excel" or "CSV" => QueryFileDataSource(ds, query),
             _ => throw new NotSupportedException($"Querying data source of type '{ds.SourceType}' is not supported.")
         };

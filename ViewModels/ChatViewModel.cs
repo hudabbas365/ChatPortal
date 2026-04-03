@@ -35,6 +35,18 @@ public class ChatSessionViewModel
 }
 
 /// <summary>
+/// Represents a user data source shown in the chat sidebar.
+/// </summary>
+public class UserDataSourceViewModel
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string SourceType { get; set; } = string.Empty;
+    public string Status { get; set; } = "Pending";
+    public DateTime CreatedAt { get; set; }
+}
+
+/// <summary>
 /// View model for the main Chat page, providing the list of sessions, the
 /// currently active session, and the AI models available for selection.
 /// </summary>
@@ -51,4 +63,7 @@ public class ChatViewModel
 
     /// <summary>Gets or sets the model identifier selected by default.</summary>
     public string SelectedModel { get; set; } = "gpt-3.5-turbo";
+
+    /// <summary>Gets or sets the user's connected data sources shown in the sidebar.</summary>
+    public List<UserDataSourceViewModel> DataSources { get; set; } = new();
 }
