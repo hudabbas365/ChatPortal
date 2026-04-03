@@ -73,6 +73,7 @@ public class ConnectorApiController : ControllerBase
             if (schema.Count > 0 && !schema.ContainsKey(table))
                 return BadRequest(new { success = false, error = "Table not found in data source." });
 
+            // limit is an integer clamped to [1,500] above; direct interpolation is safe
             string query = ds.SourceType switch
             {
                 "SqlServer" => $"SELECT TOP {limit} * FROM [{table.Replace("]", "")}]",
@@ -165,8 +166,11 @@ public class ConnectorApiController : ControllerBase
     {
         if (string.IsNullOrWhiteSpace(value) || value.Length > 256)
             return false;
-        return System.Text.RegularExpressions.Regex.IsMatch(value, @"^[\w\s.\-]+$");
+        return _identifierRegex.IsMatch(value);
     }
+
+    private static readonly System.Text.RegularExpressions.Regex _identifierRegex =
+        new(@"^[\w\s.\-]+$", System.Text.RegularExpressions.RegexOptions.Compiled);
 
     /// <summary>Removes newlines and control characters from user-supplied strings before logging.</summary>
     private static string SanitizeForLog(string value) =>

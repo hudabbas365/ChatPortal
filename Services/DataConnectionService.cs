@@ -186,6 +186,7 @@ public class DataConnectionService : IDataConnectionService
                 break;
 
             case "PostgreSQL":
+                ValidateConnectionStringLength(connectionString);
                 await using (var pgConn = new NpgsqlConnection(connectionString))
                 {
                     await pgConn.OpenAsync();
@@ -199,6 +200,7 @@ public class DataConnectionService : IDataConnectionService
                 break;
 
             case "MySQL":
+                ValidateConnectionStringLength(connectionString);
                 await using (var myConn = new MySqlConnection(connectionString))
                 {
                     await myConn.OpenAsync();
@@ -221,6 +223,7 @@ public class DataConnectionService : IDataConnectionService
                 break;
 
             case "Oracle":
+                ValidateConnectionStringLength(connectionString);
                 await using (var orConn = new OracleConnection(connectionString))
                 {
                     await orConn.OpenAsync();
@@ -286,13 +289,17 @@ public class DataConnectionService : IDataConnectionService
 
     private static void ValidateSqlConnectionString(string connectionString)
     {
+        ValidateConnectionStringLength(connectionString);
+        var _ = new SqlConnectionStringBuilder(connectionString);
+    }
+
+    private static void ValidateConnectionStringLength(string connectionString)
+    {
         if (string.IsNullOrWhiteSpace(connectionString))
             throw new ArgumentException("Connection string cannot be empty.");
 
         if (connectionString.Length > 2000)
             throw new ArgumentException("Connection string is too long.");
-
-        var _ = new SqlConnectionStringBuilder(connectionString);
     }
 
     public async Task<UserDataSource> UpdateSelectedTablesAsync(int id, int userId, List<string> selectedTables)
