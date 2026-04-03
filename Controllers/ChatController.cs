@@ -1,6 +1,7 @@
 using ChatPortal.Services;
 using ChatPortal.ViewModels;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace ChatPortal.Controllers;
 
@@ -11,18 +12,24 @@ namespace ChatPortal.Controllers;
 public class ChatController : Controller
 {
     private readonly IAIChatService _aiChatService;
+    private readonly IDataConnectionService _dataConnection;
     private readonly ILogger<ChatController> _logger;
 
     /// <summary>
     /// Initialises a new instance of <see cref="ChatController"/>.
     /// </summary>
     /// <param name="aiChatService">Service used to query available AI models and send messages.</param>
+    /// <param name="dataConnection">Service used to load user data sources.</param>
     /// <param name="logger">Logger for recording errors.</param>
-    public ChatController(IAIChatService aiChatService, ILogger<ChatController> logger)
+    public ChatController(IAIChatService aiChatService, IDataConnectionService dataConnection, ILogger<ChatController> logger)
     {
         _aiChatService = aiChatService;
+        _dataConnection = dataConnection;
         _logger = logger;
     }
+
+    private int? GetUserId() =>
+        int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : null;
 
     /// <summary>
     /// Renders the main chat page, populating the view model with the list of
@@ -43,9 +50,32 @@ public class ChatController : Controller
             TempData["Error"] = "Could not load AI model list. A default model has been selected.";
         }
 
+        var dataSources = new List<UserDataSourceViewModel>();
+        var userId = GetUserId();
+        if (userId.HasValue)
+        {
+            try
+            {
+                var sources = await _dataConnection.GetUserDataSourcesAsync(userId.Value);
+                dataSources = sources.Select(s => new UserDataSourceViewModel
+                {
+                    Id = s.Id,
+                    Name = s.Name,
+                    SourceType = s.SourceType,
+                    Status = s.Status,
+                    CreatedAt = s.CreatedAt
+                }).ToList();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to load user data sources for chat sidebar");
+            }
+        }
+
         var vm = new ChatViewModel
         {
             AvailableModels = models,
+            DataSources = dataSources,
             Sessions = new List<ChatSessionViewModel>
             {
                 new() { Id = 1, Title = "Getting Started", CreatedAt = DateTime.UtcNow.AddDays(-1) },

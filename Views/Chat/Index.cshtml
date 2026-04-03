@@ -142,10 +142,30 @@
                     </button>
                 </div>
                 <div class="small text-muted mb-2" data-datasource-status>
-                    <div class="d-flex align-items-center gap-2 mb-1" style="font-size:0.8rem;">
-                        <i class="bi bi-database" style="color:#667eea;"></i>
-                        <span>No data sources connected</span>
-                    </div>
+                    @if (Model.DataSources.Count > 0)
+                    {
+                        var activeCount = Model.DataSources.Count(d => d.Status == "Active");
+                        <div class="d-flex align-items-center gap-2 mb-1" style="font-size:0.8rem;">
+                            <i class="bi bi-database" style="color:#667eea;"></i>
+                            <span>@activeCount of @Model.DataSources.Count active</span>
+                        </div>
+                        foreach (var ds in Model.DataSources.Take(3))
+                        {
+                            var iconColor = ds.Status == "Active" ? "#28a745" : ds.Status == "Error" ? "#dc3545" : "#ffc107";
+                            <div class="d-flex align-items-center gap-2 py-1 px-2 rounded mb-1" style="background:#f8f9fa;font-size:0.78rem;">
+                                <i class="bi bi-circle-fill" style="color:@iconColor;font-size:0.5rem;"></i>
+                                <span class="text-truncate flex-grow-1" title="@ds.Name">@ds.Name</span>
+                                <span class="badge badge-sm" style="font-size:0.65rem;background:@(ds.Status == "Active" ? "#d4edda" : ds.Status == "Error" ? "#f8d7da" : "#fff3cd");color:@(ds.Status == "Active" ? "#155724" : ds.Status == "Error" ? "#721c24" : "#856404");">@ds.Status</span>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="d-flex align-items-center gap-2 mb-1" style="font-size:0.8rem;">
+                            <i class="bi bi-database" style="color:#667eea;"></i>
+                            <span>No data sources connected</span>
+                        </div>
+                    }
                 </div>
                 <button class="btn btn-sm btn-outline-secondary w-100" style="font-size:0.75rem;" onclick="connectDataSource()">
                     <i class="bi bi-plus-circle me-1"></i>Connect Data Source
@@ -788,36 +808,152 @@
         <div class="modal-content border-0 shadow">
             <div class="modal-header border-0 pb-2" style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);">
                 <h5 class="modal-title fw-bold text-white" id="dataSourceLabel">
-                    <i class="bi bi-database-add me-2"></i>Connect Data Source
+                    <i class="bi bi-database-add me-2"></i>Connect to Data Sources
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body p-4" style="max-height:70vh;overflow-y:auto;">
-                <div class="alert alert-info small mb-4">
-                    <i class="bi bi-info-circle me-1"></i>Connect to 50+ cloud services, databases, APIs, and data sources to enhance your AI conversations with real-time data.
-                </div>
 
-                <!-- Provider Selection Container -->
-                <div id="providerSelectionContainer">
-                    <!-- Populated dynamically by JavaScript -->
-                </div>
-
-                <!-- Connection Form Container (Hidden initially) -->
-                <div id="connectionFormContainer" style="display:none;">
-                    <!-- Populated dynamically when provider is selected -->
-                </div>
-
-                <!-- Connected Data Sources List -->
-                <div class="mt-4">
-                    <h6 class="fw-semibold mb-3">Connected Data Sources</h6>
-                    <div id="dataSourcesList">
-                        <!-- Populated dynamically -->
+                <!-- ── My Connected Data Sources ── -->
+                <div id="dsListView">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <h6 class="fw-semibold mb-0">My Data Sources</h6>
+                        <button class="btn btn-sm btn-primary" style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);border:none;" onclick="startDsWizard()">
+                            <i class="bi bi-plus-circle me-1"></i>Connect New Data Source
+                        </button>
+                    </div>
+                    <div id="userDataSourcesList">
+                        <div class="text-center text-muted py-4">
+                            <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+                            Loading data sources...
+                        </div>
                     </div>
                 </div>
+
+                <!-- ── Wizard ── -->
+                <div id="dsWizardView" style="display:none;">
+                    <!-- Step indicators -->
+                    <div class="d-flex align-items-center mb-4" id="dsWizardSteps">
+                        <div class="wizard-step active" data-step="1">
+                            <span class="step-circle">1</span>
+                            <span class="step-label d-none d-sm-inline ms-1">Provider</span>
+                        </div>
+                        <div class="wizard-step-line flex-grow-1"></div>
+                        <div class="wizard-step" data-step="2">
+                            <span class="step-circle">2</span>
+                            <span class="step-label d-none d-sm-inline ms-1">Details</span>
+                        </div>
+                        <div class="wizard-step-line flex-grow-1"></div>
+                        <div class="wizard-step" data-step="3">
+                            <span class="step-circle">3</span>
+                            <span class="step-label d-none d-sm-inline ms-1">Tables</span>
+                        </div>
+                        <div class="wizard-step-line flex-grow-1"></div>
+                        <div class="wizard-step" data-step="4">
+                            <span class="step-circle">4</span>
+                            <span class="step-label d-none d-sm-inline ms-1">Confirm</span>
+                        </div>
+                    </div>
+
+                    <!-- Step 1: Select Provider Type -->
+                    <div id="dsStep1">
+                        <h6 class="fw-semibold mb-3">Step 1 — Select Provider Type</h6>
+                        <div class="row g-3" id="dsProviderCards">
+                            @foreach (var prov in new[] {
+                                new { Id="SqlServer",     Name="SQL Server",     Icon="server",           Desc="Microsoft SQL Server" },
+                                new { Id="PostgreSQL",    Name="PostgreSQL",     Icon="database",         Desc="Open-source relational DB" },
+                                new { Id="MySQL",         Name="MySQL",          Icon="database-fill",    Desc="Popular relational DB" },
+                                new { Id="MongoDB",       Name="MongoDB",        Icon="diagram-3",        Desc="NoSQL document store" },
+                                new { Id="Oracle",        Name="Oracle",         Icon="hdd-stack",        Desc="Enterprise relational DB" },
+                                new { Id="Elasticsearch", Name="Elasticsearch",  Icon="search",           Desc="Search &amp; analytics engine" },
+                                new { Id="Redis",         Name="Redis",          Icon="lightning-charge", Desc="In-memory data store" },
+                                new { Id="Excel",         Name="Excel / CSV",    Icon="file-earmark-spreadsheet", Desc="Upload .xlsx, .xls or .csv" }
+                            })
+                            {
+                                <div class="col-sm-6 col-md-4 col-lg-3">
+                                    <div class="card h-100 ds-provider-card" style="cursor:pointer;border:2px solid #e2e8f0;transition:all 0.2s;"
+                                         onclick="dsSelectProvider('@prov.Id','@prov.Name')">
+                                        <div class="card-body text-center py-3 px-2">
+                                            <div class="rounded-circle mx-auto d-flex align-items-center justify-content-center mb-2"
+                                                 style="width:44px;height:44px;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);">
+                                                <i class="bi bi-@prov.Icon" style="color:white;font-size:1.1rem;"></i>
+                                            </div>
+                                            <div class="fw-semibold small">@prov.Name</div>
+                                            <small class="text-muted" style="font-size:0.7rem;">@Html.Raw(prov.Desc)</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                        <div class="mt-3">
+                            <button class="btn btn-sm btn-outline-secondary" onclick="cancelDsWizard()">
+                                <i class="bi bi-arrow-left me-1"></i>Back to list
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Step 2: Connection Details -->
+                    <div id="dsStep2" style="display:none;">
+                        <h6 class="fw-semibold mb-3">Step 2 — Enter Connection Details</h6>
+                        <div id="dsStep2Form"></div>
+                        <div class="d-flex gap-2 mt-3">
+                            <button class="btn btn-sm btn-outline-secondary" onclick="dsGoToStep(1)">
+                                <i class="bi bi-arrow-left me-1"></i>Back
+                            </button>
+                            <button class="btn btn-sm btn-outline-info" id="dsTestBtn" onclick="dsTestConnection()">
+                                <i class="bi bi-plug me-1"></i>Test Connection
+                            </button>
+                            <button class="btn btn-sm btn-primary ms-auto" id="dsNextStep2Btn" style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);border:none;" onclick="dsProceedToTables()" disabled>
+                                Next <i class="bi bi-arrow-right ms-1"></i>
+                            </button>
+                        </div>
+                        <div id="dsTestResult" class="mt-2"></div>
+                    </div>
+
+                    <!-- Step 3: Select Tables -->
+                    <div id="dsStep3" style="display:none;">
+                        <h6 class="fw-semibold mb-3">Step 3 — Select Tables / Collections</h6>
+                        <p class="text-muted small">Select which tables or collections the AI can query.</p>
+                        <div id="dsTablesList" class="row g-2"></div>
+                        <div class="d-flex gap-2 mt-3">
+                            <button class="btn btn-sm btn-outline-secondary" onclick="dsGoToStep(2)">
+                                <i class="bi bi-arrow-left me-1"></i>Back
+                            </button>
+                            <button class="btn btn-sm btn-primary ms-auto" style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);border:none;" onclick="dsProceedToConfirm()">
+                                Next <i class="bi bi-arrow-right ms-1"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Step 4: Confirmation -->
+                    <div id="dsStep4" style="display:none;">
+                        <h6 class="fw-semibold mb-3">Step 4 — Confirm & Save</h6>
+                        <div id="dsConfirmSummary" class="alert alert-info small"></div>
+                        <div class="d-flex gap-2 mt-3">
+                            <button class="btn btn-sm btn-outline-secondary" onclick="dsGoToStep(3)">
+                                <i class="bi bi-arrow-left me-1"></i>Back
+                            </button>
+                            <button class="btn btn-sm btn-success ms-auto" id="dsFinishBtn" onclick="dsFinish()">
+                                <i class="bi bi-check-circle me-1"></i>Finish
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </div>
     </div>
 </div>
+
+<style>
+.wizard-step { display:flex;align-items:center;flex-direction:column; }
+.step-circle { width:28px;height:28px;border-radius:50%;background:#e2e8f0;color:#666;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:600; }
+.wizard-step.active .step-circle { background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff; }
+.wizard-step.done .step-circle { background:#28a745;color:#fff; }
+.wizard-step-line { height:2px;background:#e2e8f0;margin:0 4px;margin-top:-14px; }
+.ds-provider-card:hover { border-color:#667eea !important;transform:scale(1.03); }
+.ds-provider-card.selected { border-color:#667eea !important;background:#f0f0ff; }
+</style>
 
 <!-- ── Toast Container for Notifications ── -->
 <div class="toast-container position-fixed bottom-0 end-0 p-3" id="toastContainer"></div>
@@ -1959,505 +2095,310 @@
         );
     }
 
-    // ── Connect Data Source ─────────────────────────────────────────────────
-    let selectedProvider = null;
-    let allProviders = {};
+    // ── Connect Data Source / UserDataSource Wizard ───────────────────────────
 
-    // Make sure connectDataSource is globally accessible
+    // State for the wizard
+    let dsWizardState = {
+        step: 1,
+        providerType: null,
+        providerName: null,
+        connectionString: null,
+        connectionName: null,
+        fileToUpload: null,
+        savedSourceId: null,
+        availableTables: [],
+        selectedTables: []
+    };
+
+    // Open the modal and load the list of data sources
     window.connectDataSource = async function() {
-        console.log('connectDataSource called'); // Debug log
-        try {
-            const modal = new bootstrap.Modal(document.getElementById('dataSourceModal'));
-            modal.show();
+        const modal = new bootstrap.Modal(document.getElementById('dataSourceModal'));
+        modal.show();
+        await loadUserDataSources();
+    };
 
-            // Load providers from backend
-            await loadProviders();
-            displayProviderSelection();
-            loadConnectedDataSources();
-        } catch (error) {
-            console.error('Error in connectDataSource:', error);
-            showToast('Failed to open data source modal: ' + error.message, 'danger');
-        }
-    }
-
-    async function loadProviders() {
-        try {
-            const response = await fetch('/DataSource/GetProviders');
-            const result = await response.json();
-
-            if (result.success && result.categories) {
-                allProviders = {};
-                result.categories.forEach(cat => {
-                    allProviders[cat.category] = cat.providers;
-                });
-            }
-        } catch (error) {
-            console.error('Failed to load providers:', error);
-        }
-    }
-
-    function displayProviderSelection() {
-        const container = document.getElementById('providerSelectionContainer');
+    async function loadUserDataSources() {
+        const container = document.getElementById('userDataSourcesList');
         if (!container) return;
-
-        let html = `
-            <div class="mb-3">
-                <input type="text" class="form-control" id="providerSearch" 
-                       placeholder="Search providers..." onkeyup="filterProviders()">
-            </div>
-            <div id="providerCategoriesContainer">`;
-
-        Object.keys(allProviders).forEach(category => {
-            html += `
-                <div class="provider-category mb-4">
-                    <h6 class="fw-semibold mb-3 text-muted">${category}</h6>
-                    <div class="row g-3">`;
-
-            allProviders[category].forEach(provider => {
-                html += `
-                    <div class="col-md-6 provider-card" data-provider-name="${provider.name.toLowerCase()}" data-provider-id="${provider.id}">
-                        <div class="card h-100" style="cursor:pointer;border:2px solid #e2e8f0;transition:all 0.2s;" 
-                             onclick="selectProvider('${provider.id}', '${escapeHtml(provider.name)}', '${category}')">
-                            <div class="card-body">
-                                <div class="d-flex align-items-start gap-3">
-                                    <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" 
-                                         style="width:48px;height:48px;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);">
-                                        <i class="bi bi-${provider.icon}" style="color:white;font-size:1.2rem;"></i>
-                                    </div>
-                                    <div class="flex-grow-1">
-                                        <div class="fw-semibold">${provider.name}</div>
-                                        <small class="text-muted">${provider.description}</small>
-                                        ${provider.requiresOAuth ? '<div class="badge bg-info mt-1">OAuth Required</div>' : ''}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>`;
-            });
-
-            html += `
-                    </div>
-                </div>`;
-        });
-
-        html += '</div>';
-        container.innerHTML = html;
-    }
-
-    function filterProviders() {
-        const searchTerm = document.getElementById('providerSearch')?.value?.toLowerCase() || '';
-        const cards = document.querySelectorAll('.provider-card');
-
-        cards.forEach(card => {
-            const providerName = card.getAttribute('data-provider-name');
-            if (providerName && providerName.includes(searchTerm)) {
-                card.style.display = '';
-            } else {
-                card.style.display = 'none';
-            }
-        });
-    }
-
-    function selectProvider(providerId, providerName, category) {
-        selectedProvider = { id: providerId, name: providerName, category: category };
-
-        // Highlight selected card
-        document.querySelectorAll('.provider-card .card').forEach(card => {
-            card.style.borderColor = '#e2e8f0';
-            card.style.transform = 'scale(1)';
-        });
-
-        const selectedCard = document.querySelector(`[data-provider-id="${providerId}"] .card`);
-        if (selectedCard) {
-            selectedCard.style.borderColor = '#667eea';
-            selectedCard.style.transform = 'scale(1.02)';
-        }
-
-        // Show connection form
-        showConnectionForm();
-    }
-
-    async function showConnectionForm() {
-        const container = document.getElementById('connectionFormContainer');
-        if (!container || !selectedProvider) return;
-
-        // Get provider schema
+        container.innerHTML = '<div class="text-center text-muted py-3"><div class="spinner-border spinner-border-sm me-2" role="status"></div>Loading...</div>';
         try {
-            const response = await fetch(`/DataSource/GetProviderSchema?provider=${selectedProvider.id}`);
-            const result = await response.json();
-
-            if (result.success && result.schema) {
-                const schema = JSON.parse(result.schema);
-
-                let formHTML = `
-                    <div class="alert alert-info">
-                        <strong>Connecting to: ${selectedProvider.name}</strong>
-                        <button type="button" class="btn-close float-end" onclick="cancelProviderSelection()"></button>
-                    </div>
-                    <form id="connectionForm" onsubmit="submitConnection(event)">
-                        @Html.AntiForgeryToken()
-                        <input type="hidden" name="provider" value="${selectedProvider.id}">
-
-                        <div class="mb-3">
-                            <label class="form-label">Connection Name *</label>
-                            <input type="text" class="form-control" name="name" 
-                                   placeholder="e.g., Production Database" required>
-                        </div>`;
-
-                // Generate form fields based on schema
-                Object.keys(schema.properties).forEach(key => {
-                    const prop = schema.properties[key];
-                    const isRequired = schema.required && schema.required.includes(key);
-                    const inputType = prop.format === 'password' ? 'password' : 
-                                    prop.type === 'integer' ? 'number' : 'text';
-
-                    formHTML += `
-                        <div class="mb-3">
-                            <label class="form-label">${key.charAt(0).toUpperCase() + key.slice(1)} ${isRequired ? '*' : ''}</label>
-                            <input type="${inputType}" class="form-control" name="${key}" 
-                                   placeholder="${prop.description || ''}" 
-                                   value="${prop.default || ''}" 
-                                   ${isRequired ? 'required' : ''}>
-                            ${prop.description ? `<small class="text-muted">${prop.description}</small>` : ''}
-                        </div>`;
-                });
-
-                formHTML += `
-                        <div class="d-flex gap-2">
-                            <button type="button" class="btn btn-outline-secondary" onclick="cancelProviderSelection()">
-                                Back to Providers
-                            </button>
-                            <button type="submit" class="btn btn-primary flex-grow-1" 
-                                    style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);border:none;">
-                                <i class="bi bi-plug me-1"></i>Test & Connect
-                            </button>
-                        </div>
-                    </form>`;
-
-                container.innerHTML = formHTML;
-                container.style.display = 'block';
-                document.getElementById('providerSelectionContainer').style.display = 'none';
-            }
-        } catch (error) {
-            showToast('Failed to load connection form', 'danger');
-        }
-    }
-    window.selectProvider = selectProvider; // Make globally accessible
-
-    function cancelProviderSelection() {
-        selectedProvider = null;
-        document.getElementById('connectionFormContainer').style.display = 'none';
-        document.getElementById('providerSelectionContainer').style.display = 'block';
-
-        // Reset card highlights
-        document.querySelectorAll('.provider-card .card').forEach(card => {
-            card.style.borderColor = '#e2e8f0';
-            card.style.transform = 'scale(1)';
-        });
-    }
-    window.cancelProviderSelection = cancelProviderSelection; // Make globally accessible
-
-    async function submitConnection(event) {
-        event.preventDefault();
-        const form = event.target;
-        const formData = new FormData(form);
-        const btn = form.querySelector('button[type="submit"]');
-        btn.disabled = true;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Connecting...';
-
-        try {
-            // Build connection string or config based on form data
-            const provider = formData.get('provider');
-            const name = formData.get('name');
-
-            // For SQL databases, build connection string
-            let connectionString = null;
-            let apiEndpoint = null;
-            let apiKey = null;
-            let username = null;
-            let password = null;
-            let additionalConfig = {};
-
-            // Extract fields based on provider type
-            for (let [key, value] of formData.entries()) {
-                if (key !== 'provider' && key !== 'name' && key !== '__RequestVerificationToken') {
-                    if (key === 'server' || key === 'host') {
-                        username = formData.get('username');
-                        password = formData.get('password');
-                        const db = formData.get('database');
-                        const port = formData.get('port');
-
-                        // Build connection string for SQL databases
-                        if (provider.includes('sql') || provider.includes('mysql') || provider.includes('postgre')) {
-                            if (provider === 'mysql') {
-                                connectionString = `Server=${value};${port ? `Port=${port};` : ''}Database=${db};User Id=${username};Password=${password};`;
-                            } else if (provider === 'postgresql') {
-                                connectionString = `Host=${value};${port ? `Port=${port};` : ''}Database=${db};Username=${username};Password=${password};`;
-                            } else {
-                                connectionString = `Server=${value};Database=${db};User Id=${username};Password=${password};Encrypt=True;TrustServerCertificate=False;`;
-                            }
-                        }
-                    } else if (key === 'accessKeyId' || key === 'secretAccessKey') {
-                        username = formData.get('accessKeyId');
-                        apiKey = formData.get('secretAccessKey');
-                        additionalConfig.region = formData.get('region');
-                    } else {
-                        additionalConfig[key] = value;
-                    }
-                }
-            }
-
-            const response = await fetch('/DataSource/Connect', {
-                method: 'POST',
-                headers: {
-                    'RequestVerificationToken': getAntiForgeryToken()
-                },
-                body: new URLSearchParams({
-                    provider: provider,
-                    name: name,
-                    connectionString: connectionString || '',
-                    apiEndpoint: apiEndpoint || '',
-                    apiKey: apiKey || '',
-                    username: username || '',
-                    password: password || '',
-                    additionalConfig: JSON.stringify(additionalConfig)
-                })
-            });
-
-            const result = await response.json();
-
-            if (result.success) {
-                showToast(`Successfully connected to ${selectedProvider.name}!`, 'success');
-                form.reset();
-                cancelProviderSelection();
-                loadConnectedDataSources();
-                loadDataSources(); // Update status in sidebar
-            } else {
-                showToast('Connection failed: ' + (result.error || 'Unknown error'), 'danger');
-            }
-        } catch (error) {
-            showToast('Failed to connect: ' + error.message, 'danger');
-        } finally {
-            btn.disabled = false;
-            btn.innerHTML = '<i class="bi bi-plug me-1"></i>Test & Connect';
-        }
-    }
-    window.submitConnection = submitConnection; // Make globally accessible
-
-    async function loadConnectedDataSources() {
-        try {
-            const response = await fetch('/DataSource/GetConnections');
-            const result = await response.json();
-
-            if (!result.success) return;
-
-            const container = document.getElementById('dataSourcesList');
-            if (!container) return;
-
-            if (!result.connections || result.connections.length === 0) {
-                container.innerHTML = `
-                    <div class="text-center text-muted py-3">
-                        <i class="bi bi-database fs-3"></i>
-                        <p class="small mb-0">No data sources connected yet</p>
-                    </div>`;
+            const res = await fetch('/DataConnection/GetUserSources');
+            const result = await res.json();
+            if (!result.success) { container.innerHTML = '<div class="text-muted small">Failed to load data sources.</div>'; return; }
+            const sources = result.sources || [];
+            if (sources.length === 0) {
+                container.innerHTML = '<div class="text-center text-muted py-4"><i class="bi bi-database fs-3 d-block mb-2"></i><p class="small mb-0">No data sources connected yet.</p></div>';
                 return;
             }
+            container.innerHTML = sources.map(s => {
+                const statusColor = s.status === 'Active' ? '#28a745' : s.status === 'Error' ? '#dc3545' : '#ffc107';
+                const badgeBg = s.status === 'Active' ? '#d4edda' : s.status === 'Error' ? '#f8d7da' : '#fff3cd';
+                const badgeColor = s.status === 'Active' ? '#155724' : s.status === 'Error' ? '#721c24' : '#856404';
+                return `<div class="d-flex align-items-center gap-3 p-3 mb-2 rounded border">
+                    <i class="bi bi-circle-fill" style="color:${statusColor};font-size:0.6rem;flex-shrink:0;"></i>
+                    <div class="flex-grow-1 min-width-0">
+                        <div class="fw-semibold small text-truncate">${escapeHtml(s.name)}</div>
+                        <small class="text-muted">${escapeHtml(s.sourceType)}</small>
+                    </div>
+                    <span class="badge" style="background:${badgeBg};color:${badgeColor};font-size:0.7rem;">${escapeHtml(s.status)}</span>
+                    <button class="btn btn-sm btn-outline-danger" style="font-size:0.7rem;" onclick="deleteUserDataSource(${s.id})" title="Delete">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>`;
+            }).join('');
+        } catch(e) {
+            container.innerHTML = '<div class="text-muted small">Could not load data sources.</div>';
+        }
+    }
 
-            const typeIcons = {
-                'SQL Databases': 'database-fill',
-                'NoSQL Databases': 'database',
-                'Cloud Storage': 'cloud-arrow-up',
-                'CRM & ERP': 'diagram-3',
-                'Analytics & Marketing': 'graph-up',
-                'APIs & Web Services': 'cloud-arrow-down',
-                'Streaming & Events': 'arrow-repeat',
-                'Files & Data Feeds': 'file-earmark-text',
-                'Financial Data': 'cash',
-                'Developer Tools': 'code-slash'
-            };
+    async function deleteUserDataSource(id) {
+        if (!confirm('Delete this data source?')) return;
+        try {
+            const res = await fetch('/DataConnection/Delete', {
+                method: 'POST',
+                headers: { 'RequestVerificationToken': getAntiForgeryToken(), 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `id=${id}`
+            });
+            await loadUserDataSources();
+        } catch(e) { showToast('Failed to delete data source.', 'danger'); }
+    }
+    window.deleteUserDataSource = deleteUserDataSource;
 
-            let html = '<div class="list-group">';
-            result.connections.forEach(conn => {
-                const icon = typeIcons[conn.sourceType] || 'database';
-                const date = new Date(conn.connectedAt).toLocaleDateString();
-                const statusColor = conn.lastSyncStatus === 'Connected' || conn.lastSyncStatus === 'Success' ? '#28a745' : 
-                                  conn.lastSyncStatus === 'Failed' ? '#dc3545' : '#ffc107';
+    function startDsWizard() {
+        dsWizardState = { step: 1, providerType: null, providerName: null, connectionString: null, connectionName: null, fileToUpload: null, savedSourceId: null, availableTables: [], selectedTables: [] };
+        document.getElementById('dsListView').style.display = 'none';
+        document.getElementById('dsWizardView').style.display = '';
+        dsGoToStep(1);
+    }
+    window.startDsWizard = startDsWizard;
 
-                html += `
-                    <div class="list-group-item">
-                        <div class="d-flex align-items-center gap-3">
-                            <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" 
-                                 style="width:40px;height:40px;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);">
-                                <i class="bi bi-${icon}" style="color:white;"></i>
-                            </div>
-                            <div class="flex-grow-1">
-                                <div class="fw-medium">${escapeHtml(conn.name)}</div>
-                                <div class="small text-muted">
-                                    ${conn.provider} • ${conn.sourceType}
-                                    ${conn.lastSyncAt ? ' • Last sync: ' + new Date(conn.lastSyncAt).toLocaleString() : ''}
-                                </div>
-                                <div class="small mt-1">
-                                    <span class="badge" style="background-color:${statusColor};">
-                                        ${conn.lastSyncStatus || 'Unknown'}
-                                    </span>
-                                </div>
-                            </div>
-                            <div class="d-flex gap-2">
-                                <button class="btn btn-sm btn-outline-primary" onclick="testConnection(${conn.id})" title="Test Connection">
-                                    <i class="bi bi-arrow-repeat"></i>
-                                </button>
-                                <button class="btn btn-sm btn-outline-info" onclick="syncDataSource(${conn.id})" title="Sync">
-                                    <i class="bi bi-cloud-download"></i>
-                                </button>
-                                <button class="btn btn-sm btn-outline-danger" onclick="confirmRemoveDataSource(${conn.id})" title="Disconnect">
-                                    <i class="bi bi-trash3"></i>
-                                </button>
-                            </div>
+    function cancelDsWizard() {
+        document.getElementById('dsWizardView').style.display = 'none';
+        document.getElementById('dsListView').style.display = '';
+    }
+    window.cancelDsWizard = cancelDsWizard;
+
+    function dsGoToStep(step) {
+        dsWizardState.step = step;
+        [1,2,3,4].forEach(s => {
+            const el = document.getElementById('dsStep' + s);
+            if (el) el.style.display = (s === step) ? '' : 'none';
+        });
+        document.querySelectorAll('#dsWizardSteps .wizard-step').forEach(el => {
+            const s = parseInt(el.getAttribute('data-step'));
+            el.classList.toggle('active', s === step);
+            el.classList.toggle('done', s < step);
+        });
+    }
+    window.dsGoToStep = dsGoToStep;
+
+    function dsSelectProvider(type, name) {
+        dsWizardState.providerType = type;
+        dsWizardState.providerName = name;
+        document.querySelectorAll('.ds-provider-card').forEach(c => c.classList.remove('selected'));
+        event.currentTarget.classList.add('selected');
+        renderDsDetailsForm(type, name);
+        dsGoToStep(2);
+    }
+    window.dsSelectProvider = dsSelectProvider;
+
+    function renderDsDetailsForm(type, name) {
+        const container = document.getElementById('dsStep2Form');
+        let html = `<div class="mb-3"><label class="form-label fw-semibold">Connection Name <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" id="dsConnName" placeholder="e.g. Production DB" required></div>`;
+
+        if (type === 'Excel' || type === 'CSV') {
+            html += `<div class="mb-3"><label class="form-label fw-semibold">Upload File <span class="text-danger">*</span></label>
+                <input type="file" class="form-control" id="dsFileInput" accept=".xlsx,.xls,.csv" onchange="dsFileSelected()">
+                <small class="text-muted">Supported: .xlsx, .xls, .csv (max 50 MB)</small></div>`;
+        } else {
+            const rawConnStr = type === 'MongoDB' || type === 'Elasticsearch' || type === 'Redis';
+            if (rawConnStr) {
+                const placeholder = type === 'MongoDB' ? 'mongodb://user:pass@host:27017/dbname'
+                    : type === 'Elasticsearch' ? 'http://localhost:9200'
+                    : 'localhost:6379,password=xxx';
+                html += `<div class="mb-3"><label class="form-label fw-semibold">Connection URI <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="dsConnStr" placeholder="${escapeHtml(placeholder)}" required></div>`;
+            } else {
+                html += `<div class="row g-3 mb-3">
+                    <div class="col-sm-8"><label class="form-label">Server / Host <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="dsHost" placeholder="e.g. localhost" required></div>
+                    <div class="col-sm-4"><label class="form-label">Port</label>
+                        <input type="number" class="form-control" id="dsPort" placeholder="${type === 'PostgreSQL' ? '5432' : type === 'MySQL' ? '3306' : '1433'}"></div>
+                </div>
+                <div class="mb-3"><label class="form-label">Database <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="dsDatabase" placeholder="Database name" required></div>
+                <div class="row g-3 mb-3">
+                    <div class="col-sm-6"><label class="form-label">Username</label>
+                        <input type="text" class="form-control" id="dsUser" autocomplete="username"></div>
+                    <div class="col-sm-6"><label class="form-label">Password</label>
+                        <input type="password" class="form-control" id="dsPassword" autocomplete="current-password"></div>
+                </div>
+                <details class="mb-3"><summary class="text-muted small" style="cursor:pointer;">Or paste a raw connection string</summary>
+                    <div class="mt-2"><textarea class="form-control" id="dsConnStr" rows="2" placeholder="Server=..."></textarea></div>
+                </details>`;
+            }
+        }
+        container.innerHTML = html;
+        document.getElementById('dsNextStep2Btn').disabled = true;
+        document.getElementById('dsTestResult').innerHTML = '';
+    }
+
+    function dsFileSelected() {
+        const file = document.getElementById('dsFileInput')?.files?.[0];
+        dsWizardState.fileToUpload = file || null;
+        document.getElementById('dsNextStep2Btn').disabled = !file;
+        document.getElementById('dsTestResult').innerHTML = file
+            ? '<div class="alert alert-success small py-2 mb-0"><i class="bi bi-check-circle me-1"></i>File ready to upload.</div>'
+            : '';
+    }
+    window.dsFileSelected = dsFileSelected;
+
+    function dsBuildConnectionString() {
+        const type = dsWizardState.providerType;
+        if (type === 'Excel' || type === 'CSV') return null;
+        const rawField = document.getElementById('dsConnStr');
+        if (rawField && rawField.value.trim()) return rawField.value.trim();
+        const host = document.getElementById('dsHost')?.value?.trim() || '';
+        const port = document.getElementById('dsPort')?.value?.trim() || '';
+        const db = document.getElementById('dsDatabase')?.value?.trim() || '';
+        const user = document.getElementById('dsUser')?.value?.trim() || '';
+        const pass = document.getElementById('dsPassword')?.value || '';
+        if (!host || !db) return null;
+        if (type === 'PostgreSQL') return `Host=${host};${port ? 'Port=' + port + ';' : ''}Database=${db};Username=${user};Password=${pass};`;
+        if (type === 'MySQL')      return `Server=${host};${port ? 'Port=' + port + ';' : ''}Database=${db};User Id=${user};Password=${pass};`;
+        return `Server=${host}${port ? ',' + port : ''};Database=${db};User Id=${user};Password=${pass};Encrypt=True;TrustServerCertificate=True;`;
+    }
+
+    async function dsTestConnection() {
+        const name = document.getElementById('dsConnName')?.value?.trim();
+        if (!name) { showToast('Please enter a connection name first.', 'warning'); return; }
+        const type = dsWizardState.providerType;
+        const connStr = dsBuildConnectionString();
+        if (!connStr) { showToast('Please fill in the required connection fields.', 'warning'); return; }
+        dsWizardState.connectionString = connStr;
+        dsWizardState.connectionName = name;
+
+        const btn = document.getElementById('dsTestBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Testing...';
+
+        try {
+            const res = await fetch('/DataConnection/TestConnection', {
+                method: 'POST',
+                headers: { 'RequestVerificationToken': getAntiForgeryToken(), 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: new URLSearchParams({ sourceType: type, connectionString: connStr })
+            });
+            const result = await res.json();
+            const el = document.getElementById('dsTestResult');
+            if (result.success) {
+                el.innerHTML = '<div class="alert alert-success small py-2 mb-0"><i class="bi bi-check-circle me-1"></i>Connection successful!</div>';
+                document.getElementById('dsNextStep2Btn').disabled = false;
+            } else {
+                el.innerHTML = `<div class="alert alert-danger small py-2 mb-0"><i class="bi bi-x-circle me-1"></i>${escapeHtml(result.message || 'Connection failed.')}</div>`;
+            }
+        } catch(e) {
+            document.getElementById('dsTestResult').innerHTML = '<div class="alert alert-danger small py-2 mb-0">Error testing connection.</div>';
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-plug me-1"></i>Test Connection';
+        }
+    }
+    window.dsTestConnection = dsTestConnection;
+
+    async function dsProceedToTables() {
+        const name = document.getElementById('dsConnName')?.value?.trim();
+        dsWizardState.connectionName = name;
+        const type = dsWizardState.providerType;
+        if (type === 'Excel' || type === 'CSV') {
+            dsGoToStep(4);
+            renderDsConfirmSummary();
+            return;
+        }
+        dsGoToStep(3);
+        const tablesList = document.getElementById('dsTablesList');
+        tablesList.innerHTML = '<div class="col-12 text-center text-muted py-2"><div class="spinner-border spinner-border-sm me-1"></div>Fetching tables...</div>';
+        try {
+            const res = await fetch(`/DataConnection/GetTables?sourceType=${encodeURIComponent(type)}&connectionString=${encodeURIComponent(dsWizardState.connectionString)}`);
+            const result = await res.json();
+            if (result.success && result.tables?.length > 0) {
+                dsWizardState.availableTables = result.tables;
+                tablesList.innerHTML = result.tables.map(t => `
+                    <div class="col-sm-6 col-md-4">
+                        <div class="form-check">
+                            <input class="form-check-input ds-table-check" type="checkbox" value="${escapeHtml(t)}" id="dst_${escapeHtml(t)}" checked>
+                            <label class="form-check-label small" for="dst_${escapeHtml(t)}">${escapeHtml(t)}</label>
                         </div>
-                    </div>`;
-            });
-            html += '</div>';
-
-            container.innerHTML = html;
-        } catch (error) {
-            console.error('Failed to load connected data sources:', error);
+                    </div>`).join('');
+            } else {
+                tablesList.innerHTML = '<div class="col-12 text-muted small">No tables found or unable to fetch tables.</div>';
+            }
+        } catch(e) {
+            tablesList.innerHTML = '<div class="col-12 text-muted small">Failed to fetch tables.</div>';
         }
     }
+    window.dsProceedToTables = dsProceedToTables;
 
-    async function testConnection(connectionId) {
-        const btn = event.target.closest('button');
-        const originalHTML = btn.innerHTML;
+    function dsProceedToConfirm() {
+        const checked = Array.from(document.querySelectorAll('.ds-table-check:checked')).map(c => c.value);
+        dsWizardState.selectedTables = checked;
+        dsGoToStep(4);
+        renderDsConfirmSummary();
+    }
+    window.dsProceedToConfirm = dsProceedToConfirm;
+
+    function renderDsConfirmSummary() {
+        const el = document.getElementById('dsConfirmSummary');
+        const tables = dsWizardState.selectedTables;
+        el.innerHTML = `<strong>${escapeHtml(dsWizardState.connectionName)}</strong><br>
+            Type: <strong>${escapeHtml(dsWizardState.providerName)}</strong><br>
+            ${tables.length > 0 ? 'Tables: <strong>' + tables.map(escapeHtml).join(', ') + '</strong>' : ''}`;
+    }
+
+    async function dsFinish() {
+        const btn = document.getElementById('dsFinishBtn');
         btn.disabled = true;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
-
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Saving...';
         try {
-            const formData = new FormData();
-            formData.append('connectionId', connectionId);
-            formData.append('__RequestVerificationToken', getAntiForgeryToken());
-
-            const response = await fetch('/DataSource/TestConnection', {
-                method: 'POST',
-                body: formData
-            });
-
-            const result = await response.json();
-
-            if (result.success) {
-                showToast('Connection test successful!', 'success');
+            const type = dsWizardState.providerType;
+            let response;
+            if (type === 'Excel' || type === 'CSV') {
+                const formData = new FormData();
+                formData.append('Name', dsWizardState.connectionName);
+                formData.append('SourceType', type);
+                formData.append('File', dsWizardState.fileToUpload);
+                formData.append('__RequestVerificationToken', getAntiForgeryToken());
+                response = await fetch('/DataConnection/UploadFile', { method: 'POST', body: formData });
             } else {
-                showToast('Connection test failed: ' + (result.error || 'Unknown error'), 'danger');
+                response = await fetch('/DataConnection/ConnectDatabase', {
+                    method: 'POST',
+                    headers: { 'RequestVerificationToken': getAntiForgeryToken(), 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams({ Name: dsWizardState.connectionName, SourceType: type, ConnectionString: dsWizardState.connectionString })
+                });
             }
 
-            loadConnectedDataSources(); // Refresh list
-        } catch (error) {
-            showToast('Failed to test connection: ' + error.message, 'danger');
-        } finally {
-            btn.disabled = false;
-            btn.innerHTML = originalHTML;
-        }
-    }
-
-    async function syncDataSource(connectionId) {
-        const btn = event.target.closest('button');
-        const originalHTML = btn.innerHTML;
-        btn.disabled = true;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
-
-        try {
-            const formData = new FormData();
-            formData.append('connectionId', connectionId);
-            formData.append('__RequestVerificationToken', getAntiForgeryToken());
-
-            const response = await fetch('/DataSource/Sync', {
-                method: 'POST',
-                body: formData
-            });
-
-            const result = await response.json();
-
-            if (result.success) {
-                showToast(`Sync successful! Processed ${result.recordsProcessed} records.`, 'success');
-            } else {
-                showToast('Sync failed: ' + (result.error || 'Unknown error'), 'danger');
-            }
-
-            loadConnectedDataSources(); // Refresh list
-        } catch (error) {
-            showToast('Failed to sync: ' + error.message, 'danger');
-        } finally {
-            btn.disabled = false;
-            btn.innerHTML = originalHTML;
-        }
-    }
-
-    function confirmRemoveDataSource(id) {
-        showConfirmModal(
-            'Disconnect Data Source',
-            'Are you sure you want to disconnect this data source? This will not delete any data.',
-            () => removeDataSource(id)
-        );
-    }
-
-    async function removeDataSource(id) {
-        try {
-            const formData = new FormData();
-            formData.append('connectionId', id);
-            formData.append('__RequestVerificationToken', getAntiForgeryToken());
-
-            const response = await fetch('/DataSource/Disconnect', {
-                method: 'POST',
-                body: formData
-            });
-
-            const result = await response.json();
-
-            if (result.success) {
-                showToast('Data source disconnected successfully!', 'success');
-                loadConnectedDataSources();
-                loadDataSources(); // Update sidebar status
-            } else {
-                showToast('Failed to disconnect: ' + (result.error || 'Unknown error'), 'danger');
-            }
-        } catch (error) {
-            showToast('Failed to disconnect: ' + error.message, 'danger');
-        }
-    }
-
-    async function loadDataSources() {
-        try {
-            const response = await fetch('/DataSource/GetConnections');
-            const result = await response.json();
-
-            if (!result.success) return;
-
-            const dataSources = result.connections || [];
-            const container = document.querySelector('[data-datasource-status]');
-
-            if (container) {
-                if (dataSources.length > 0) {
-                    const activeCount = dataSources.filter(ds => ds.lastSyncStatus === 'Connected' || ds.lastSyncStatus === 'Success').length;
-                    container.innerHTML = `
-                        <div class="d-flex align-items-center gap-2 mb-1" style="font-size:0.8rem;">
-                            <i class="bi bi-database-check" style="color:#28a745;"></i>
-                            <span>${activeCount} of ${dataSources.length} active</span>
-                        </div>`;
-                } else {
-                    container.innerHTML = `
-                        <div class="d-flex align-items-center gap-2 mb-1" style="font-size:0.8rem;">
-                            <i class="bi bi-database" style="color:#667eea;"></i>
-                            <span>No data sources connected</span>
-                        </div>`;
+            if (response.redirected || response.ok) {
+                if (dsWizardState.savedSourceId && dsWizardState.selectedTables.length > 0) {
+                    await fetch('/DataConnection/UpdateTables?id=' + dsWizardState.savedSourceId, {
+                        method: 'POST',
+                        headers: { 'RequestVerificationToken': getAntiForgeryToken(), 'Content-Type': 'application/json' },
+                        body: JSON.stringify(dsWizardState.selectedTables)
+                    });
                 }
+                showToast('Data source connected successfully!', 'success');
+                cancelDsWizard();
+                await loadUserDataSources();
+            } else {
+                showToast('Failed to save data source. Please try again.', 'danger');
             }
-        } catch (error) {
-            console.error('Failed to load data sources status:', error);
+        } catch(e) {
+            showToast('Error saving data source: ' + e.message, 'danger');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-check-circle me-1"></i>Finish';
         }
     }
-
-    // Load data sources on page load
-    document.addEventListener('DOMContentLoaded', function() {
-        loadDataSources();
-    });
+    window.dsFinish = dsFinish;
 
     // ── Edit Workspace (Placeholder) ───────────────────────────────────────
     function editWorkspace(id) {
@@ -2513,15 +2454,16 @@
 
     // Data source connection functions
     window.connectDataSource = connectDataSource;
-    window.filterProviders = filterProviders;
-    window.selectProvider = selectProvider;
-    window.cancelProviderSelection = cancelProviderSelection;
-    window.submitConnection = submitConnection;
-    window.testConnection = testConnection;
-    window.syncDataSource = syncDataSource;
-    window.confirmRemoveDataSource = confirmRemoveDataSource;
-    window.removeDataSource = removeDataSource;
-    window.loadDataSources = loadDataSources;
+    window.startDsWizard = startDsWizard;
+    window.cancelDsWizard = cancelDsWizard;
+    window.dsGoToStep = dsGoToStep;
+    window.dsSelectProvider = dsSelectProvider;
+    window.dsTestConnection = dsTestConnection;
+    window.dsProceedToTables = dsProceedToTables;
+    window.dsProceedToConfirm = dsProceedToConfirm;
+    window.dsFinish = dsFinish;
+    window.deleteUserDataSource = deleteUserDataSource;
+    window.dsFileSelected = dsFileSelected;
 
     // UI/Toast/Modal functions
     window.showToast = showToast;

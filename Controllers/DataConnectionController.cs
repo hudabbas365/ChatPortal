@@ -77,6 +77,45 @@ public class DataConnectionController : Controller
     }
 
     [HttpGet]
+    public async Task<IActionResult> GetUserSources()
+    {
+        try
+        {
+            var userId = GetUserId();
+            var sources = await _dataConnection.GetUserDataSourcesAsync(userId);
+            var result = sources.Select(s => new
+            {
+                id = s.Id,
+                name = s.Name,
+                sourceType = s.SourceType,
+                status = s.Status,
+                createdAt = s.CreatedAt,
+                updatedAt = s.UpdatedAt,
+                selectedTables = s.SelectedTables
+            });
+            return Json(new { success = true, sources = result });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, error = ex.Message });
+        }
+    }
+
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> TestConnection([FromForm] string sourceType, [FromForm] string connectionString)
+    {
+        try
+        {
+            var isValid = await _dataConnection.ValidateConnectionAsync(sourceType, connectionString);
+            return Json(new { success = isValid, message = isValid ? "Connection successful." : "Connection failed." });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.Message });
+        }
+    }
+
+    [HttpGet]
     public async Task<IActionResult> GetTables(string sourceType, string connectionString)
     {
         try
