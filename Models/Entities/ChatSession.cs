@@ -31,6 +31,12 @@ public class ChatSession
     [ForeignKey("AgentId")]
     public virtual Agent? Agent { get; set; }
 
+    // DataSourceConnection FK — required to enforce AI Insights binding
+    public int? DataSourceConnectionId { get; set; }
+
+    [ForeignKey("DataSourceConnectionId")]
+    public virtual DataSourceConnection? DataSourceConnection { get; set; }
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
     public bool IsArchived { get; set; } = false;

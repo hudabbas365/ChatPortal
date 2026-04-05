@@ -146,6 +146,13 @@ async function sendMessage() {
     if (!message && !attachedFile) return;
 
     const model = document.getElementById('modelSelect')?.value ?? 'gpt-3.5-turbo';
+    // Require a datasource — get from window state set when session was created
+    const dataSourceId = window._activeChatDataSourceId || null;
+    if (!dataSourceId) {
+        appendMessage('assistant', 'Error: A datasource with AI Insights is required. Please start a new chat and select a data source.');
+        return;
+    }
+
     input.value = '';
     autoResizeTextarea(input);
 
@@ -171,10 +178,12 @@ async function sendMessage() {
             const fileContent = await readFileAsText(attachedFile);
             bodyContent = JSON.stringify({
                 message: message + '\n\n[Attached file: ' + attachedFile.name + ']\n' + fileContent,
-                model
+                model,
+                dataSourceId,
+                sessionId: window._activeChatSessionId || null
             });
         } else {
-            bodyContent = JSON.stringify({ message, model });
+            bodyContent = JSON.stringify({ message, model, dataSourceId, sessionId: window._activeChatSessionId || null });
         }
 
         clearAttachment();
@@ -192,7 +201,13 @@ async function sendMessage() {
             appendMessage('assistant', `Error: ${err.error || 'Something went wrong.'}`);
         } else {
             const data = await response.json();
-            appendMessage('assistant', data.content);
+            if (data.success) {
+                // Structured data insights response
+                const content = JSON.stringify(data);
+                appendMessage('assistant', content);
+            } else {
+                appendMessage('assistant', data.content || data.error || 'No response.');
+            }
         }
     } catch (e) {
         removeTypingIndicator();
@@ -285,12 +300,16 @@ function buildStructuredHtml(data) {
             <pre class="mt-1 p-2 rounded small" style="background:#1e1e2e;color:#cdd6f4;overflow-x:auto;">${escapeHtml(data.query)}</pre>
             </details>`;
     }
+    let hasTableData = false;
     if (data.result && Array.isArray(data.result) && data.result.length > 0) {
+        hasTableData = true;
         const keys = Object.keys(data.result[0]);
         html += `<div class="table-responsive mb-2"><table class="table table-sm mb-0" style="font-size:0.78rem;">
             <thead><tr>${keys.map(k => `<th>${escapeHtml(k)}</th>`).join('')}</tr></thead>
             <tbody>${data.result.slice(0, MAX_TABLE_ROWS).map(r => `<tr>${keys.map(k => `<td>${escapeHtml(String(r[k] ?? ''))}</td>`).join('')}</tr>`).join('')}</tbody>
             </table></div>`;
+        // Add "Generate Chart" button for tabular data
+        html += `<button class="btn btn-sm mb-2" style="background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;font-size:0.78rem;" data-result='${escapeHtml(JSON.stringify(data.result))}' onclick="openChartPanelFromBtn(this)"><i class="bi bi-bar-chart-fill me-1"></i>Generate Chart</button>`;
     }
     if (data.chartData && data.chartData.labels && data.chartData.datasets) {
         const chartId = 'chart-' + Math.random().toString(36).slice(2, 9);
@@ -581,3 +600,30 @@ document.addEventListener('click', e => {
         }
     }
 });
+
+// ── Generate Chart from structured response data ──────────────────────────
+function openChartPanelFromBtn(btn) {
+    let resultData = [];
+    try { resultData = JSON.parse(btn.getAttribute('data-result') || '[]'); } catch {}
+    const labels = [], datasets = [];
+    if (resultData.length > 0) {
+        const keys = Object.keys(resultData[0]);
+        if (keys.length >= 2) {
+            resultData.forEach(r => labels.push(String(r[keys[0]] ?? '')));
+            datasets.push({ label: keys[1], data: resultData.map(r => parseFloat(r[keys[1]]) || 0), backgroundColor: 'rgba(173,216,230,0.7)', borderColor: 'rgba(100,149,237,0.9)', borderWidth: 1 });
+        }
+    }
+    if (typeof openChartPanel === 'function') {
+        // Build fake bubble reference to trigger panel
+        openChartPanel(btn.closest('.chat-bubble-ai'), labels, datasets);
+    } else {
+        // Fallback: directly open panel with data
+        window._chartPanelLabels = labels;
+        window._chartPanelDatasets = datasets;
+        if (typeof confirmGenerateChart === 'function') {
+            const chartType = prompt('Chart type (bar/pie/doughnut/radar/line):', 'bar') || 'bar';
+            const title = prompt('Chart title:', 'Result Chart') || 'Result Chart';
+            confirmGenerateChart(labels, datasets, chartType, title);
+        }
+    }
+}

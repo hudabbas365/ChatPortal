@@ -33,12 +33,19 @@
                     <div class="card border-0 shadow-sm h-100">
                         <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center pt-3 px-3 pb-0">
                             <h6 class="fw-semibold mb-0">@chart.Title</h6>
-                            <button class="btn btn-sm btn-outline-danger" onclick="unpinChart(@chart.Id)" title="Unpin">
-                                <i class="bi bi-pin-angle-fill"></i>
-                            </button>
+                            <div class="d-flex gap-1">
+                                <button class="btn btn-sm" style="background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;font-size:0.75rem;"
+                                    onclick="openPinExportPopup(this, @chart.Id, '@Html.Raw(chart.Title.Replace("'", "\\'").Replace("\\", "\\\\"))')"
+                                    title="Pin / Export">
+                                    <i class="bi bi-pin-angle me-1"></i>📌 Pin / Export
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" onclick="unpinChart(@chart.Id)" title="Unpin">
+                                    <i class="bi bi-pin-angle-fill"></i>
+                                </button>
+                            </div>
                         </div>
                         <div class="card-body">
-                            <canvas id="canvas-@chart.Id" height="250"></canvas>
+                            <canvas id="canvas-@chart.Id" height="250" data-chart-json="@System.Net.WebUtility.HtmlEncode(chart.ChartDataJson ?? "{}")"></canvas>
                         </div>
                         <div class="card-footer bg-transparent border-0 pb-3 px-3">
                             <small class="text-muted">
@@ -51,6 +58,56 @@
         </div>
     }
 </div>
+
+<!-- ── Pin / Export Popup Modal ── -->
+<div id="pinExportOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:10000;align-items:center;justify-content:center;">
+    <div id="pinExportModal" style="background:#fff;border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,0.25);width:640px;max-width:95vw;padding:24px;position:relative;">
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="fw-bold mb-0"><i class="bi bi-pin-angle me-2" style="color:#667eea;"></i>Pin / Export Chart</h5>
+            <button class="btn btn-sm border-0 p-0" onclick="closePinExportPopup()"><i class="bi bi-x-lg text-muted"></i></button>
+        </div>
+
+        <!-- Title Input -->
+        <div class="mb-3">
+            <label class="form-label fw-semibold small">Chart Title</label>
+            <input type="text" id="popupChartTitle" class="form-control" placeholder="Enter chart title…" />
+        </div>
+
+        <!-- Drag-and-Drop Chart Area -->
+        <div id="dndArea" style="position:relative;height:300px;background:#f8f9fa;border:2px dashed #dee2e6;border-radius:10px;overflow:hidden;"
+             ondragover="event.preventDefault();event.dataTransfer.dropEffect='move';"
+             ondrop="handleChartDrop(event)">
+            <div id="draggableChart" draggable="true"
+                 style="position:absolute;left:16px;top:16px;width:420px;max-width:90%;cursor:grab;user-select:none;"
+                 ondragstart="handleChartDragStart(event)"
+                 ondragend="handleChartDragEnd(event)">
+                <div class="card border-0 shadow-sm" style="border-radius:8px;overflow:hidden;">
+                    <div class="card-body p-2">
+                        <canvas id="popupChartCanvas" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+            <small class="text-muted position-absolute" style="bottom:6px;right:10px;font-size:0.7rem;"><i class="bi bi-arrows-move me-1"></i>Drag chart to reposition</small>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="d-flex gap-2 mt-3 justify-content-end flex-wrap">
+            <button class="btn btn-outline-secondary btn-sm" onclick="closePinExportPopup()">
+                <i class="bi bi-x me-1"></i>Cancel
+            </button>
+            <button class="btn btn-sm" style="background:#28a745;color:#fff;" onclick="saveAsHtml()">
+                <i class="bi bi-filetype-html me-1"></i>Save as HTML
+            </button>
+            <button class="btn btn-sm" style="background:#dc3545;color:#fff;" onclick="saveAsPdf()">
+                <i class="bi bi-file-earmark-pdf me-1"></i>Save as PDF
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Hidden iframe for PDF printing -->
+<iframe id="pdfPrintFrame" style="display:none;width:0;height:0;border:none;" title="PDF Print Frame"></iframe>
 
 @section Scripts {
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -107,6 +164,153 @@ function unpinChart(pinnedChartId) {
         }
     });
 }
+
+// ── Pin / Export Popup ────────────────────────────────────────────────────
+let _popupChartInstance = null;
+let _popupChartJson = null;
+let _dragOffsetX = 0, _dragOffsetY = 0;
+
+function openPinExportPopup(btnOrEl, chartId, defaultTitle) {
+    const overlay = document.getElementById('pinExportOverlay');
+    overlay.style.display = 'flex';
+
+    // Set title
+    document.getElementById('popupChartTitle').value = defaultTitle || 'Chart';
+
+    // Load chart data
+    let chartJson = null;
+    if (chartId) {
+        const canvas = document.getElementById('canvas-' + chartId);
+        if (canvas) {
+            try { chartJson = JSON.parse(canvas.getAttribute('data-chart-json') || '{}'); } catch {}
+        }
+    }
+    _popupChartJson = chartJson;
+    _renderPopupChart(chartJson);
+}
+
+function closePinExportPopup() {
+    document.getElementById('pinExportOverlay').style.display = 'none';
+    if (_popupChartInstance) { _popupChartInstance.destroy(); _popupChartInstance = null; }
+}
+
+function _renderPopupChart(chartData) {
+    if (_popupChartInstance) { _popupChartInstance.destroy(); _popupChartInstance = null; }
+    const ctx = document.getElementById('popupChartCanvas');
+    if (!ctx) return;
+    if (!chartData || !chartData.labels) {
+        // Fallback 3 sample charts rendered as bar (show one at a time via tab-like switching)
+        _renderFallbackChart(ctx);
+        return;
+    }
+    _popupChartInstance = new Chart(ctx, {
+        type: chartData.chartType || 'bar',
+        data: { labels: chartData.labels, datasets: chartData.datasets || [] },
+        options: { responsive: true, plugins: { legend: { position: 'top' } } }
+    });
+}
+
+function _renderFallbackChart(ctx) {
+    const sampleData = {
+        type: 'bar',
+        data: {
+            labels: ['Jan','Feb','Mar','Apr','May','Jun'],
+            datasets: [
+                { label: 'Sample A', data: [42,67,35,89,54,71], backgroundColor: 'rgba(173,216,230,0.7)', borderColor: 'rgba(100,149,237,0.9)', borderWidth: 1 }
+            ]
+        },
+        options: { responsive: true, plugins: { legend: { position: 'top' } } }
+    };
+    _popupChartInstance = new Chart(ctx, sampleData);
+}
+
+// ── Drag-and-Drop ─────────────────────────────────────────────────────────
+function handleChartDragStart(event) {
+    const el = event.target.closest('#draggableChart');
+    _dragOffsetX = event.clientX - el.getBoundingClientRect().left;
+    _dragOffsetY = event.clientY - el.getBoundingClientRect().top;
+    event.dataTransfer.effectAllowed = 'move';
+}
+
+function handleChartDragEnd(event) {}
+
+function handleChartDrop(event) {
+    event.preventDefault();
+    const area = document.getElementById('dndArea');
+    const rect = area.getBoundingClientRect();
+    const el = document.getElementById('draggableChart');
+    const grid = 8; // snap grid px
+    let newLeft = event.clientX - rect.left - _dragOffsetX;
+    let newTop = event.clientY - rect.top - _dragOffsetY;
+    // Snap to grid
+    newLeft = Math.round(newLeft / grid) * grid;
+    newTop = Math.round(newTop / grid) * grid;
+    // Clamp within area
+    newLeft = Math.max(0, Math.min(newLeft, rect.width - el.offsetWidth));
+    newTop = Math.max(0, Math.min(newTop, rect.height - el.offsetHeight));
+    el.style.left = newLeft + 'px';
+    el.style.top = newTop + 'px';
+}
+
+// ── Save as HTML ──────────────────────────────────────────────────────────
+async function saveAsHtml() {
+    const title = document.getElementById('popupChartTitle').value || 'Chart';
+    const chartJsonStr = JSON.stringify(_popupChartJson || {});
+
+    try {
+        const r = await fetch('/Chart/Export', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ html: `<canvas id="ec"></canvas><script>new Chart(document.getElementById('ec'),${chartJsonStr})<\/script>`, title })
+        });
+        const html = await r.text();
+        const blob = new Blob([html], { type: 'text/html' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = title.replace(/[^a-z0-9_\-]/gi, '_') + '.html';
+        a.click();
+        URL.revokeObjectURL(a.href);
+    } catch(e) {
+        alert('Error saving HTML: ' + e.message);
+    }
+}
+
+// ── Save as PDF (browser print) ───────────────────────────────────────────
+async function saveAsPdf() {
+    const title = document.getElementById('popupChartTitle').value || 'Chart';
+    try {
+        const r = await fetch('/Chart/RenderHtml', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                chartType: _popupChartJson?.chartType || _popupChartJson?.type || 'bar',
+                labels: _popupChartJson?.labels || _popupChartJson?.data?.labels || [],
+                datasets: _popupChartJson?.datasets || _popupChartJson?.data?.datasets || [],
+                title
+            })
+        });
+        const html = await r.text();
+        const frame = document.getElementById('pdfPrintFrame');
+        frame.srcdoc = html;
+        frame.onload = function() {
+            try {
+                frame.contentWindow.focus();
+                frame.contentWindow.print();
+            } catch(e) {
+                const blob = new Blob([html], { type: 'text/html' });
+                const w = window.open(URL.createObjectURL(blob), '_blank');
+                if (w) { w.onload = () => { w.focus(); w.print(); }; }
+            }
+        };
+    } catch(e) {
+        alert('Error saving PDF: ' + e.message);
+    }
+}
+
+// Close overlay on background click
+document.getElementById('pinExportOverlay').addEventListener('click', function(e) {
+    if (e.target === this) closePinExportPopup();
+});
 </script>
 @Html.AntiForgeryToken()
 }

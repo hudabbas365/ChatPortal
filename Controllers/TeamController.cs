@@ -414,6 +414,37 @@ public class TeamController : Controller
         }
     }
 
+    // GET: Team/SearchUsers?q=...
+    [HttpGet]
+    public async Task<IActionResult> SearchUsers(string q)
+    {
+        if (string.IsNullOrWhiteSpace(q) || q.Length < 2)
+            return Json(new { success = true, users = new List<object>() });
+
+        var orgId = await GetActiveOrganizationIdAsync();
+        var lower = q.ToLower();
+
+        var users = await _context.Users
+            .Where(u => u.Email.ToLower().Contains(lower) ||
+                        u.FirstName.ToLower().Contains(lower) ||
+                        u.LastName.ToLower().Contains(lower))
+            .Take(10)
+            .Select(u => new
+            {
+                id = u.Id,
+                name = u.FirstName + " " + u.LastName,
+                email = u.Email,
+                isInOrganization = orgId.HasValue &&
+                    _context.OrganizationMembers.Any(m => m.OrganizationId == orgId.Value && m.UserId == u.Id)
+            })
+            .ToListAsync();
+
+        if (!users.Any())
+            return Json(new { success = true, users = new List<object>(), hint = "User not found. An invitation email will be sent." });
+
+        return Json(new { success = true, users });
+    }
+
     // POST: Team/RemoveMember
     [HttpPost]
     [ValidateAntiForgeryToken]
