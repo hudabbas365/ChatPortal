@@ -13,7 +13,7 @@
 
         <!-- New Chat Button -->
         <div class="p-3 border-bottom">
-            <button class="btn w-100 shadow-sm" style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:white;font-weight:600;" onclick="newChat()">
+            <button class="btn w-100 shadow-sm" style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:white;font-weight:600;" onclick="openNewChatModal()">
                 <i class="bi bi-plus-lg me-2"></i>New Chat
             </button>
         </div>
@@ -580,6 +580,41 @@
     </div>
 </div>
 
+<!-- ── New Chat — DataSource Selection Modal ── -->
+<div class="modal fade" id="newChatModal" tabindex="-1" aria-labelledby="newChatModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-0 pb-2" style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);">
+                <h5 class="modal-title fw-bold text-white" id="newChatModalLabel">
+                    <i class="bi bi-plus-circle me-2"></i>New Chat
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div id="newChatNoDsAlert" style="display:none;" class="alert alert-warning small">
+                    <i class="bi bi-exclamation-triangle me-1"></i>No data sources found. Please <a href="/DataSource" class="alert-link">add a data source</a> with AI Insights to start a chat.
+                </div>
+                <div id="newChatDsSection">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Select Data Source with AI Insights *</label>
+                        <select class="form-select" id="newChatDsSelect">
+                            <option value="">Loading…</option>
+                        </select>
+                        <small class="text-muted">A datasource with AI Insights is required to start a chat.</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Chat Title (optional)</label>
+                        <input type="text" class="form-control" id="newChatTitle" placeholder="New Chat" maxlength="256" />
+                    </div>
+                    <button class="btn w-100" id="newChatStartBtn" style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:white;" onclick="startNewChatWithDs()">
+                        <i class="bi bi-chat-dots me-1"></i>Start Chat
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- ── Team Member Invitation Modal ── -->
 <div class="modal fade" id="teamMemberModal" tabindex="-1" aria-labelledby="teamMemberLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
@@ -594,10 +629,15 @@
                 <form id="addTeamMemberForm" onsubmit="addTeamMember(event)">
                     @Html.AntiForgeryToken()
                     <input type="hidden" id="memberTeamId" name="teamId" />
+                    <input type="hidden" id="memberEmail" name="email" />
                     <div class="mb-3">
-                        <label class="form-label">User Email *</label>
-                        <input type="email" class="form-control" id="memberEmail" name="email" placeholder="user@example.com" required />
-                        <small class="text-muted">The user must already have an account</small>
+                        <label class="form-label">Search User *</label>
+                        <div style="position:relative;">
+                            <input type="text" class="form-control" id="memberPickerInput" placeholder="Type name or email…" autocomplete="off" oninput="teamPickerSearch(this.value)" />
+                            <div id="teamPickerDropdown" style="display:none;position:absolute;z-index:9999;background:#fff;border:1px solid #dee2e6;border-radius:8px;width:100%;max-height:220px;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,0.12);"></div>
+                        </div>
+                        <div id="teamPickerHint" style="display:none;color:#dc3545;font-size:0.8rem;margin-top:4px;">User not found in organization. An invitation email will be sent upon adding.</div>
+                        <div id="teamPickerSelected" style="display:none;margin-top:6px;padding:6px 10px;border-radius:6px;font-size:0.85rem;background:#f0f4ff;border:1px solid #667eea;color:#2d3748;"></div>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Role</label>
@@ -629,10 +669,15 @@
                 <form id="addOrgMemberForm" onsubmit="addOrgMember(event)">
                     @Html.AntiForgeryToken()
                     <input type="hidden" id="orgMemberId" name="organizationId" />
+                    <input type="hidden" id="orgMemberEmail" name="email" />
                     <div class="mb-3">
-                        <label class="form-label">User Email *</label>
-                        <input type="email" class="form-control" id="orgMemberEmail" name="email" placeholder="user@example.com" required />
-                        <small class="text-muted">The user must already have an account</small>
+                        <label class="form-label">Search User *</label>
+                        <div style="position:relative;">
+                            <input type="text" class="form-control" id="orgPickerInput" placeholder="Type name or email…" autocomplete="off" oninput="orgPickerSearch(this.value)" />
+                            <div id="orgPickerDropdown" style="display:none;position:absolute;z-index:9999;background:#fff;border:1px solid #dee2e6;border-radius:8px;width:100%;max-height:220px;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,0.12);"></div>
+                        </div>
+                        <div id="orgPickerHint" style="display:none;color:#dc3545;font-size:0.8rem;margin-top:4px;">User not found in organization. An invitation email will be sent upon adding.</div>
+                        <div id="orgPickerSelected" style="display:none;margin-top:6px;padding:6px 10px;border-radius:6px;font-size:0.85rem;background:#f0f4ff;border:1px solid #667eea;color:#2d3748;"></div>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Role</label>
@@ -2515,5 +2560,456 @@
     #sessionSearch::placeholder { color: rgba(255,255,255,0.35); }
     #sessionSearch:focus { background: rgba(255,255,255,0.12) !important; color: #fff !important; box-shadow: none; outline: none; }
 </style>
+
+<script>
+// ══════════════════════════════════════════════════════════════
+// FEATURE 1 — People Picker for Team & Org Member Modals
+// ══════════════════════════════════════════════════════════════
+let _pickerDebounce = null;
+
+function _pickerRenderDropdown(containerId, hiddenId, selectedId, hintId, results, hint) {
+    const drop = document.getElementById(containerId);
+    const hidden = document.getElementById(hiddenId);
+    const sel = document.getElementById(selectedId);
+    const hintEl = document.getElementById(hintId);
+
+    if (!results.length) {
+        drop.style.display = 'none';
+        hintEl.style.display = hint ? 'block' : 'none';
+        return;
+    }
+    hintEl.style.display = 'none';
+    drop.innerHTML = results.map(u => {
+        const badge = u.isInOrganization
+            ? '<span style="display:inline-block;background:#d4edda;color:#155724;border-radius:4px;font-size:0.7rem;padding:1px 6px;margin-left:6px;font-weight:600;">In Org</span>'
+            : '<span style="display:inline-block;background:#f8d7da;color:#721c24;border-radius:4px;font-size:0.7rem;padding:1px 6px;margin-left:6px;">Not in Org</span>';
+        const border = u.isInOrganization ? '2px solid #28a745' : '2px solid #dc3545';
+        return `<div class="picker-item" data-email="${escapeHtml(u.email)}" data-name="${escapeHtml(u.name)}"
+            style="padding:8px 12px;cursor:pointer;display:flex;align-items:center;gap:8px;border-left:${border};margin:4px;border-radius:4px;"
+            onmouseenter="this.style.background='#f8f9fa'" onmouseleave="this.style.background=''"
+            onclick="_pickerSelect('${containerId}','${hiddenId}','${selectedId}','${hintId}','${escapeHtml(u.email)}','${escapeHtml(u.name)}')">
+            <i class="bi bi-person-circle" style="font-size:1.2rem;color:#667eea;flex-shrink:0;"></i>
+            <div>
+                <div style="font-size:0.88rem;font-weight:600;">${escapeHtml(u.name)}</div>
+                <div style="font-size:0.78rem;color:#6c757d;">${escapeHtml(u.email)}</div>
+            </div>
+            ${badge}
+        </div>`;
+    }).join('');
+    drop.style.display = 'block';
 }
 
+function _pickerSelect(dropId, hiddenId, selectedId, hintId, email, name) {
+    document.getElementById(hiddenId).value = email;
+    document.getElementById(dropId).style.display = 'none';
+    document.getElementById(hintId).style.display = 'none';
+    const sel = document.getElementById(selectedId);
+    sel.innerHTML = `<i class="bi bi-check-circle-fill me-1" style="color:#28a745;"></i><strong>${escapeHtml(name)}</strong> <span class="text-muted">&lt;${escapeHtml(email)}&gt;</span>`;
+    sel.style.display = 'block';
+    // Update the visible input too
+    if (dropId === 'teamPickerDropdown') document.getElementById('memberPickerInput').value = `${name} <${email}>`;
+    if (dropId === 'orgPickerDropdown') document.getElementById('orgPickerInput').value = `${name} <${email}>`;
+}
+
+async function teamPickerSearch(q) {
+    clearTimeout(_pickerDebounce);
+    document.getElementById('memberEmail').value = '';
+    document.getElementById('teamPickerSelected').style.display = 'none';
+    if (q.length < 2) { document.getElementById('teamPickerDropdown').style.display = 'none'; return; }
+    _pickerDebounce = setTimeout(async () => {
+        try {
+            const r = await fetch(`/Team/SearchUsers?q=${encodeURIComponent(q)}`);
+            const data = await r.json();
+            _pickerRenderDropdown('teamPickerDropdown','memberEmail','teamPickerSelected','teamPickerHint', data.users || [], !!data.hint);
+        } catch {}
+    }, 300);
+}
+
+async function orgPickerSearch(q) {
+    clearTimeout(_pickerDebounce);
+    document.getElementById('orgMemberEmail').value = '';
+    document.getElementById('orgPickerSelected').style.display = 'none';
+    if (q.length < 2) { document.getElementById('orgPickerDropdown').style.display = 'none'; return; }
+    _pickerDebounce = setTimeout(async () => {
+        try {
+            const r = await fetch(`/Team/SearchUsers?q=${encodeURIComponent(q)}`);
+            const data = await r.json();
+            _pickerRenderDropdown('orgPickerDropdown','orgMemberEmail','orgPickerSelected','orgPickerHint', data.users || [], !!data.hint);
+        } catch {}
+    }, 300);
+}
+
+// Close dropdowns when clicking outside
+document.addEventListener('click', e => {
+    if (!e.target.closest('#teamMemberModal')) document.getElementById('teamPickerDropdown').style.display = 'none';
+    if (!e.target.closest('#orgMemberModal')) document.getElementById('orgPickerDropdown').style.display = 'none';
+});
+
+// ══════════════════════════════════════════════════════════════
+// FEATURE 2 — New Chat requires DataSource
+// ══════════════════════════════════════════════════════════════
+window.openNewChatModal = async function() {
+    const select = document.getElementById('newChatDsSelect');
+    const noDsAlert = document.getElementById('newChatNoDsAlert');
+    const dsSection = document.getElementById('newChatDsSection');
+    select.innerHTML = '<option value="">Loading…</option>';
+    const modal = new bootstrap.Modal(document.getElementById('newChatModal'));
+    modal.show();
+
+    // Fallback datasources pre-rendered from server-side model
+    const sidebarDs = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.DataSources));
+
+    function populateDsSelect(sources) {
+        if (!sources || !sources.length) {
+            noDsAlert.style.display = 'block';
+            select.innerHTML = '<option value="">No data sources available</option>';
+        } else {
+            noDsAlert.style.display = 'none';
+            select.innerHTML = '<option value="">— Select a data source —</option>' +
+                sources.map(s => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
+        }
+    }
+
+    try {
+        const r = await fetch('/DataConnection/GetUserConnections');
+        if (r.ok) {
+            const data = await r.json();
+            const sources = data.connections || data.dataSources || (Array.isArray(data) ? data : []);
+            populateDsSelect(sources.length ? sources : sidebarDs);
+        } else {
+            populateDsSelect(sidebarDs);
+        }
+    } catch {
+        populateDsSelect(sidebarDs);
+    }
+};
+
+window.startNewChatWithDs = async function() {
+    const dsId = parseInt(document.getElementById('newChatDsSelect').value);
+    const title = document.getElementById('newChatTitle').value.trim() || 'New Chat';
+    if (!dsId) { alert('Please select a data source to start a chat.'); return; }
+
+    const btn = document.getElementById('newChatStartBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Starting…';
+
+    try {
+        const r = await fetch('/Chat/CreateSession', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': getAntiForgeryToken() },
+            body: JSON.stringify({ dataSourceId: dsId, title })
+        });
+        const data = await r.json();
+        if (data.success) {
+            // Store active datasource for this session
+            window._activeChatDataSourceId = dsId;
+            window._activeChatSessionId = data.sessionId;
+            // Close modal and activate chat UI
+            bootstrap.Modal.getInstance(document.getElementById('newChatModal')).hide();
+            // Enable send button and input
+            document.getElementById('sendBtn').disabled = false;
+            document.getElementById('messageInput').disabled = false;
+            document.getElementById('messageInput').placeholder = 'Ask a question about your data…';
+            // Update sidebar with server sessions
+            await loadServerSessions();
+            newChat();
+        } else {
+            alert(data.error || 'Failed to create session.');
+        }
+    } catch (e) {
+        alert('Error starting chat: ' + e.message);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-chat-dots me-1"></i>Start Chat';
+    }
+};
+
+// ══════════════════════════════════════════════════════════════
+// FEATURE 5 — Load server-side chat sessions for user isolation
+// ══════════════════════════════════════════════════════════════
+async function loadServerSessions() {
+    try {
+        const r = await fetch('/Chat/GetSessions');
+        const data = await r.json();
+        if (data.success && data.sessions) {
+            renderServerSessions(data.sessions);
+        }
+    } catch {}
+}
+
+function renderServerSessions(sessions) {
+    const list = document.getElementById('sessionList');
+    if (!list) return;
+    if (!sessions.length) {
+        list.innerHTML = '<div class="text-muted small text-center py-3">No conversations yet</div>';
+        return;
+    }
+    list.innerHTML = sessions.map(s => {
+        const d = new Date(s.createdAt);
+        const label = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+        return `<div class="session-item d-flex align-items-center gap-2 p-2 rounded-3 mb-1" data-server-session-id="${s.id}" style="cursor:pointer;" onclick="activateServerSession(${s.id})">
+            <i class="bi bi-chat-left text-muted small flex-shrink-0"></i>
+            <div class="overflow-hidden flex-grow-1">
+                <div class="small text-truncate fw-medium">${escapeHtml(s.title)}</div>
+                <div class="text-muted" style="font-size:0.7rem;">${label}</div>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function activateServerSession(sessionId) {
+    document.querySelectorAll('[data-server-session-id]').forEach(el => el.classList.remove('session-active'));
+    document.querySelector(`[data-server-session-id="${sessionId}"]`)?.classList.add('session-active');
+    window._activeChatSessionId = sessionId;
+    clearChatUI();
+}
+
+// Load server sessions on page load (augments/replaces localStorage-based sidebar)
+document.addEventListener('DOMContentLoaded', () => {
+    loadServerSessions();
+});
+
+// ══════════════════════════════════════════════════════════════
+// FEATURE 3 — Chart Generation (Generate Chart button after AI response)
+// Override _insertMessageBubble to inject "Generate Chart" button
+// ══════════════════════════════════════════════════════════════
+(function() {
+    // Patch buildStructuredHtml to add Generate Chart button when data has results
+    const _origBuildStructuredHtml = window.buildStructuredHtml;
+    if (typeof _origBuildStructuredHtml === 'function') {
+        // Redefine after chat.js loads
+    }
+})();
+
+// Add "Generate Chart" button to structured AI responses
+document.addEventListener('chatResponseRendered', function(e) {});
+
+// Override so Generate Chart button is appended to structured responses
+const _origInsert = window._insertMessageBubble;
+document.addEventListener('DOMContentLoaded', () => {
+    // Patch initPendingCharts to also add Generate Chart buttons
+    const origInit = window.initPendingCharts;
+    if (typeof origInit === 'function') {
+        window.initPendingCharts = function() {
+            origInit();
+            _addGenerateChartBtns();
+        };
+    }
+});
+
+function _addGenerateChartBtns() {
+    document.querySelectorAll('.chat-bubble-ai:not([data-chart-btn-added])').forEach(bubble => {
+        if (bubble.querySelector('.table-responsive') || bubble.querySelector('canvas')) {
+            bubble.setAttribute('data-chart-btn-added', '1');
+            const btn = document.createElement('button');
+            btn.className = 'btn btn-sm mt-2';
+            btn.style.cssText = 'background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;font-size:0.78rem;';
+            btn.innerHTML = '<i class="bi bi-bar-chart-fill me-1"></i>Generate Chart';
+            btn.onclick = () => openChartPanel(bubble);
+            bubble.appendChild(btn);
+        }
+    });
+}
+
+function openChartPanel(bubble) {
+    // Extract JSON data from the bubble's table if any
+    let labels = [], datasets = [], rows = [];
+    const table = bubble.querySelector('table');
+    if (table) {
+        const headers = Array.from(table.querySelectorAll('thead th')).map(th => th.textContent.trim());
+        const trs = Array.from(table.querySelectorAll('tbody tr'));
+        rows = trs.map(tr => Array.from(tr.querySelectorAll('td')).map(td => td.textContent.trim()));
+        if (headers.length >= 2) {
+            labels = rows.map(r => r[0]);
+            const vals = rows.map(r => parseFloat(r[1]) || 0);
+            datasets = [{ label: headers[1], data: vals, backgroundColor: 'rgba(173,216,230,0.7)', borderColor: 'rgba(100,149,237,0.9)', borderWidth: 1 }];
+        }
+    }
+
+    // Show inline chart panel
+    let panel = document.getElementById('chartGenPanel');
+    if (!panel) {
+        panel = document.createElement('div');
+        panel.id = 'chartGenPanel';
+        panel.style.cssText = 'position:fixed;bottom:80px;right:20px;z-index:9999;background:#fff;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.18);padding:20px;width:340px;';
+        document.body.appendChild(panel);
+    }
+    panel.innerHTML = `
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <strong style="font-size:0.9rem;"><i class="bi bi-bar-chart-fill me-1" style="color:#667eea;"></i>Generate Chart</strong>
+            <button class="btn btn-sm border-0 p-0" onclick="document.getElementById('chartGenPanel').remove()"><i class="bi bi-x-lg text-muted"></i></button>
+        </div>
+        <div class="mb-2">
+            <label class="form-label small fw-semibold">Chart Type</label>
+            <select class="form-select form-select-sm" id="chartTypeSelect">
+                <option value="bar">Bar</option>
+                <option value="pie">Pie</option>
+                <option value="doughnut">Doughnut</option>
+                <option value="radar">Radar</option>
+                <option value="line">Line</option>
+            </select>
+        </div>
+        <div class="mb-2">
+            <label class="form-label small fw-semibold">Title</label>
+            <input type="text" class="form-control form-control-sm" id="chartTitleInput" placeholder="Chart Title" />
+        </div>
+        <button class="btn btn-sm w-100 mb-2" style="background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;" onclick="confirmGenerateChart(${JSON.stringify(labels)},${JSON.stringify(datasets)})">
+            <i class="bi bi-check-circle me-1"></i>Confirm & Generate
+        </button>`;
+
+    // Store data for later use
+    panel._labels = labels;
+    panel._datasets = datasets;
+}
+
+async function confirmGenerateChart(labels, datasets) {
+    const chartType = document.getElementById('chartTypeSelect')?.value || 'bar';
+    const title = document.getElementById('chartTitleInput')?.value || 'Chart';
+
+    try {
+        const r = await fetch('/Chart/RenderHtml', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ chartType, labels, datasets, title })
+        });
+        const html = await r.text();
+
+        // Insert iframe into chat
+        const container = document.getElementById('chatMessages');
+        const wrapper = document.createElement('div');
+        wrapper.className = 'd-flex mb-3';
+        wrapper.innerHTML = `
+            <div class="me-2 flex-shrink-0">
+                <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center" style="width:36px;height:36px;">
+                    <i class="bi bi-bar-chart text-white small"></i>
+                </div>
+            </div>
+            <div class="chat-bubble chat-bubble-ai p-2 rounded-3 shadow-sm" style="max-width:90%;width:100%;">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <small class="text-muted fw-semibold"><i class="bi bi-bar-chart-fill me-1"></i>${escapeHtml(title)}</small>
+                    <button class="btn btn-sm" style="background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;font-size:0.72rem;" onclick="openPinExportPopup(this)">
+                        <i class="bi bi-pin-angle me-1"></i>📌 Pin / Export
+                    </button>
+                </div>
+                <div style="resize:vertical;overflow:hidden;min-height:200px;height:350px;">
+                    <iframe srcdoc="" style="width:100%;height:100%;border:none;border-radius:6px;" loading="lazy"></iframe>
+                </div>
+            </div>`;
+        const iframe = wrapper.querySelector('iframe');
+        iframe.srcdoc = html;
+        iframe.setAttribute('data-chart-html', encodeURIComponent(html));
+        iframe.setAttribute('data-chart-title', title);
+        container.appendChild(wrapper);
+        container.scrollTop = container.scrollHeight;
+        document.getElementById('chartGenPanel')?.remove();
+    } catch(e) {
+        alert('Error generating chart: ' + e.message);
+    }
+}
+window.confirmGenerateChart = confirmGenerateChart;
+window.openChartPanel = openChartPanel;
+
+// ── Pin/Export popup (also used from chat chart panels) ────────────────────
+window.openPinExportPopup = function(btnEl) {
+    // Get the iframe containing the chart HTML
+    const bubble = btnEl.closest('.chat-bubble-ai');
+    const iframe = bubble ? bubble.querySelector('iframe') : null;
+    const chartHtml = iframe ? decodeURIComponent(iframe.getAttribute('data-chart-html') || '') : '';
+    const chartTitle = iframe ? (iframe.getAttribute('data-chart-title') || 'Chart') : 'Chart';
+
+    // Build a simple popup overlay
+    let overlay = document.getElementById('chatPinExportOverlay');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'chatPinExportOverlay';
+        overlay.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:10000;align-items:center;justify-content:center;';
+        document.body.appendChild(overlay);
+    }
+    overlay.style.display = 'flex';
+    overlay.innerHTML = `
+        <div id="chatPinExportModal" style="background:#fff;border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,0.25);width:640px;max-width:95vw;padding:24px;position:relative;">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold mb-0"><i class="bi bi-pin-angle me-2" style="color:#667eea;"></i>Pin / Export Chart</h5>
+                <button class="btn btn-sm border-0 p-0" onclick="document.getElementById('chatPinExportOverlay').style.display='none'"><i class="bi bi-x-lg text-muted"></i></button>
+            </div>
+            <div class="mb-3">
+                <label class="form-label fw-semibold small">Chart Title</label>
+                <input type="text" id="chatPopupTitle" class="form-control" value="${escapeHtml(chartTitle)}" placeholder="Enter chart title…" />
+            </div>
+            <div id="chatDndArea" style="position:relative;height:280px;background:#f8f9fa;border:2px dashed #dee2e6;border-radius:10px;overflow:hidden;"
+                 ondragover="event.preventDefault();" ondrop="chatHandleDrop(event)">
+                <div id="chatDraggableChart" draggable="true"
+                     style="position:absolute;left:16px;top:16px;width:420px;max-width:90%;cursor:grab;"
+                     ondragstart="chatDragStart(event)" ondragend="">
+                    <div style="border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.1);">
+                        <iframe srcdoc="${escapeHtml(chartHtml)}" style="width:100%;height:200px;border:none;" loading="lazy"></iframe>
+                    </div>
+                </div>
+                <small class="text-muted position-absolute" style="bottom:6px;right:10px;font-size:0.7rem;"><i class="bi bi-arrows-move me-1"></i>Drag to reposition</small>
+            </div>
+            <div class="d-flex gap-2 mt-3 justify-content-end flex-wrap">
+                <button class="btn btn-outline-secondary btn-sm" onclick="document.getElementById('chatPinExportOverlay').style.display='none'"><i class="bi bi-x me-1"></i>Cancel</button>
+                <button class="btn btn-sm" style="background:#28a745;color:#fff;" onclick="chatSaveAsHtml('${encodeURIComponent(chartHtml)}')"><i class="bi bi-filetype-html me-1"></i>Save as HTML</button>
+                <button class="btn btn-sm" style="background:#dc3545;color:#fff;" onclick="chatSaveAsPdf('${encodeURIComponent(chartHtml)}')"><i class="bi bi-file-earmark-pdf me-1"></i>Save as PDF</button>
+            </div>
+        </div>`;
+    overlay.onclick = function(e) { if (e.target === overlay) overlay.style.display = 'none'; };
+
+    window._chatDragOffX = 0;
+    window._chatDragOffY = 0;
+};
+
+window.chatDragStart = function(e) {
+    const el = document.getElementById('chatDraggableChart');
+    window._chatDragOffX = e.clientX - el.getBoundingClientRect().left;
+    window._chatDragOffY = e.clientY - el.getBoundingClientRect().top;
+    e.dataTransfer.effectAllowed = 'move';
+};
+
+window.chatHandleDrop = function(e) {
+    e.preventDefault();
+    const area = document.getElementById('chatDndArea');
+    const rect = area.getBoundingClientRect();
+    const el = document.getElementById('chatDraggableChart');
+    const g = 8;
+    let l = Math.round((e.clientX - rect.left - window._chatDragOffX) / g) * g;
+    let t = Math.round((e.clientY - rect.top - window._chatDragOffY) / g) * g;
+    l = Math.max(0, Math.min(l, rect.width - el.offsetWidth));
+    t = Math.max(0, Math.min(t, rect.height - el.offsetHeight));
+    el.style.left = l + 'px'; el.style.top = t + 'px';
+};
+
+window.chatSaveAsHtml = async function(encodedHtml) {
+    const title = document.getElementById('chatPopupTitle')?.value || 'Chart';
+    const html = decodeURIComponent(encodedHtml);
+    try {
+        const r = await fetch('/Chart/Export', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ html, title })
+        });
+        const out = await r.text();
+        const blob = new Blob([out], { type: 'text/html' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = title.replace(/[^a-z0-9_\-]/gi, '_') + '.html';
+        a.click();
+        URL.revokeObjectURL(a.href);
+    } catch(e) { alert('Error saving HTML: ' + e.message); }
+};
+
+window.chatSaveAsPdf = function(encodedHtml) {
+    const html = decodeURIComponent(encodedHtml);
+    let frame = document.getElementById('chatPdfFrame');
+    if (!frame) { frame = document.createElement('iframe'); frame.id = 'chatPdfFrame'; frame.style.cssText = 'display:none;width:0;height:0;'; document.body.appendChild(frame); }
+    frame.srcdoc = html;
+    frame.onload = function() {
+        try { frame.contentWindow.focus(); frame.contentWindow.print(); }
+        catch(e) { const b = new Blob([html],{type:'text/html'}); const w = window.open(URL.createObjectURL(b),'_blank'); if(w){w.onload=()=>{w.focus();w.print();};} }
+    };
+};
+</script>
+
+
+
+}

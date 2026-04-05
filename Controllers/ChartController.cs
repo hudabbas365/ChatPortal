@@ -116,6 +116,84 @@ public class ChartController : Controller
         }
     }
 
+    // POST: Chart/RenderHtml
+    [HttpPost]
+    [IgnoreAntiforgeryToken]
+    public IActionResult RenderHtml([FromBody] RenderChartRequest request)
+    {
+        var allowedTypes = new[] { "bar", "pie", "line", "doughnut", "radar" };
+        var chartType = request.ChartType?.ToLower() ?? "bar";
+        if (!allowedTypes.Contains(chartType)) chartType = "bar";
+
+        // Sanitize inputs
+        var labels = request.Labels ?? new List<string>();
+        var datasets = request.Datasets ?? new List<object>();
+        var title = string.IsNullOrWhiteSpace(request.Title) ? "Chart" : request.Title;
+
+        // Build fallback sample data when no real data provided
+        string datasetsJs;
+        string labelsJs;
+        bool useFallback = !labels.Any() || !datasets.Any();
+
+        if (useFallback)
+        {
+            labelsJs = "['Jan','Feb','Mar','Apr','May','Jun']";
+            datasetsJs = @"[
+  { label: 'Sample Bar', data: [42,67,35,89,54,71], backgroundColor: 'rgba(173,216,230,0.7)', borderColor: 'rgba(100,149,237,0.9)', borderWidth: 1, type: 'bar' },
+  { label: 'Sample Line', data: [30,55,45,70,60,80], borderColor: 'rgba(144,238,144,0.9)', backgroundColor: 'rgba(144,238,144,0.2)', borderWidth: 2, type: 'line', fill: true },
+  { label: 'Sample Radar', data: [65,59,90,81,56,72], borderColor: 'rgba(216,191,216,0.9)', backgroundColor: 'rgba(216,191,216,0.3)', borderWidth: 1 }
+]";
+            chartType = "bar";
+        }
+        else
+        {
+            labelsJs = System.Text.Json.JsonSerializer.Serialize(labels);
+            datasetsJs = System.Text.Json.JsonSerializer.Serialize(datasets);
+        }
+
+        var html = $@"<!DOCTYPE html>
+<html>
+<head>
+<meta charset=""utf-8""/>
+<title>{System.Net.WebUtility.HtmlEncode(title)}</title>
+<script src=""https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js""></script>
+<style>
+html,body{{margin:0;padding:0;width:100%;height:100%;background:#fff;}}
+.chart-wrap{{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px;box-sizing:border-box;}}
+canvas{{max-width:100%;max-height:100%;}}
+h3{{font-family:sans-serif;margin:0 0 8px;font-size:14px;color:#333;}}
+</style>
+</head>
+<body>
+<div class=""chart-wrap"">
+  <h3>{System.Net.WebUtility.HtmlEncode(title)}</h3>
+  <canvas id=""chartCanvas""></canvas>
+</div>
+<script>
+(function(){{
+  var ctx = document.getElementById('chartCanvas').getContext('2d');
+  new Chart(ctx, {{
+    type: '{chartType}',
+    data: {{
+      labels: {labelsJs},
+      datasets: {datasetsJs}
+    }},
+    options: {{
+      responsive: true,
+      maintainAspectRatio: true,
+      plugins: {{
+        legend: {{ position: 'top' }},
+        title: {{ display: false }}
+      }}
+    }}
+  }});
+}})();
+</script>
+</body>
+</html>";
+        return Content(html, "text/html");
+    }
+
     // POST: Chart/Pin
     [HttpPost]
     [ValidateAntiForgeryToken]
@@ -232,6 +310,14 @@ public class ChartController : Controller
             return Json(new { success = false, error = ex.Message });
         }
     }
+}
+
+public class RenderChartRequest
+{
+    public string? ChartType { get; set; }
+    public List<string>? Labels { get; set; }
+    public List<object>? Datasets { get; set; }
+    public string? Title { get; set; }
 }
 
 public class GenerateChartRequest

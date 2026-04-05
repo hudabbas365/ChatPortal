@@ -1,6 +1,10 @@
+using ChatPortal.Data;
+using ChatPortal.Models.Entities;
 using ChatPortal.Services;
 using ChatPortal.ViewModels;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
 namespace ChatPortal.Controllers;
@@ -9,26 +13,25 @@ namespace ChatPortal.Controllers;
 /// Handles the main chat interface, including rendering the chat page and
 /// accepting AI message requests from the browser.
 /// </summary>
+[Authorize]
 public class ChatController : Controller
 {
     private readonly IAIChatService _aiChatService;
     private readonly IDataConnectionService _dataConnection;
     private readonly IDataChatService _dataChatService;
+    private readonly AppDbContext _context;
     private readonly ILogger<ChatController> _logger;
 
     /// <summary>
     /// Initialises a new instance of <see cref="ChatController"/>.
     /// </summary>
-    /// <param name="aiChatService">Service used to query available AI models and send messages.</param>
-    /// <param name="dataConnection">Service used to load user data sources.</param>
-    /// <param name="dataChatService">Service used to query data sources with AI.</param>
-    /// <param name="logger">Logger for recording errors.</param>
     public ChatController(IAIChatService aiChatService, IDataConnectionService dataConnection,
-        IDataChatService dataChatService, ILogger<ChatController> logger)
+        IDataChatService dataChatService, AppDbContext context, ILogger<ChatController> logger)
     {
         _aiChatService = aiChatService;
         _dataConnection = dataConnection;
         _dataChatService = dataChatService;
+        _context = context;
         _logger = logger;
     }
 
@@ -39,7 +42,6 @@ public class ChatController : Controller
     /// Renders the main chat page, populating the view model with the list of
     /// available AI models retrieved from the AI service.
     /// </summary>
-    /// <returns>The Chat/Index Razor view pre-populated with <see cref="ChatViewModel"/>.</returns>
     public async Task<IActionResult> Index()
     {
         List<string> models;
@@ -76,69 +78,119 @@ public class ChatController : Controller
             }
         }
 
+        // Load real per-user chat sessions — no cross-user leakage
+        var sessions = new List<ChatSessionViewModel>();
+        if (userId.HasValue)
+        {
+            try
+            {
+                sessions = await _context.ChatSessions
+                    .Where(s => s.UserId == userId.Value && !s.IsArchived)
+                    .OrderByDescending(s => s.UpdatedAt)
+                    .Select(s => new ChatSessionViewModel
+                    {
+                        Id = s.Id,
+                        Title = s.Title,
+                        CreatedAt = s.CreatedAt
+                    })
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to load chat sessions for user {UserId}", userId.Value);
+            }
+        }
+
         var vm = new ChatViewModel
         {
             AvailableModels = models,
             DataSources = dataSources,
-            Sessions = new List<ChatSessionViewModel>
-            {
-                new() { Id = 1, Title = "Getting Started", CreatedAt = DateTime.UtcNow.AddDays(-1) },
-                new() { Id = 2, Title = "Code Review Help", CreatedAt = DateTime.UtcNow.AddHours(-3) }
-            }
+            Sessions = sessions
         };
         return View(vm);
     }
 
     /// <summary>
-    /// Accepts a chat message from the browser, forwards it to the AI service, and
-    /// returns the AI-generated response as JSON.
+    /// Returns only the current user's chat sessions as JSON.
     /// </summary>
-    /// <param name="request">
-    /// The message payload containing the user message text, the selected AI model,
-    /// and an optional session identifier.
-    /// </param>
-    /// <returns>
-    /// A <see cref="JsonResult"/> with <c>content</c> (AI reply text) and
-    /// <c>tokensUsed</c> on success; a <c>400 Bad Request</c> with an <c>error</c>
-    /// property on failure.
-    /// </returns>
+    [HttpGet]
+    public async Task<IActionResult> GetSessions()
+    {
+        var userId = GetUserId();
+        if (!userId.HasValue)
+            return Unauthorized();
+
+        var sessions = await _context.ChatSessions
+            .Where(s => s.UserId == userId.Value && !s.IsArchived)
+            .OrderByDescending(s => s.UpdatedAt)
+            .Select(s => new { s.Id, s.Title, s.CreatedAt })
+            .ToListAsync();
+
+        return Json(new { success = true, sessions });
+    }
+
+    /// <summary>
+    /// Creates a new chat session bound to the authenticated user and a required datasource.
+    /// </summary>
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> CreateSession([FromBody] CreateSessionRequest request)
+    {
+        var userId = GetUserId();
+        if (!userId.HasValue)
+            return Unauthorized();
+
+        if (request.DataSourceId <= 0)
+            return BadRequest(new { error = "A datasource with AI Insights is required to start a chat." });
+
+        // Verify the datasource belongs to this user
+        var dsExists = await _context.DataSourceConnections
+            .AnyAsync(d => d.Id == request.DataSourceId && d.UserId == userId.Value);
+        if (!dsExists)
+            return BadRequest(new { error = "Data source not found or access denied." });
+
+        var session = new ChatSession
+        {
+            UserId = userId.Value,
+            Title = string.IsNullOrWhiteSpace(request.Title) ? "New Chat" : request.Title,
+            DataSourceConnectionId = request.DataSourceId,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+
+        _context.ChatSessions.Add(session);
+        await _context.SaveChangesAsync();
+
+        return Json(new { success = true, sessionId = session.Id });
+    }
+
+    /// <summary>
+    /// Accepts a chat message, requires a datasource — no plain-AI fallback.
+    /// </summary>
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> Send([FromBody] SendMessageRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.Message))
             return BadRequest(new { error = "Message is required." });
 
+        var userId = GetUserId();
+
+        if (!request.DataSourceId.HasValue || !userId.HasValue)
+            return BadRequest(new { error = "A datasource with AI Insights is required to start a chat." });
+
         try
         {
-            var userId = GetUserId();
+            var response = await _dataChatService.QueryDataSourceAsync(userId.Value, request.DataSourceId.Value, request.Message);
+            if (!response.Success)
+                return BadRequest(new { error = response.Error });
 
-            if (request.DataSourceId.HasValue && userId.HasValue)
+            return Json(new
             {
-                var response = await _dataChatService.QueryDataSourceAsync(userId.Value, request.DataSourceId.Value, request.Message);
-                if (!response.Success)
-                    return BadRequest(new { error = response.Error });
-
-                return Json(new
-                {
-                    success = true,
-                    queryDescription = response.QueryDescription,
-                    query = response.Query,
-                    prompts = response.Prompts,
-                    creditsUsed = 5
-                });
-            }
-
-            var chatRequest = new ChatRequest(
-                Model: request.Model ?? "command-a-03-2025",
-                SystemPrompt: "You are a helpful AI assistant.",
-                Messages: new List<AIChatMessage> { new AIChatMessage("user", request.Message) }
-            );
-
-            var aiResponse = await _aiChatService.SendMessageAsync(chatRequest);
-            if (!aiResponse.Success)
-                return BadRequest(new { error = aiResponse.Error ?? "The AI service was unable to process your request." });
-
-            return Json(new { content = aiResponse.Content, tokensUsed = aiResponse.TokensUsed });
+                success = true,
+                queryDescription = response.QueryDescription,
+                query = response.Query,
+                prompts = response.Prompts,
+                creditsUsed = 5
+            });
         }
         catch (Exception ex)
         {
@@ -153,15 +205,17 @@ public class ChatController : Controller
 /// </summary>
 public class SendMessageRequest
 {
-    /// <summary>Gets or sets the user's message text.</summary>
     public string? Message { get; set; }
-
-    /// <summary>Gets or sets the AI model identifier (e.g. <c>gpt-4</c>).</summary>
     public string? Model { get; set; }
-
-    /// <summary>Gets or sets the optional session ID for conversation tracking.</summary>
     public int? SessionId { get; set; }
-
-    /// <summary>Gets or sets the optional data source ID for AI data queries.</summary>
     public int? DataSourceId { get; set; }
+}
+
+/// <summary>
+/// Request body model used by the <see cref="ChatController.CreateSession"/> endpoint.
+/// </summary>
+public class CreateSessionRequest
+{
+    public int DataSourceId { get; set; }
+    public string? Title { get; set; }
 }

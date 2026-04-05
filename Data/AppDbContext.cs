@@ -67,6 +67,8 @@ public class AppDbContext : DbContext
     // Agent system
     public DbSet<Agent> Agents { get; set; }
 
+    // ChatSession.DataSourceConnectionId — nullable FK added for AI Insights binding (migration required)
+
     // Team workspace permissions
     public DbSet<TeamWorkspacePermission> TeamWorkspacePermissions { get; set; }
 
