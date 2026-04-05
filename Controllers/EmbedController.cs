@@ -115,7 +115,7 @@ public class EmbedController : Controller
         var chatRequest = new ChatRequest(
             Model: request.Model ?? "gpt-3.5-turbo",
             SystemPrompt: "You are a helpful AI assistant embedded in a partner website.",
-            Messages: new List<AIChatMessage> { new AIChatMessage("user", request.Message) }
+            Messages: new List<(string Role, string Content)> { ("user", request.Message) }
         );
 
         var response = await _aiChatService.SendMessageAsync(chatRequest);
