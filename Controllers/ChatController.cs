@@ -19,6 +19,7 @@ public class ChatController : Controller
     private readonly IAIChatService _aiChatService;
     private readonly IDataConnectionService _dataConnection;
     private readonly IDataChatService _dataChatService;
+    private readonly ICreditService _creditService;
     private readonly AppDbContext _context;
     private readonly ILogger<ChatController> _logger;
 
@@ -26,11 +27,13 @@ public class ChatController : Controller
     /// Initialises a new instance of <see cref="ChatController"/>.
     /// </summary>
     public ChatController(IAIChatService aiChatService, IDataConnectionService dataConnection,
-        IDataChatService dataChatService, AppDbContext context, ILogger<ChatController> logger)
+        IDataChatService dataChatService, ICreditService creditService, AppDbContext context,
+        ILogger<ChatController> logger)
     {
         _aiChatService = aiChatService;
         _dataConnection = dataConnection;
         _dataChatService = dataChatService;
+        _creditService = creditService;
         _context = context;
         _logger = logger;
     }
@@ -107,6 +110,19 @@ public class ChatController : Controller
             DataSources = dataSources,
             Sessions = sessions
         };
+
+        if (userId.HasValue)
+        {
+            try
+            {
+                vm.CreditBalance = await _creditService.GetBalanceAsync(userId.Value);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to load credit balance for user {UserId}", userId.Value);
+            }
+        }
+
         return View(vm);
     }
 

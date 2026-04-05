@@ -152,7 +152,10 @@
                         foreach (var ds in Model.DataSources.Take(3))
                         {
                             var iconColor = ds.Status == "Active" ? "#28a745" : ds.Status == "Error" ? "#dc3545" : "#ffc107";
-                            <div class="d-flex align-items-center gap-2 py-1 px-2 rounded mb-1" style="background:#f8f9fa;font-size:0.78rem;">
+                            <div class="d-flex align-items-center gap-2 py-1 px-2 rounded mb-1 datasource-item"
+                                 style="background:#f8f9fa;font-size:0.78rem;cursor:pointer;"
+                                 title="Click to use @ds.Name as active data source"
+                                 onclick="sidebarSelectDataSource(@ds.Id, '@System.Web.HttpUtility.JavaScriptStringEncode(ds.Name)', '@ds.Status')">
                                 <i class="bi bi-circle-fill" style="color:@iconColor;font-size:0.5rem;"></i>
                                 <span class="text-truncate flex-grow-1" title="@ds.Name">@ds.Name</span>
                                 <span class="badge badge-sm" style="font-size:0.65rem;background:@(ds.Status == "Active" ? "#d4edda" : ds.Status == "Error" ? "#f8d7da" : "#fff3cd");color:@(ds.Status == "Active" ? "#155724" : ds.Status == "Error" ? "#721c24" : "#856404");">@ds.Status</span>
@@ -164,6 +167,9 @@
                         <div class="d-flex align-items-center gap-2 mb-1" style="font-size:0.8rem;">
                             <i class="bi bi-database" style="color:#667eea;"></i>
                             <span>No data sources connected</span>
+                        </div>
+                        <div class="small mb-1" style="font-size:0.78rem;">
+                            <a asp-controller="DataSource" asp-action="Index" style="color:#667eea;">Add a data source with AI Insights to start a chat.</a>
                         </div>
                     }
                 </div>
@@ -216,19 +222,23 @@
             <div class="d-flex align-items-center gap-3">
                 <div class="rounded-circle d-flex align-items-center justify-content-center"
                      style="width:40px;height:40px;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);">
-                    <i class="bi bi-robot" style="color:white;font-size:1.1rem;"></i>
+                    <i class="bi bi-graph-up-arrow" style="color:white;font-size:1.1rem;"></i>
                 </div>
                 <div>
-                    <div class="fw-medium" style="color:#2d3748;" id="selectedAgentName">No Agent Selected</div>
-                    <div class="small" id="agentStatus" style="color:#e74c3c;">
-                        <i class="bi bi-circle-fill me-1" style="font-size:0.45rem;vertical-align:middle;"></i>Select an agent to start
+                    <div class="fw-medium" style="color:#2d3748;" id="selectedDsName">No data source selected</div>
+                    <div class="small" id="dsStatus" style="color:#e74c3c;">
+                        <i class="bi bi-circle-fill me-1" style="font-size:0.45rem;vertical-align:middle;"></i>Select a data source to start
                     </div>
                 </div>
             </div>
             <div class="d-flex gap-2 align-items-center flex-wrap">
-                <!-- Agent Selector -->
-                <select id="agentSelect" class="form-select form-select-sm" style="width:200px;" onchange="selectAgent()">
-                    <option value="">-- Select AI Agent --</option>
+                <!-- Datasource Selector -->
+                <select id="dsSelect" class="form-select form-select-sm" style="width:220px;" onchange="selectDataSource()">
+                    <option value="">-- Select Data Source --</option>
+                    @foreach (var ds in Model.DataSources)
+                    {
+                        <option value="@ds.Id" data-status="@ds.Status">@ds.Name</option>
+                    }
                 </select>
                 <select id="modelSelect" class="form-select form-select-sm" style="width:auto;">
                     @foreach (var aiModel in Model.AvailableModels)
@@ -236,13 +246,13 @@
                         <option value="@aiModel" selected="@(aiModel == Model.SelectedModel)">@aiModel</option>
                     }
                 </select>
-                <!-- Share Agent -->
-                <button class="btn btn-sm btn-outline-secondary" id="shareAgentBtn" title="Share Agent" onclick="shareAgent()" disabled>
+                <!-- Share -->
+                <button class="btn btn-sm btn-outline-secondary" title="Share" onclick="shareAgent()">
                     <i class="bi bi-share"></i>
                 </button>
                 <!-- Export as iframe -->
-                <button class="btn btn-sm btn-outline-secondary" id="exportAgentBtn" title="Export Agent as iframe" 
-                        data-bs-toggle="modal" data-bs-target="#embedAgentModal" disabled>
+                <button class="btn btn-sm btn-outline-secondary" title="Export as iframe"
+                        data-bs-toggle="modal" data-bs-target="#embedAgentModal">
                     <i class="bi bi-code-slash"></i>
                 </button>
                 <!-- Export PDF -->
@@ -282,7 +292,7 @@
                         <i class="bi bi-paperclip"></i>
                     </button>
                     <textarea id="messageInput" class="form-control border-0 shadow-none"
-                              placeholder="Select an AI agent above to start chatting…" rows="1"
+                              placeholder="Ask a question about your data… (Enter to send, Shift+Enter for new line)" rows="1"
                               style="resize:none;max-height:200px;"
                               onkeydown="handleKeyDown(event)" disabled></textarea>
                     <button class="btn btn-outline-secondary border-0 px-3" id="micBtn" type="button"
@@ -293,8 +303,9 @@
                         <i class="bi bi-send-fill"></i>
                     </button>
                 </div>
-                <div class="text-center mt-2">
-                    <small class="text-muted">ChatPortal AI may produce inaccurate results. <a href="/pages/docs" class="text-muted">Learn more</a></small>
+                <div class="d-flex justify-content-between align-items-center mt-2">
+                    <small class="text-muted">5 credits per query · <span id="creditDisplay">@Model.CreditBalance remaining</span></small>
+                    <small class="text-muted">Enter to send · Shift+Enter for new line</small>
                 </div>
             </div>
         </div>
@@ -1089,11 +1100,74 @@
     document.addEventListener('DOMContentLoaded', function() {
         loadOrganizations();
         loadWorkspaces();
-        loadAvailableAgents(); // Load agents for selection
+        // Auto-select a datasource if exactly one active source exists
+        autoSelectDatasource();
     });
 
     // ── AI Agent Selection & Management ──────────────────────────────────
     let selectedAgent = null;
+
+    // ── Datasource Selection & Activation ───────────────────────────────
+    /**
+     * Activate a datasource as the current chat source and update the header UI.
+     * @@param {number} dsId - The datasource ID.
+     * @@param {string} dsName - The datasource display name.
+     * @@param {string} dsStatus - The datasource status string (e.g. "Active").
+     */
+    function setActiveDatasource(dsId, dsName, dsStatus) {
+        window._activeChatDataSourceId = dsId || null;
+        const isActive = dsStatus === 'Active';
+        document.getElementById('selectedDsName').textContent = dsName || 'No data source selected';
+        const statusEl = document.getElementById('dsStatus');
+        if (statusEl) {
+            statusEl.innerHTML = `<i class="bi bi-circle-fill me-1" style="font-size:0.45rem;vertical-align:middle;"></i>${isActive ? 'Connected' : (dsStatus || 'Not connected')}`;
+            statusEl.style.color = isActive ? '#2ecc71' : '#e74c3c';
+        }
+        document.getElementById('messageInput').disabled = !isActive;
+        document.getElementById('sendBtn').disabled = !isActive;
+        if (isActive) {
+            document.getElementById('messageInput').placeholder = 'Ask a question about your data… (Enter to send, Shift+Enter for new line)';
+        } else {
+            document.getElementById('messageInput').placeholder = 'Data source is not active';
+        }
+        // Sync the header dropdown
+        const select = document.getElementById('dsSelect');
+        if (select) {
+            for (let i = 0; i < select.options.length; i++) {
+                if (parseInt(select.options[i].value) === dsId) { select.selectedIndex = i; break; }
+            }
+        }
+    }
+
+    /** Called when user picks a datasource from the header dropdown. */
+    function selectDataSource() {
+        const select = document.getElementById('dsSelect');
+        const opt = select.options[select.selectedIndex];
+        if (!opt.value) {
+            setActiveDatasource(null, 'No data source selected', '');
+            return;
+        }
+        setActiveDatasource(parseInt(opt.value), opt.textContent.trim(), opt.dataset.status || '');
+        clearChatUI();
+    }
+
+    /** Called when user clicks a datasource item in the sidebar My Data section. */
+    window.sidebarSelectDataSource = function(dsId, dsName, dsStatus) {
+        setActiveDatasource(dsId, dsName, dsStatus);
+        clearChatUI();
+    };
+
+    /** Auto-select the datasource if there is exactly one active source. */
+    function autoSelectDatasource() {
+        const select = document.getElementById('dsSelect');
+        if (!select) return;
+        const activeOptions = Array.from(select.options).filter(o => o.value && o.dataset.status === 'Active');
+        if (activeOptions.length === 1) {
+            const opt = activeOptions[0];
+            setActiveDatasource(parseInt(opt.value), opt.textContent.trim(), 'Active');
+        }
+    }
+    window.autoSelectDatasource = autoSelectDatasource;
 
     async function loadAvailableAgents() {
         try {
@@ -2468,8 +2542,8 @@
     window.editWorkspace = editWorkspace;
     window.loadWorkspaces = loadWorkspaces;
 
-    // Agent functions
-    window.selectAgent = selectAgent;
+    // Agent functions (agent management modal still works)
+    window.selectAgent = function() {}; // legacy stub — datasource selector used instead
     window.shareAgent = shareAgent;
     window.generateAgentEmbed = generateAgentEmbed;
     window.copyShareLink = copyShareLink;
@@ -2517,6 +2591,10 @@
     window.confirmClearAllSessions = confirmClearAllSessions;
     window.copyToClipboard = copyToClipboard;
 
+    // Datasource selection functions
+    window.selectDataSource = selectDataSource;
+    window.setActiveDatasource = setActiveDatasource;
+
     // Utility functions (also used by chat.js)
     window.escapeHtml = escapeHtml;
     window.getAntiForgeryToken = getAntiForgeryToken;
@@ -2559,9 +2637,50 @@
     /* Sidebar search input placeholder */
     #sessionSearch::placeholder { color: rgba(255,255,255,0.35); }
     #sessionSearch:focus { background: rgba(255,255,255,0.12) !important; color: #fff !important; box-shadow: none; outline: none; }
+
+    /* Prompt chips for empty-state suggestions */
+    .prompt-chip {
+        display: inline-block; padding: 0.35em 0.9em;
+        background: #F3E8FF; color: #7c4dff;
+        border-radius: 100px; font-size: 0.82rem; font-weight: 600;
+        cursor: pointer; transition: background 0.15s, transform 0.1s;
+        border: 1px solid rgba(124,77,255,0.2); text-decoration: none;
+    }
+    .prompt-chip:hover { background: #e0ccff; transform: translateY(-1px); color: #5e35b1; }
+
+    /* Datasource item hover in sidebar */
+    .datasource-item:hover { background: #eef2ff !important; }
 </style>
 
 <script>
+// ══════════════════════════════════════════════════════════════
+// Override showEmptyState (from chatHistory.js) with a
+// datasource-focused empty state for the unified AI Chat.
+// ══════════════════════════════════════════════════════════════
+window.showEmptyState = function() {
+    const container = document.getElementById('chatMessages');
+    if (!container) return;
+    if (container.querySelectorAll('.message-item').length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-5" id="emptyState">
+                <div class="mb-4">
+                    <div class="rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                         style="width:72px;height:72px;background:linear-gradient(135deg,#E8F0FE,#F3E8FF);">
+                        <i class="bi bi-graph-up-arrow fs-2" style="color:#7c4dff;"></i>
+                    </div>
+                    <h5 class="fw-bold" style="color:#1a1a2e;">Ask anything about your data</h5>
+                    <p class="text-muted small">Select a data source and start chatting. Each query costs <strong>5 credits</strong>.</p>
+                </div>
+                <div class="d-flex flex-wrap gap-2 justify-content-center">
+                    <button class="prompt-chip suggestion-btn" onclick="useSuggestion(this)">Show top 10 rows</button>
+                    <button class="prompt-chip suggestion-btn" onclick="useSuggestion(this)">Count all records</button>
+                    <button class="prompt-chip suggestion-btn" onclick="useSuggestion(this)">What columns exist?</button>
+                    <button class="prompt-chip suggestion-btn" onclick="useSuggestion(this)">Show numeric averages</button>
+                </div>
+            </div>`;
+    }
+};
+
 // ══════════════════════════════════════════════════════════════
 // FEATURE 1 — People Picker for Team & Org Member Modals
 // ══════════════════════════════════════════════════════════════
@@ -2666,7 +2785,7 @@ window.openNewChatModal = async function() {
         } else {
             noDsAlert.style.display = 'none';
             select.innerHTML = '<option value="">— Select a data source —</option>' +
-                sources.map(s => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
+                sources.map(s => `<option value="${s.id}" data-status="${escapeHtml(s.status || '')}">${escapeHtml(s.name)}</option>`).join('');
         }
     }
 
@@ -2702,14 +2821,13 @@ window.startNewChatWithDs = async function() {
         const data = await r.json();
         if (data.success) {
             // Store active datasource for this session
-            window._activeChatDataSourceId = dsId;
+            const selectedOpt = document.getElementById('newChatDsSelect').options[document.getElementById('newChatDsSelect').selectedIndex];
+            const dsName = selectedOpt ? selectedOpt.textContent.trim() : '';
+            const dsStatus = selectedOpt ? (selectedOpt.dataset.status || 'Active') : 'Active';
+            setActiveDatasource(dsId, dsName, dsStatus);
             window._activeChatSessionId = data.sessionId;
             // Close modal and activate chat UI
             bootstrap.Modal.getInstance(document.getElementById('newChatModal')).hide();
-            // Enable send button and input
-            document.getElementById('sendBtn').disabled = false;
-            document.getElementById('messageInput').disabled = false;
-            document.getElementById('messageInput').placeholder = 'Ask a question about your data…';
             // Update sidebar with server sessions
             await loadServerSessions();
             newChat();
