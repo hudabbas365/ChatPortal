@@ -131,7 +131,7 @@ public class ChatController : Controller
             var chatRequest = new ChatRequest(
                 Model: request.Model ?? "command-a-03-2025",
                 SystemPrompt: "You are a helpful AI assistant.",
-                Messages: new List<AIChatMessage> { new AIChatMessage("user", request.Message) }
+                Messages: new List<(string Role, string Content)> { ("user", request.Message) }
             );
 
             var aiResponse = await _aiChatService.SendMessageAsync(chatRequest);
