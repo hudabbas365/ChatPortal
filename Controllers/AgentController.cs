@@ -1,5 +1,7 @@
 using ChatPortal.Data;
 using ChatPortal.Models.Entities;
+using ChatPortal.Services;
+using ChatPortal.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -11,10 +13,12 @@ namespace ChatPortal.Controllers;
 public class AgentController : Controller
 {
     private readonly AppDbContext _context;
+    private readonly IAIChatService _aiChatService;
 
-    public AgentController(AppDbContext context)
+    public AgentController(AppDbContext context, IAIChatService aiChatService)
     {
         _context = context;
+        _aiChatService = aiChatService;
     }
 
     private int GetUserId() =>
@@ -124,7 +128,7 @@ public class AgentController : Controller
             if (workspace == null)
                 return Json(new { success = false, error = "Workspace not found or access denied" });
 
-            var agents = await _context.Agents
+            var agentData = await _context.Agents
                 .Where(a => a.WorkspaceId == workspaceId)
                 .Select(a => new
                 {
@@ -141,6 +145,22 @@ public class AgentController : Controller
                     CreatedAt = a.CreatedAt.ToString("yyyy-MM-dd")
                 })
                 .ToListAsync();
+
+            var agents = agentData.Select(a => new
+            {
+                a.Id,
+                a.Name,
+                a.Description,
+                a.AgentType,
+                a.ModelName,
+                a.Temperature,
+                a.MaxTokens,
+                a.IsActive,
+                a.ChatSessionCount,
+                a.IsCreator,
+                a.CreatedAt,
+                chatUrl = Url.Action("Chat", "Agent", new { id = a.Id })
+            });
 
             return Json(new { success = true, agents });
         }
@@ -358,4 +378,176 @@ public class AgentController : Controller
             return Json(new { success = false, error = ex.Message });
         }
     }
+
+    // GET: Agent/Chat/{id}
+    [HttpGet]
+    public async Task<IActionResult> Chat(int id)
+    {
+        try
+        {
+            var userId = GetUserId();
+            var agent = await _context.Agents
+                .Include(a => a.Workspace)
+                .ThenInclude(w => w.Organization)
+                .ThenInclude(o => o.Members)
+                .FirstOrDefaultAsync(a => a.Id == id);
+
+            if (agent == null)
+                return NotFound("Agent not found");
+
+            var isOwner = agent.Workspace.Organization.OwnerId == userId;
+            var isMember = agent.Workspace.Organization.Members.Any(m => m.UserId == userId);
+            var isCreator = agent.CreatedBy == userId;
+
+            if (!isOwner && !isMember && !isCreator)
+                return Forbid();
+
+            // Load or create a chat session for this agent+user
+            var session = await _context.ChatSessions
+                .Include(s => s.Messages)
+                .Where(s => s.AgentId == id && s.UserId == userId && !s.IsArchived)
+                .OrderByDescending(s => s.UpdatedAt)
+                .FirstOrDefaultAsync();
+
+            var history = new List<ChatMessageDto>();
+            int? sessionId = null;
+
+            if (session != null)
+            {
+                sessionId = session.Id;
+                history = session.Messages
+                    .OrderBy(m => m.CreatedAt)
+                    .Select(m => new ChatMessageDto(m.Role, m.Content, m.CreatedAt))
+                    .ToList();
+            }
+
+            var vm = new AgentChatViewModel
+            {
+                AgentId = agent.Id,
+                AgentName = agent.Name,
+                AgentDescription = agent.Description,
+                AgentType = agent.AgentType,
+                ModelName = agent.ModelName,
+                SessionId = sessionId,
+                History = history
+            };
+
+            ViewData["Title"] = $"Chat with {agent.Name}";
+            return View(vm);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
+    // POST: Agent/Chat
+    [HttpPost]
+    public async Task<IActionResult> Chat([FromBody] AgentChatRequest body)
+    {
+        try
+        {
+            var userId = GetUserId();
+
+            var agent = await _context.Agents
+                .Include(a => a.Workspace)
+                .ThenInclude(w => w.Organization)
+                .ThenInclude(o => o.Members)
+                .FirstOrDefaultAsync(a => a.Id == body.AgentId);
+
+            if (agent == null)
+                return Json(new { success = false, error = "Agent not found" });
+
+            var isOwner = agent.Workspace.Organization.OwnerId == userId;
+            var isMember = agent.Workspace.Organization.Members.Any(m => m.UserId == userId);
+            var isCreator = agent.CreatedBy == userId;
+
+            if (!isOwner && !isMember && !isCreator)
+                return Json(new { success = false, error = "Access denied" });
+
+            // Load or create session
+            ChatSession? session = null;
+            if (body.SessionId.HasValue)
+            {
+                session = await _context.ChatSessions
+                    .Include(s => s.Messages)
+                    .FirstOrDefaultAsync(s => s.Id == body.SessionId.Value && s.UserId == userId);
+            }
+
+            if (session == null)
+            {
+                session = new ChatSession
+                {
+                    UserId = userId,
+                    AgentId = agent.Id,
+                    Title = $"Chat with {agent.Name}",
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+                _context.ChatSessions.Add(session);
+                await _context.SaveChangesAsync();
+
+                session.Messages = new List<ChatMessage>();
+            }
+
+            // Build message history for the AI call
+            var history = session.Messages
+                .OrderBy(m => m.CreatedAt)
+                .Select(m => new AIChatMessage(m.Role, m.Content))
+                .ToList();
+            history.Add(new AIChatMessage("user", body.Message));
+
+            var aiRequest = new ChatRequest(
+                agent.ModelName ?? "command-a-03-2025",
+                agent.SystemPrompt ?? string.Empty,
+                history
+            );
+
+            var aiResponse = await _aiChatService.SendMessageAsync(aiRequest);
+
+            // Save user message
+            var userMessage = new ChatMessage
+            {
+                ChatSessionId = session.Id,
+                Role = "user",
+                Content = body.Message,
+                CreatedAt = DateTime.UtcNow,
+                TokensUsed = 0
+            };
+            _context.ChatMessages.Add(userMessage);
+
+            // Save assistant reply
+            var assistantMessage = new ChatMessage
+            {
+                ChatSessionId = session.Id,
+                Role = "assistant",
+                Content = aiResponse.Content ?? string.Empty,
+                CreatedAt = DateTime.UtcNow,
+                TokensUsed = aiResponse.TokensUsed
+            };
+            _context.ChatMessages.Add(assistantMessage);
+
+            session.UpdatedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+
+            return Json(new
+            {
+                success = true,
+                reply = aiResponse.Content,
+                sessionId = session.Id,
+                tokensUsed = aiResponse.TokensUsed
+            });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, error = ex.Message });
+        }
+    }
+}
+
+public class AgentChatRequest
+{
+    public int AgentId { get; set; }
+    public string Message { get; set; } = string.Empty;
+    public int? SessionId { get; set; }
 }
