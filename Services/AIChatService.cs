@@ -42,7 +42,7 @@ public class AIChatService : IAIChatService
 
             var payload = new
             {
-                model = request.Model ?? aiSettings["DefaultModel"] ?? "command-r-plus",
+                model = request.Model ?? aiSettings["DefaultModel"] ?? "command-a-03-2025",
                 messages
             };
 
@@ -85,6 +85,6 @@ public class AIChatService : IAIChatService
 
     public Task<IEnumerable<string>> GetAvailableModelsAsync()
     {
-        return Task.FromResult<IEnumerable<string>>(new[] { "command-r-plus", "command-r", "command" });
+        return Task.FromResult<IEnumerable<string>>(new[] { "command-a-03-2025", "command-r-plus", "command-r" });
     }
 }

@@ -13,6 +13,7 @@ public class ChatController : Controller
 {
     private readonly IAIChatService _aiChatService;
     private readonly IDataConnectionService _dataConnection;
+    private readonly IDataChatService _dataChatService;
     private readonly ILogger<ChatController> _logger;
 
     /// <summary>
@@ -20,11 +21,14 @@ public class ChatController : Controller
     /// </summary>
     /// <param name="aiChatService">Service used to query available AI models and send messages.</param>
     /// <param name="dataConnection">Service used to load user data sources.</param>
+    /// <param name="dataChatService">Service used to query data sources with AI.</param>
     /// <param name="logger">Logger for recording errors.</param>
-    public ChatController(IAIChatService aiChatService, IDataConnectionService dataConnection, ILogger<ChatController> logger)
+    public ChatController(IAIChatService aiChatService, IDataConnectionService dataConnection,
+        IDataChatService dataChatService, ILogger<ChatController> logger)
     {
         _aiChatService = aiChatService;
         _dataConnection = dataConnection;
+        _dataChatService = dataChatService;
         _logger = logger;
     }
 
@@ -106,17 +110,35 @@ public class ChatController : Controller
 
         try
         {
+            var userId = GetUserId();
+
+            if (request.DataSourceId.HasValue && userId.HasValue)
+            {
+                var response = await _dataChatService.QueryDataSourceAsync(userId.Value, request.DataSourceId.Value, request.Message);
+                if (!response.Success)
+                    return BadRequest(new { error = response.Error });
+
+                return Json(new
+                {
+                    success = true,
+                    queryDescription = response.QueryDescription,
+                    query = response.Query,
+                    prompts = response.Prompts,
+                    creditsUsed = 5
+                });
+            }
+
             var chatRequest = new ChatRequest(
-                Model: request.Model ?? "gpt-3.5-turbo",
+                Model: request.Model ?? "command-a-03-2025",
                 SystemPrompt: "You are a helpful AI assistant.",
                 Messages: new List<(string Role, string Content)> { ("user", request.Message) }
             );
 
-            var response = await _aiChatService.SendMessageAsync(chatRequest);
-            if (!response.Success)
-                return BadRequest(new { error = response.Error ?? "The AI service was unable to process your request." });
+            var aiResponse = await _aiChatService.SendMessageAsync(chatRequest);
+            if (!aiResponse.Success)
+                return BadRequest(new { error = aiResponse.Error ?? "The AI service was unable to process your request." });
 
-            return Json(new { content = response.Content, tokensUsed = response.TokensUsed });
+            return Json(new { content = aiResponse.Content, tokensUsed = aiResponse.TokensUsed });
         }
         catch (Exception ex)
         {
@@ -139,4 +161,7 @@ public class SendMessageRequest
 
     /// <summary>Gets or sets the optional session ID for conversation tracking.</summary>
     public int? SessionId { get; set; }
+
+    /// <summary>Gets or sets the optional data source ID for AI data queries.</summary>
+    public int? DataSourceId { get; set; }
 }
