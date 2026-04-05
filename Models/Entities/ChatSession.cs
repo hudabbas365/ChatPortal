@@ -26,6 +26,11 @@ public class ChatSession
     [ForeignKey("WorkspaceId")]
     public virtual Workspace? Workspace { get; set; }
 
+    public int? AgentId { get; set; }
+
+    [ForeignKey("AgentId")]
+    public virtual Agent? Agent { get; set; }
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
     public bool IsArchived { get; set; } = false;
