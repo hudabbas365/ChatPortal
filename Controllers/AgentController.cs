@@ -8,7 +8,7 @@ using System.Security.Claims;
 namespace ChatPortal.Controllers;
 
 [Authorize]
-public class AgentController : Controller
+public class AgentController : ControllerQ
 {
     private readonly AppDbContext _context;
 
