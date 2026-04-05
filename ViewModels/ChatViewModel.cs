@@ -66,4 +66,7 @@ public class ChatViewModel
 
     /// <summary>Gets or sets the user's connected data sources shown in the sidebar.</summary>
     public List<UserDataSourceViewModel> DataSources { get; set; } = new();
+
+    /// <summary>Gets or sets the user's current credit balance.</summary>
+    public int CreditBalance { get; set; }
 }
