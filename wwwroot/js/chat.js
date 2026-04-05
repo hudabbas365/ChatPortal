@@ -614,16 +614,11 @@ function openChartPanelFromBtn(btn) {
         }
     }
     if (typeof openChartPanel === 'function') {
-        // Build fake bubble reference to trigger panel
         openChartPanel(btn.closest('.chat-bubble-ai'), labels, datasets);
-    } else {
-        // Fallback: directly open panel with data
+    } else if (typeof confirmGenerateChart === 'function') {
+        // Fallback: open panel with data (avoids native prompt dialogs)
         window._chartPanelLabels = labels;
         window._chartPanelDatasets = datasets;
-        if (typeof confirmGenerateChart === 'function') {
-            const chartType = prompt('Chart type (bar/pie/doughnut/radar/line):', 'bar') || 'bar';
-            const title = prompt('Chart title:', 'Result Chart') || 'Result Chart';
-            confirmGenerateChart(labels, datasets, chartType, title);
-        }
+        confirmGenerateChart(labels, datasets);
     }
 }

@@ -2584,10 +2584,13 @@ function _pickerRenderDropdown(containerId, hiddenId, selectedId, hintId, result
             ? '<span style="display:inline-block;background:#d4edda;color:#155724;border-radius:4px;font-size:0.7rem;padding:1px 6px;margin-left:6px;font-weight:600;">In Org</span>'
             : '<span style="display:inline-block;background:#f8d7da;color:#721c24;border-radius:4px;font-size:0.7rem;padding:1px 6px;margin-left:6px;">Not in Org</span>';
         const border = u.isInOrganization ? '2px solid #28a745' : '2px solid #dc3545';
-        return `<div class="picker-item" data-email="${escapeHtml(u.email)}" data-name="${escapeHtml(u.name)}"
+        // Use data attributes to avoid XSS in onclick handlers
+        return `<div class="picker-item"
+            data-container="${escapeHtml(containerId)}" data-hidden="${escapeHtml(hiddenId)}"
+            data-selected="${escapeHtml(selectedId)}" data-hint="${escapeHtml(hintId)}"
+            data-email="${escapeHtml(u.email)}" data-name="${escapeHtml(u.name)}"
             style="padding:8px 12px;cursor:pointer;display:flex;align-items:center;gap:8px;border-left:${border};margin:4px;border-radius:4px;"
-            onmouseenter="this.style.background='#f8f9fa'" onmouseleave="this.style.background=''"
-            onclick="_pickerSelect('${containerId}','${hiddenId}','${selectedId}','${hintId}','${escapeHtml(u.email)}','${escapeHtml(u.name)}')">
+            onmouseenter="this.style.background='#f8f9fa'" onmouseleave="this.style.background=''">
             <i class="bi bi-person-circle" style="font-size:1.2rem;color:#667eea;flex-shrink:0;"></i>
             <div>
                 <div style="font-size:0.88rem;font-weight:600;">${escapeHtml(u.name)}</div>
@@ -2597,6 +2600,13 @@ function _pickerRenderDropdown(containerId, hiddenId, selectedId, hintId, result
         </div>`;
     }).join('');
     drop.style.display = 'block';
+
+    // Attach click handlers via event delegation (avoids XSS in inline onclick)
+    drop.querySelectorAll('.picker-item').forEach(item => {
+        item.addEventListener('click', () => {
+            _pickerSelect(item.dataset.container, item.dataset.hidden, item.dataset.selected, item.dataset.hint, item.dataset.email, item.dataset.name);
+        });
+    });
 }
 
 function _pickerSelect(dropId, hiddenId, selectedId, hintId, email, name) {
@@ -2811,18 +2821,20 @@ function _addGenerateChartBtns() {
     });
 }
 
-function openChartPanel(bubble) {
-    // Extract JSON data from the bubble's table if any
-    let labels = [], datasets = [], rows = [];
-    const table = bubble.querySelector('table');
-    if (table) {
-        const headers = Array.from(table.querySelectorAll('thead th')).map(th => th.textContent.trim());
-        const trs = Array.from(table.querySelectorAll('tbody tr'));
-        rows = trs.map(tr => Array.from(tr.querySelectorAll('td')).map(td => td.textContent.trim()));
-        if (headers.length >= 2) {
-            labels = rows.map(r => r[0]);
-            const vals = rows.map(r => parseFloat(r[1]) || 0);
-            datasets = [{ label: headers[1], data: vals, backgroundColor: 'rgba(173,216,230,0.7)', borderColor: 'rgba(100,149,237,0.9)', borderWidth: 1 }];
+function openChartPanel(bubble, preLabels, preDatasets) {
+    // Extract JSON data from the bubble's table if any, or use preloaded data
+    let labels = preLabels || [], datasets = preDatasets || [];
+    if (!labels.length && bubble) {
+        const table = bubble.querySelector('table');
+        if (table) {
+            const headers = Array.from(table.querySelectorAll('thead th')).map(th => th.textContent.trim());
+            const trs = Array.from(table.querySelectorAll('tbody tr'));
+            const rows = trs.map(tr => Array.from(tr.querySelectorAll('td')).map(td => td.textContent.trim()));
+            if (headers.length >= 2) {
+                labels = rows.map(r => r[0]);
+                const vals = rows.map(r => parseFloat(r[1]) || 0);
+                datasets = [{ label: headers[1], data: vals, backgroundColor: 'rgba(173,216,230,0.7)', borderColor: 'rgba(100,149,237,0.9)', borderWidth: 1 }];
+            }
         }
     }
 
@@ -2834,6 +2846,9 @@ function openChartPanel(bubble) {
         panel.style.cssText = 'position:fixed;bottom:80px;right:20px;z-index:9999;background:#fff;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.18);padding:20px;width:340px;';
         document.body.appendChild(panel);
     }
+    // Store data as property (not in onclick string)
+    panel._labels = labels;
+    panel._datasets = datasets;
     panel.innerHTML = `
         <div class="d-flex justify-content-between align-items-center mb-3">
             <strong style="font-size:0.9rem;"><i class="bi bi-bar-chart-fill me-1" style="color:#667eea;"></i>Generate Chart</strong>
@@ -2853,13 +2868,17 @@ function openChartPanel(bubble) {
             <label class="form-label small fw-semibold">Title</label>
             <input type="text" class="form-control form-control-sm" id="chartTitleInput" placeholder="Chart Title" />
         </div>
-        <button class="btn btn-sm w-100 mb-2" style="background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;" onclick="confirmGenerateChart(${JSON.stringify(labels)},${JSON.stringify(datasets)})">
-            <i class="bi bi-check-circle me-1"></i>Confirm & Generate
+        <button class="btn btn-sm w-100 mb-2" id="chartGenConfirmBtn" style="background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;">
+            <i class="bi bi-check-circle me-1"></i>Confirm &amp; Generate
         </button>`;
 
-    // Store data for later use
+    // Re-attach stored data (innerHTML clears it)
     panel._labels = labels;
     panel._datasets = datasets;
+    document.getElementById('chartGenConfirmBtn').addEventListener('click', function() {
+        const p = document.getElementById('chartGenPanel');
+        confirmGenerateChart(p._labels || [], p._datasets || []);
+    });
 }
 
 async function confirmGenerateChart(labels, datasets) {
