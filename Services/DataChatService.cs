@@ -100,15 +100,18 @@ public class DataChatService : IDataChatService
 
         var systemPrompt = BuildSystemPrompt(sourceType, schema, agentName, dataSourceName);
         var userPrompt = $"Question: {question}\n\nSample data (first 20 rows):\n{sampleData}\n\n" +
-                         "Respond ONLY with a valid JSON object in this exact format:\n" +
-                         "{\n  \"QueryDescription\": \"...\",\n  \"Query\": \"...\",\n  \"Suggestions\": [\"...\", \"...\", \"...\"]\n}";
+                         "Respond ONLY with valid JSON in this exact format:\n" +
+                         "{ \"QueryDescription\": \"...\", \"Query\": \"...\", \"Prompts\": \"prompt1$prompt2$prompt3\" }";
 
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+        _httpClient.DefaultRequestHeaders.Accept.Clear();
+        _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("text/event-stream"));
 
-        var payload = new
+        var payload = new Dictionary<string, object>
         {
-            model = aiSettings["DefaultModel"] ?? "command-r-plus",
-            messages = new[]
+            ["model"] = "command-a-03-2025",
+            ["stream"] = true,
+            ["messages"] = new[]
             {
                 new { role = "system", content = systemPrompt },
                 new { role = "user", content = userPrompt }
@@ -123,15 +126,35 @@ public class DataChatService : IDataChatService
         if (!httpResponse.IsSuccessStatusCode)
             return BuildDemoResponse(question, sourceType);
 
-        var responseJson = await httpResponse.Content.ReadAsStringAsync();
-        using var doc = JsonDocument.Parse(responseJson);
+        using var stream = await httpResponse.Content.ReadAsStreamAsync();
+        using var reader = new System.IO.StreamReader(stream);
+        var fullResponse = new StringBuilder();
 
-        // Cohere v2 response: message.content[0].text
-        var text = doc.RootElement
-            .GetProperty("message")
-            .GetProperty("content")[0]
-            .GetProperty("text")
-            .GetString() ?? "{}";
+        while (!reader.EndOfStream)
+        {
+            string? line = await reader.ReadLineAsync();
+            if (string.IsNullOrEmpty(line) || !line.StartsWith("data: ")) continue;
+            string data = line[6..];
+            if (data == "[DONE]") break;
+            try
+            {
+                using JsonDocument eventDoc = JsonDocument.Parse(data);
+                if (eventDoc.RootElement.TryGetProperty("type", out JsonElement typeElement) &&
+                    typeElement.GetString() == "content-delta")
+                {
+                    if (eventDoc.RootElement.TryGetProperty("delta", out JsonElement deltaElement) &&
+                        deltaElement.TryGetProperty("message", out JsonElement messageElement) &&
+                        messageElement.TryGetProperty("content", out JsonElement contentElement) &&
+                        contentElement.TryGetProperty("text", out JsonElement textElement))
+                    {
+                        fullResponse.Append(textElement.GetString());
+                    }
+                }
+            }
+            catch (JsonException) { _logger.LogDebug("Skipped malformed JSON in streaming response"); }
+        }
+
+        var text = fullResponse.ToString();
 
         try
         {
@@ -146,7 +169,6 @@ public class DataChatService : IDataChatService
             }
             else
             {
-                // Trim any trailing backticks
                 jsonText = jsonText.TrimEnd('`').Trim();
             }
 
@@ -155,10 +177,16 @@ public class DataChatService : IDataChatService
 
             var queryDescription = root.TryGetProperty("QueryDescription", out var qd) ? qd.GetString() : null;
             var query = root.TryGetProperty("Query", out var q) ? q.GetString() : null;
+
             var suggestions = new List<string>();
-            if (root.TryGetProperty("Suggestions", out var sugg) && sugg.ValueKind == JsonValueKind.Array)
-                foreach (var s in sugg.EnumerateArray())
-                    suggestions.Add(s.GetString() ?? "");
+            if (root.TryGetProperty("Prompts", out var promptsEl) && promptsEl.ValueKind == JsonValueKind.String)
+            {
+                var promptsStr = promptsEl.GetString() ?? "";
+                suggestions = promptsStr.Split('$', StringSplitOptions.RemoveEmptyEntries)
+                                        .Select(p => p.Trim())
+                                        .Where(p => !string.IsNullOrEmpty(p))
+                                        .ToList();
+            }
 
             return new StructuredAIResponse
             {
@@ -204,7 +232,12 @@ public class DataChatService : IDataChatService
         return $"You are an expert data analyst. The user has a {sourceType} data source.\n" +
                $"Generate {queryLang} queries using the following schema:\n" +
                $"{schema ?? "unknown"}.\n" +
-               "Maintain relationships between tables if they exist.";
+               "Maintain relationships between tables if they exist." +
+               "Dont Invent a new Column the return will be as per the existing schema." +
+               "return values \"QueryDescription\", \"Query\", \"Prompts\" " +
+               "Rules:\n" +
+               "3 Promopts will be return split by $" +
+               "Any special charcter or Welcome message will be consider randon result from schema";
     }
 
     private StructuredAIResponse BuildDemoResponse(string question, string sourceType)
