@@ -443,6 +443,7 @@ public class AgentController : Controller
 
     // POST: Agent/Chat
     [HttpPost]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> Chat([FromBody] AgentChatRequest body)
     {
         try

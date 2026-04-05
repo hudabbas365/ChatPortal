@@ -162,6 +162,7 @@
 
     <!-- Input bar -->
     <div class="agent-chat-input">
+        @Html.AntiForgeryToken()
         <div class="d-flex gap-2">
             <textarea id="messageInput" class="form-control" rows="1"
                       placeholder="Type your message…"
@@ -244,9 +245,13 @@
         scrollToBottom();
 
         try {
+            const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? '';
             const res = await fetch('@Url.Action("Chat", "Agent")', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': token
+                },
                 body: JSON.stringify({ agentId, message: text, sessionId })
             });
 
