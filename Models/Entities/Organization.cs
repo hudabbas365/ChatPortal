@@ -6,7 +6,7 @@ namespace ChatPortal.Models.Entities;
 public class Organization
 {
     [Key]
-    public int Id { get; set; }
+    public Guid Id { get; set; } = Guid.NewGuid();
 
     [Required, MaxLength(100)]
     public string Name { get; set; } = string.Empty;
@@ -24,14 +24,11 @@ public class Organization
     public string? Website { get; set; }
 
     // Owner/Creator of the organization
-    public int OwnerId { get; set; }
+    public Guid OwnerId { get; set; }
     [ForeignKey("OwnerId")]
     public virtual User Owner { get; set; } = null!;
 
     public bool IsActive { get; set; } = true;
-
-    /// <summary>Unique business identifier (GUID) — additive, int Id remains the PK for EF.</summary>
-    public Guid UniqueId { get; set; } = Guid.NewGuid();
 
     /// <summary>Tracks the last time any activity occurred in this organization (used for 30-day retention policy).</summary>
     public DateTime? LastActivityAt { get; set; }

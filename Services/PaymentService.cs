@@ -8,52 +8,52 @@ namespace ChatPortal.Services;
 
 public interface IPaymentService
 {
-    Task<string> CreateStripeCheckoutSessionAsync(int userId, int packageId, string successUrl, string cancelUrl);
+    Task<string> CreateStripeSubscriptionAsync(Guid orgId, Guid planId, string successUrl, string cancelUrl);
     Task<bool> HandleStripeWebhookAsync(string json, string stripeSignature);
-    Task<string> CreatePayPalOrderAsync(int userId, int packageId);
-    Task<bool> CapturePayPalOrderAsync(int userId, string orderId);
-    Task<List<CreditPackage>> GetActiveCreditPackagesAsync();
-    Task<List<PaymentTransaction>> GetUserPaymentHistoryAsync(int userId);
+    Task<string> CreatePayPalSubscriptionAsync(Guid orgId, Guid planId);
+    Task<bool> CapturePayPalOrderAsync(Guid userId, string orderId);
+    Task HandleFailedPaymentAsync(Guid orgId);
+    Task<bool> RetryPaymentAsync(Guid transactionId);
+    Task<List<PaymentTransaction>> GetPaymentHistoryAsync(Guid orgId);
 }
 
 public class PaymentService : IPaymentService
 {
     private readonly AppDbContext _db;
-    private readonly ICreditService _creditService;
     private readonly IConfiguration _configuration;
     private readonly ILogger<PaymentService> _logger;
 
-    public PaymentService(AppDbContext db, ICreditService creditService, IConfiguration configuration, ILogger<PaymentService> logger)
+    public PaymentService(AppDbContext db, IConfiguration configuration, ILogger<PaymentService> logger)
     {
         _db = db;
-        _creditService = creditService;
         _configuration = configuration;
         _logger = logger;
 
         StripeConfiguration.ApiKey = _configuration["Stripe:SecretKey"];
     }
 
-    public async Task<List<CreditPackage>> GetActiveCreditPackagesAsync()
+    public async Task<List<PaymentTransaction>> GetPaymentHistoryAsync(Guid orgId)
     {
-        return await _db.CreditPackages
-            .Where(p => p.IsActive)
-            .OrderBy(p => p.Price)
+        // Get users in org
+        var userIds = await _db.OrganizationMembers
+            .Where(m => m.OrganizationId == orgId)
+            .Select(m => m.UserId)
             .ToListAsync();
-    }
 
-    public async Task<List<PaymentTransaction>> GetUserPaymentHistoryAsync(int userId)
-    {
         return await _db.PaymentTransactions
-            .Where(t => t.UserId == userId)
+            .Where(t => userIds.Contains(t.UserId))
             .OrderByDescending(t => t.CreatedAt)
-            .Take(20)
+            .Take(50)
             .ToListAsync();
     }
 
-    public async Task<string> CreateStripeCheckoutSessionAsync(int userId, int packageId, string successUrl, string cancelUrl)
+    public async Task<string> CreateStripeSubscriptionAsync(Guid orgId, Guid planId, string successUrl, string cancelUrl)
     {
-        var package = await _db.CreditPackages.FindAsync(packageId)
-            ?? throw new KeyNotFoundException("Credit package not found.");
+        var plan = await _db.Plans.FindAsync(planId)
+            ?? throw new KeyNotFoundException("Plan not found.");
+
+        var org = await _db.Organizations.FindAsync(orgId)
+            ?? throw new KeyNotFoundException("Organization not found.");
 
         var options = new SessionCreateOptions
         {
@@ -64,39 +64,40 @@ public class PaymentService : IPaymentService
                 {
                     PriceData = new SessionLineItemPriceDataOptions
                     {
-                        UnitAmount = (long)(package.Price * 100),
+                        UnitAmount = (long)(plan.MonthlyPrice * 100),
                         Currency = "usd",
+                        Recurring = new SessionLineItemPriceDataRecurringOptions { Interval = "month" },
                         ProductData = new SessionLineItemPriceDataProductDataOptions
                         {
-                            Name = $"{package.Name} — {package.Credits} Credits",
-                            Description = package.Description
+                            Name = $"{plan.Name} Plan",
+                            Description = plan.Description
                         }
                     },
                     Quantity = 1
                 }
             },
-            Mode = "payment",
+            Mode = "subscription",
             SuccessUrl = successUrl + "?session_id={CHECKOUT_SESSION_ID}",
             CancelUrl = cancelUrl,
             Metadata = new Dictionary<string, string>
             {
-                { "userId", userId.ToString() },
-                { "packageId", packageId.ToString() }
+                { "orgId", orgId.ToString() },
+                { "planId", planId.ToString() }
             }
         };
 
         var service = new SessionService();
         var session = await service.CreateAsync(options);
 
-        // Record pending transaction
         _db.PaymentTransactions.Add(new PaymentTransaction
         {
-            UserId = userId,
-            CreditPackageId = packageId,
-            Amount = package.Price,
+            UserId = org.OwnerId,
+            PlanId = planId,
+            Amount = plan.MonthlyPrice,
             Provider = "Stripe",
             Status = "Pending",
-            ProviderSessionId = session.Id
+            ProviderSessionId = session.Id,
+            Description = $"{plan.Name} Plan subscription"
         });
         await _db.SaveChangesAsync();
 
@@ -136,41 +137,63 @@ public class PaymentService : IPaymentService
         tx.ProviderTransactionId = session.PaymentIntentId;
         tx.UpdatedAt = DateTime.UtcNow;
 
-        var package = await _db.CreditPackages.FindAsync(tx.CreditPackageId);
-        if (package != null)
+        // Activate subscription if plan was set
+        if (tx.PlanId.HasValue && session.Metadata.TryGetValue("orgId", out var orgIdStr) && Guid.TryParse(orgIdStr, out var orgId))
         {
-            tx.CreditsAwarded = package.Credits;
-            await _creditService.AddCreditsAsync(tx.UserId, package.Credits, "Purchase",
-                $"Purchased {package.Name} package via Stripe ({package.Credits} credits)");
+            var existingSub = await _db.Subscriptions
+                .Where(s => s.OrganizationId == orgId && s.Status == "Active")
+                .FirstOrDefaultAsync();
+
+            if (existingSub != null)
+            {
+                existingSub.PlanId = tx.PlanId.Value;
+                existingSub.Status = "Active";
+                existingSub.StartDate = DateTime.UtcNow;
+                existingSub.EndDate = DateTime.UtcNow.AddMonths(1);
+            }
+            else
+            {
+                _db.Subscriptions.Add(new ChatPortal.Models.Entities.Subscription
+                {
+                    UserId = tx.UserId,
+                    OrganizationId = orgId,
+                    PlanId = tx.PlanId.Value,
+                    Status = "Active",
+                    StartDate = DateTime.UtcNow,
+                    EndDate = DateTime.UtcNow.AddMonths(1)
+                });
+            }
         }
 
         await _db.SaveChangesAsync();
     }
 
-    public async Task<string> CreatePayPalOrderAsync(int userId, int packageId)
+    public async Task<string> CreatePayPalSubscriptionAsync(Guid orgId, Guid planId)
     {
-        var package = await _db.CreditPackages.FindAsync(packageId)
-            ?? throw new KeyNotFoundException("Credit package not found.");
+        var plan = await _db.Plans.FindAsync(planId)
+            ?? throw new KeyNotFoundException("Plan not found.");
 
-        // Record pending transaction
+        var org = await _db.Organizations.FindAsync(orgId)
+            ?? throw new KeyNotFoundException("Organization not found.");
+
         var tx = new PaymentTransaction
         {
-            UserId = userId,
-            CreditPackageId = packageId,
-            Amount = package.Price,
+            UserId = org.OwnerId,
+            PlanId = planId,
+            Amount = plan.MonthlyPrice,
             Provider = "PayPal",
-            Status = "Pending"
+            Status = "Pending",
+            Description = $"{plan.Name} Plan subscription"
         };
         _db.PaymentTransactions.Add(tx);
         await _db.SaveChangesAsync();
 
-        // Return the transaction ID for frontend approval flow
         return tx.Id.ToString();
     }
 
-    public async Task<bool> CapturePayPalOrderAsync(int userId, string orderId)
+    public async Task<bool> CapturePayPalOrderAsync(Guid userId, string orderId)
     {
-        if (!int.TryParse(orderId, out var txId))
+        if (!Guid.TryParse(orderId, out var txId))
             return false;
 
         var tx = await _db.PaymentTransactions
@@ -183,14 +206,24 @@ public class PaymentService : IPaymentService
         tx.ProviderTransactionId = orderId;
         tx.UpdatedAt = DateTime.UtcNow;
 
-        var package = await _db.CreditPackages.FindAsync(tx.CreditPackageId);
-        if (package != null)
-        {
-            tx.CreditsAwarded = package.Credits;
-            await _creditService.AddCreditsAsync(tx.UserId, package.Credits, "Purchase",
-                $"Purchased {package.Name} package via PayPal ({package.Credits} credits)");
-        }
+        await _db.SaveChangesAsync();
+        return true;
+    }
 
+    public async Task HandleFailedPaymentAsync(Guid orgId)
+    {
+        _logger.LogWarning("Payment failed for organization {OrgId}", orgId);
+        // Log failed payment and could trigger notification
+    }
+
+    public async Task<bool> RetryPaymentAsync(Guid transactionId)
+    {
+        var tx = await _db.PaymentTransactions.FindAsync(transactionId);
+        if (tx == null || tx.Status != "Failed")
+            return false;
+
+        tx.Status = "Pending";
+        tx.UpdatedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync();
         return true;
     }

@@ -6,7 +6,7 @@ namespace ChatPortal.Models.Entities;
 public class Agent
 {
     [Key]
-    public int Id { get; set; }
+    public Guid Id { get; set; } = Guid.NewGuid();
 
     [Required, MaxLength(100)]
     public string Name { get; set; } = string.Empty;
@@ -14,11 +14,11 @@ public class Agent
     [MaxLength(500)]
     public string? Description { get; set; }
 
-    public int WorkspaceId { get; set; }
+    public Guid WorkspaceId { get; set; }
     [ForeignKey("WorkspaceId")]
     public virtual Workspace Workspace { get; set; } = null!;
 
-    public int? DataSourceId { get; set; }
+    public Guid? DataSourceId { get; set; }
     [ForeignKey("DataSourceId")]
     public virtual UserDataSource? DataSource { get; set; }
 
@@ -33,7 +33,7 @@ public class Agent
 
     public bool IsActive { get; set; } = true;
 
-    public int CreatedBy { get; set; }
+    public Guid CreatedBy { get; set; }
     [ForeignKey("CreatedBy")]
     public virtual User Creator { get; set; } = null!;
 

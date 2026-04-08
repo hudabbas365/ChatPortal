@@ -4,8 +4,6 @@ public class DashboardViewModel
 {
     public string UserName { get; set; } = string.Empty;
     public int TotalChats { get; set; }
-    public int CreditsUsed { get; set; }
-    public int CreditsRemaining { get; set; }
     public string PlanName { get; set; } = "Free";
     public List<RecentActivityItem> RecentActivity { get; set; } = new();
     public List<QuickStatItem> Stats { get; set; } = new();

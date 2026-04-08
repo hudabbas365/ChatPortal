@@ -10,23 +10,18 @@ namespace ChatPortal.Controllers;
 public class DataInsightsController : Controller
 {
     private readonly IDataConnectionService _dataConnection;
-    private readonly IDataChatService _dataChatService;
-    private readonly ICreditService _creditService;
-    private readonly ILogger<DataInsightsController> _logger;
+    private readonly IDataChatService _dataChatService;    private readonly ILogger<DataInsightsController> _logger;
 
-    public DataInsightsController(IDataConnectionService dataConnection, IDataChatService dataChatService,
-        ICreditService creditService, ILogger<DataInsightsController> logger)
+    public DataInsightsController(IDataConnectionService dataConnection, IDataChatService dataChatService, ILogger<DataInsightsController> logger)
     {
         _dataConnection = dataConnection;
-        _dataChatService = dataChatService;
-        _creditService = creditService;
-        _logger = logger;
+        _dataChatService = dataChatService;        _logger = logger;
     }
 
-    private int GetUserId() =>
-        int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : 0;
+    private Guid GetUserId() =>
+        Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : Guid.Empty;
 
-    public async Task<IActionResult> Index(int dataSourceId)
+    public async Task<IActionResult> Index(Guid dataSourceId)
     {
         try
         {
@@ -41,7 +36,6 @@ public class DataInsightsController : Controller
             var vm = new DataInsightsViewModel
             {
                 DataSource = ds,
-                CreditBalance = await _creditService.GetBalanceAsync(userId)
             };
             return View(vm);
         }
@@ -54,7 +48,7 @@ public class DataInsightsController : Controller
     }
 
     [HttpPost, ValidateAntiForgeryToken]
-    public async Task<IActionResult> Query(int dataSourceId, [FromBody] string question)
+    public async Task<IActionResult> Query(Guid dataSourceId, [FromBody] string question)
     {
         if (string.IsNullOrWhiteSpace(question))
             return BadRequest(new { error = "Question is required." });

@@ -17,8 +17,8 @@ public class OrganizationController : Controller
         _context = context;
     }
 
-    private int GetUserId() =>
-        int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : 0;
+    private Guid GetUserId() =>
+        Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : Guid.Empty;
 
     // GET: Organization/Index
     public async Task<IActionResult> Index()
@@ -76,7 +76,7 @@ public class OrganizationController : Controller
             await _context.SaveChangesAsync();
 
             // Automatically set as active organization
-            HttpContext.Session.SetInt32("ActiveOrganizationId", organization.Id);
+            HttpContext.Session.SetString("ActiveOrganizationId", organization.Id.ToString());
 
             return Json(new { success = true, organizationId = organization.Id, message = "Organization created successfully" });
         }
@@ -115,7 +115,7 @@ public class OrganizationController : Controller
     // POST: Organization/AddMember
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> AddMember(int organizationId, string email, string role = "Member")
+    public async Task<IActionResult> AddMember(Guid organizationId, string email, string role = "Member")
     {
         try
         {
@@ -167,7 +167,7 @@ public class OrganizationController : Controller
     // POST: Organization/Update
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Update(int id, string name, string? description, string? industry, string? phone, string? website)
+    public async Task<IActionResult> Update(Guid id, string name, string? description, string? industry, string? phone, string? website)
     {
         try
         {
@@ -206,7 +206,7 @@ public class OrganizationController : Controller
     // POST: Organization/Delete
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Delete(int id)
+    public async Task<IActionResult> Delete(Guid id)
     {
         try
         {
@@ -231,7 +231,7 @@ public class OrganizationController : Controller
     // POST: Organization/SetActive
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> SetActive(int id)
+    public async Task<IActionResult> SetActive(Guid id)
     {
         try
         {
@@ -245,7 +245,7 @@ public class OrganizationController : Controller
                 return Json(new { success = false, error = "Organization not found or access denied" });
 
             // Store in session
-            HttpContext.Session.SetInt32("ActiveOrganizationId", id);
+            HttpContext.Session.SetString("ActiveOrganizationId", id.ToString());
 
             return Json(new { success = true, organizationName = organization.Name });
         }
@@ -257,7 +257,7 @@ public class OrganizationController : Controller
 
     // GET: Organization/GetMembers
     [HttpGet]
-    public async Task<IActionResult> GetMembers(int organizationId)
+    public async Task<IActionResult> GetMembers(Guid organizationId)
     {
         try
         {
@@ -300,7 +300,7 @@ public class OrganizationController : Controller
     // POST: Organization/UpdateMemberRole
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> UpdateMemberRole(int organizationId, int userId, string role)
+    public async Task<IActionResult> UpdateMemberRole(Guid organizationId, Guid userId, string role)
     {
         try
         {
@@ -343,7 +343,7 @@ public class OrganizationController : Controller
     // POST: Organization/RemoveMember
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> RemoveMember(int organizationId, int userId)
+    public async Task<IActionResult> RemoveMember(Guid organizationId, Guid userId)
     {
         try
         {

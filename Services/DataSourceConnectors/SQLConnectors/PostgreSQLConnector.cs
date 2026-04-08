@@ -74,7 +74,7 @@ namespace ChatPortal.Services.DataSourceConnectors.SQLConnectors
             return testResult;
         }
 
-        public async Task<bool> DisconnectAsync(int connectionId)
+        public async Task<bool> DisconnectAsync(Guid connectionId)
         {
             var connection = await _context.DataSourceConnections.FindAsync(connectionId);
             if (connection == null) return false;
@@ -86,7 +86,7 @@ namespace ChatPortal.Services.DataSourceConnectors.SQLConnectors
             return true;
         }
 
-        public async Task<SyncResult> SyncDataAsync(int connectionId)
+        public async Task<SyncResult> SyncDataAsync(Guid connectionId)
         {
             var connection = await _context.DataSourceConnections.FindAsync(connectionId);
             if (connection == null)
@@ -135,7 +135,7 @@ namespace ChatPortal.Services.DataSourceConnectors.SQLConnectors
             }
         }
 
-        public async Task<HealthStatus> GetHealthAsync(int connectionId)
+        public async Task<HealthStatus> GetHealthAsync(Guid connectionId)
         {
             var connection = await _context.DataSourceConnections.FindAsync(connectionId);
             if (connection == null)

@@ -4,16 +4,16 @@ namespace ChatPortal.Services;
 
 public interface IDashboardService
 {
-    Task<List<Dashboard>> GetUserDashboardsAsync(int userId);
-    Task<Dashboard?> GetByIdAsync(int id, int userId);
+    Task<List<Dashboard>> GetUserDashboardsAsync(Guid userId);
+    Task<Dashboard?> GetByIdAsync(Guid id, Guid userId);
     Task<Dashboard?> GetBySlugAsync(string slug);
-    Task<Dashboard> CreateAsync(int userId, string title, string? description);
-    Task<Dashboard> UpdateAsync(int id, int userId, string title, string? description, bool isPublic);
-    Task DeleteAsync(int id, int userId);
-    Task<Dashboard> ShareAsync(int id, int userId);
-    Task<PinnedChart> PinChartAsync(int userId, int queryHistoryId, int? dashboardId, string title, string chartDataJson, int position);
-    Task<List<PinnedChart>> GetPinnedChartsAsync(int dashboardId, int userId);
-    Task UnpinChartAsync(int pinnedChartId, int userId);
+    Task<Dashboard> CreateAsync(Guid userId, string title, string? description);
+    Task<Dashboard> UpdateAsync(Guid id, Guid userId, string title, string? description, bool isPublic);
+    Task DeleteAsync(Guid id, Guid userId);
+    Task<Dashboard> ShareAsync(Guid id, Guid userId);
+    Task<PinnedChart> PinChartAsync(Guid userId, Guid queryHistoryId, Guid? dashboardId, string title, string chartDataJson, int position);
+    Task<List<PinnedChart>> GetPinnedChartsAsync(Guid dashboardId, Guid userId);
+    Task UnpinChartAsync(Guid pinnedChartId, Guid userId);
     Task<List<Dashboard>> GetAllPublicDashboardsAsync();
-    Task RevokeShareAsync(int id);
+    Task RevokeShareAsync(Guid id);
 }

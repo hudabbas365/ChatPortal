@@ -24,7 +24,7 @@ public class JwtService : IJwtService
     }
 
     /// <inheritdoc />
-    public string GenerateAccessToken(int userId, string email, string role)
+    public string GenerateAccessToken(Guid userId, string email, string role)
     {
         var jwtSettings = _configuration.GetSection("JwtSettings");
         var secret = jwtSettings["Secret"]!;

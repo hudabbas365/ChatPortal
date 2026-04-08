@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ChatPortal.Models.Entities;
 
-public class OrganizationMember
+public class PushedChartDataset
 {
     [Key]
     public Guid Id { get; set; } = Guid.NewGuid();
@@ -16,10 +16,14 @@ public class OrganizationMember
     [ForeignKey("UserId")]
     public virtual User User { get; set; } = null!;
 
-    [Required, MaxLength(50)]
-    public string Role { get; set; } = "Member"; // Admin, Member, Viewer
+    [Required, MaxLength(256)]
+    public string Name { get; set; } = string.Empty;
 
-    public bool IsActive { get; set; } = true;
+    public string JsonData { get; set; } = string.Empty;
 
-    public DateTime JoinedAt { get; set; } = DateTime.UtcNow;
+    public Guid? SourceQueryHistoryId { get; set; }
+    [ForeignKey("SourceQueryHistoryId")]
+    public virtual QueryHistory? SourceQueryHistory { get; set; }
+
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }

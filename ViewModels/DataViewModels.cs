@@ -5,7 +5,6 @@ namespace ChatPortal.ViewModels;
 public class DataConnectionViewModel
 {
     public List<UserDataSource> DataSources { get; set; } = new();
-    public int CreditBalance { get; set; }
 }
 
 public class CreateFileDataSourceViewModel
@@ -24,8 +23,7 @@ public class CreateDbDataSourceViewModel
 
 public class PaymentViewModel
 {
-    public List<CreditPackage> Packages { get; set; } = new();
-    public int CurrentBalance { get; set; }
+    public List<Plan> Plans { get; set; } = new();
     public List<PaymentTransaction> RecentTransactions { get; set; } = new();
     public string? PublishableKey { get; set; }
     public string? PayPalClientId { get; set; }
@@ -34,5 +32,4 @@ public class PaymentViewModel
 public class DataInsightsViewModel
 {
     public UserDataSource DataSource { get; set; } = null!;
-    public int CreditBalance { get; set; }
 }

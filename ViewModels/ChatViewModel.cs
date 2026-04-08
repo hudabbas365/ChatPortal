@@ -21,8 +21,8 @@ public class ChatMessageViewModel
 /// </summary>
 public class ChatSessionViewModel
 {
-    /// <summary>Gets or sets the numeric identifier for the session (server-side).</summary>
-    public int Id { get; set; }
+    /// <summary>Gets or sets the identifier for the session (server-side).</summary>
+    public Guid Id { get; set; }
 
     /// <summary>Gets or sets the human-readable session title.</summary>
     public string Title { get; set; } = "New Chat";
@@ -39,7 +39,7 @@ public class ChatSessionViewModel
 /// </summary>
 public class UserDataSourceViewModel
 {
-    public int Id { get; set; }
+    public Guid Id { get; set; }
     public string Name { get; set; } = string.Empty;
     public string SourceType { get; set; } = string.Empty;
     public string Status { get; set; } = "Pending";
@@ -66,7 +66,4 @@ public class ChatViewModel
 
     /// <summary>Gets or sets the user's connected data sources shown in the sidebar.</summary>
     public List<UserDataSourceViewModel> DataSources { get; set; } = new();
-
-    /// <summary>Gets or sets the user's current credit balance.</summary>
-    public int CreditBalance { get; set; }
 }

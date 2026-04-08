@@ -88,16 +88,16 @@ public class GlobalExceptionFilter : IExceptionFilter
             string? orgName = null;
             try
             {
-                var orgId = context.HttpContext.Session.GetInt32("ActiveOrganizationId");
-                if (orgId.HasValue)
-                    orgName = db.Organizations.Where(o => o.Id == orgId.Value).Select(o => o.Name).FirstOrDefault();
+                var orgIdStr = context.HttpContext.Session.GetString("ActiveOrganizationId");
+                if (Guid.TryParse(orgIdStr, out var orgId))
+                    orgName = db.Organizations.Where(o => o.Id == orgId).Select(o => o.Name).FirstOrDefault();
             }
             catch { /* session may not be available */ }
 
             // Try to get user id from claims
-            int? userId = null;
+            Guid? userId = null;
             var userIdClaim = context.HttpContext.User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-            if (int.TryParse(userIdClaim, out var uid))
+            if (Guid.TryParse(userIdClaim, out var uid))
                 userId = uid;
 
             var fullMessage = $"{context.Exception.Message}\n\n{context.Exception.StackTrace}";

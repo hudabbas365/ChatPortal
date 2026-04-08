@@ -13,7 +13,7 @@ public class QueryHistoryService : IQueryHistoryService
         _db = db;
     }
 
-    public async Task<QueryHistory> SaveAsync(int userId, int dataSourceId, string query, string? resultJson, string? chartDataJson, string? narrative)
+    public async Task<QueryHistory> SaveAsync(Guid userId, Guid dataSourceId, string query, string? resultJson, string? chartDataJson, string? narrative)
     {
         var entry = new QueryHistory
         {
@@ -30,7 +30,7 @@ public class QueryHistoryService : IQueryHistoryService
         return entry;
     }
 
-    public async Task<List<QueryHistory>> GetHistoryAsync(int userId, int? dataSourceId = null, int page = 1, int pageSize = 20)
+    public async Task<List<QueryHistory>> GetHistoryAsync(Guid userId, Guid? dataSourceId = null, int page = 1, int pageSize = 20)
     {
         var query = _db.QueryHistories
             .Where(q => q.UserId == userId);
@@ -46,14 +46,14 @@ public class QueryHistoryService : IQueryHistoryService
             .ToListAsync();
     }
 
-    public async Task<QueryHistory?> GetByIdAsync(int id, int userId)
+    public async Task<QueryHistory?> GetByIdAsync(Guid id, Guid userId)
     {
         return await _db.QueryHistories
             .Include(q => q.DataSource)
             .FirstOrDefaultAsync(q => q.Id == id && q.UserId == userId);
     }
 
-    public async Task DeleteAsync(int id, int userId)
+    public async Task DeleteAsync(Guid id, Guid userId)
     {
         var entry = await _db.QueryHistories.FirstOrDefaultAsync(q => q.Id == id && q.UserId == userId)
             ?? throw new KeyNotFoundException("History entry not found.");

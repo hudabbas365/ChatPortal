@@ -6,9 +6,9 @@ namespace ChatPortal.Models.Entities;
 public class ChatMessage
 {
     [Key]
-    public int Id { get; set; }
+    public Guid Id { get; set; } = Guid.NewGuid();
 
-    public int ChatSessionId { get; set; }
+    public Guid ChatSessionId { get; set; }
 
     [ForeignKey("ChatSessionId")]
     public virtual ChatSession ChatSession { get; set; } = null!;

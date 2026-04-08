@@ -13,7 +13,7 @@ public class NotificationService : INotificationService
         _db = db;
     }
 
-    public async Task<List<NotificationDto>> GetUserNotificationsAsync(int userId, bool includeRead = true, bool includeDismissed = false)
+    public async Task<List<NotificationDto>> GetUserNotificationsAsync(Guid userId, bool includeRead = true, bool includeDismissed = false)
     {
         var query = _db.Notifications.Where(n => n.UserId == userId);
         if (!includeRead) query = query.Where(n => !n.IsRead);
@@ -24,7 +24,7 @@ public class NotificationService : INotificationService
             .ToListAsync();
     }
 
-    public async Task<List<AnnouncementDto>> GetUserAnnouncementsAsync(int userId)
+    public async Task<List<AnnouncementDto>> GetUserAnnouncementsAsync(Guid userId)
     {
         var now = DateTime.UtcNow;
         var activeAnnouncements = await _db.Announcements
@@ -46,7 +46,7 @@ public class NotificationService : INotificationService
             .ToList();
     }
 
-    public async Task<int> GetUnreadCountAsync(int userId)
+    public async Task<int> GetUnreadCountAsync(Guid userId)
     {
         var unreadNotifications = await _db.Notifications
             .CountAsync(n => n.UserId == userId && !n.IsRead && !n.IsDismissed);
@@ -67,7 +67,7 @@ public class NotificationService : INotificationService
         return unreadNotifications + unreadAnnouncements;
     }
 
-    public async Task MarkNotificationAsReadAsync(int notificationId, int userId)
+    public async Task MarkNotificationAsReadAsync(Guid notificationId, Guid userId)
     {
         var n = await _db.Notifications.FirstOrDefaultAsync(x => x.Id == notificationId && x.UserId == userId);
         if (n != null)
@@ -77,14 +77,14 @@ public class NotificationService : INotificationService
         }
     }
 
-    public async Task MarkAllNotificationsAsReadAsync(int userId)
+    public async Task MarkAllNotificationsAsReadAsync(Guid userId)
     {
         var notifications = await _db.Notifications.Where(n => n.UserId == userId && !n.IsRead).ToListAsync();
         foreach (var n in notifications) n.IsRead = true;
         await _db.SaveChangesAsync();
     }
 
-    public async Task DismissNotificationAsync(int notificationId, int userId)
+    public async Task DismissNotificationAsync(Guid notificationId, Guid userId)
     {
         var n = await _db.Notifications.FirstOrDefaultAsync(x => x.Id == notificationId && x.UserId == userId);
         if (n != null)
@@ -95,7 +95,7 @@ public class NotificationService : INotificationService
         }
     }
 
-    public async Task MarkAnnouncementAsReadAsync(int announcementId, int userId)
+    public async Task MarkAnnouncementAsReadAsync(Guid announcementId, Guid userId)
     {
         var status = await _db.AnnouncementReadStatuses.FirstOrDefaultAsync(s => s.AnnouncementId == announcementId && s.UserId == userId);
         if (status == null)
@@ -110,7 +110,7 @@ public class NotificationService : INotificationService
         await _db.SaveChangesAsync();
     }
 
-    public async Task DismissAnnouncementAsync(int announcementId, int userId)
+    public async Task DismissAnnouncementAsync(Guid announcementId, Guid userId)
     {
         var status = await _db.AnnouncementReadStatuses.FirstOrDefaultAsync(s => s.AnnouncementId == announcementId && s.UserId == userId);
         if (status == null)
@@ -126,7 +126,7 @@ public class NotificationService : INotificationService
         await _db.SaveChangesAsync();
     }
 
-    public async Task<Announcement?> CreateAnnouncementAsync(string title, string content, AnnouncementPriority priority, int adminUserId, DateTime? expiresAt = null)
+    public async Task<Announcement?> CreateAnnouncementAsync(string title, string content, AnnouncementPriority priority, Guid adminUserId, DateTime? expiresAt = null)
     {
         var announcement = new Announcement
         {
@@ -143,7 +143,7 @@ public class NotificationService : INotificationService
         return announcement;
     }
 
-    public async Task<bool> UpdateAnnouncementAsync(int id, string title, string content, AnnouncementPriority priority, bool isActive, DateTime? expiresAt)
+    public async Task<bool> UpdateAnnouncementAsync(Guid id, string title, string content, AnnouncementPriority priority, bool isActive, DateTime? expiresAt)
     {
         var announcement = await _db.Announcements.FindAsync(id);
         if (announcement == null) return false;
@@ -156,7 +156,7 @@ public class NotificationService : INotificationService
         return true;
     }
 
-    public async Task<bool> DeleteAnnouncementAsync(int id)
+    public async Task<bool> DeleteAnnouncementAsync(Guid id)
     {
         var announcement = await _db.Announcements.FindAsync(id);
         if (announcement == null) return false;
@@ -173,7 +173,7 @@ public class NotificationService : INotificationService
             .ToListAsync();
     }
 
-    public async Task CreateNotificationForUserAsync(int userId, string title, string content, NotificationPriority priority, string? actionUrl = null)
+    public async Task CreateNotificationForUserAsync(Guid userId, string title, string content, NotificationPriority priority, string? actionUrl = null)
     {
         _db.Notifications.Add(new Notification
         {

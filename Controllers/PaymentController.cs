@@ -9,31 +9,25 @@ namespace ChatPortal.Controllers;
 [Authorize]
 public class PaymentController : Controller
 {
-    private readonly IPaymentService _paymentService;
-    private readonly ICreditService _creditService;
-    private readonly IConfiguration _configuration;
+    private readonly IPaymentService _paymentService;    private readonly IConfiguration _configuration;
     private readonly ILogger<PaymentController> _logger;
 
-    public PaymentController(IPaymentService paymentService, ICreditService creditService,
+    public PaymentController(IPaymentService paymentService,
         IConfiguration configuration, ILogger<PaymentController> logger)
     {
-        _paymentService = paymentService;
-        _creditService = creditService;
-        _configuration = configuration;
+        _paymentService = paymentService;        _configuration = configuration;
         _logger = logger;
     }
 
-    private int GetUserId() =>
-        int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : 0;
+    private Guid GetUserId() =>
+        Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : Guid.Empty;
 
     public async Task<IActionResult> SelectPlan()
     {
         var userId = GetUserId();
         var vm = new PaymentViewModel
         {
-            Packages = await _paymentService.GetActiveCreditPackagesAsync(),
-            CurrentBalance = await _creditService.GetBalanceAsync(userId),
-            RecentTransactions = await _paymentService.GetUserPaymentHistoryAsync(userId),
+            RecentTransactions = await _paymentService.GetPaymentHistoryAsync(userId),
             PublishableKey = _configuration["Stripe:PublishableKey"],
             PayPalClientId = _configuration["PayPal:ClientId"]
         };
@@ -41,14 +35,14 @@ public class PaymentController : Controller
     }
 
     [HttpPost, ValidateAntiForgeryToken]
-    public async Task<IActionResult> ProcessStripePayment(int packageId)
+    public async Task<IActionResult> ProcessStripePayment(Guid packageId)
     {
         try
         {
             var userId = GetUserId();
             var successUrl = Url.Action("Success", "Payment", null, Request.Scheme)!;
             var cancelUrl = Url.Action("Cancel", "Payment", null, Request.Scheme)!;
-            var checkoutUrl = await _paymentService.CreateStripeCheckoutSessionAsync(userId, packageId, successUrl, cancelUrl);
+            var checkoutUrl = await _paymentService.CreateStripeSubscriptionAsync(userId, packageId, successUrl, cancelUrl);
             return Redirect(checkoutUrl);
         }
         catch (Exception ex)
@@ -71,12 +65,12 @@ public class PaymentController : Controller
     }
 
     [HttpPost, ValidateAntiForgeryToken]
-    public async Task<IActionResult> ProcessPayPalPayment(int packageId)
+    public async Task<IActionResult> ProcessPayPalPayment(Guid packageId)
     {
         try
         {
             var userId = GetUserId();
-            var orderId = await _paymentService.CreatePayPalOrderAsync(userId, packageId);
+            var orderId = await _paymentService.CreatePayPalSubscriptionAsync(userId, packageId);
             return Json(new { success = true, orderId });
         }
         catch (Exception ex)

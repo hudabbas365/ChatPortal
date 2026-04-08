@@ -3,8 +3,8 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace ChatPortal.Models.Entities;
 public class ApiKey
 {
-    [Key] public int Id { get; set; }
-    public int UserId { get; set; }
+    [Key] public Guid Id { get; set; } = Guid.NewGuid();
+    public Guid UserId { get; set; }
     [ForeignKey("UserId")] public virtual User User { get; set; } = null!;
     [Required] public string KeyHash { get; set; } = string.Empty;
     [Required, MaxLength(100)] public string Name { get; set; } = string.Empty;

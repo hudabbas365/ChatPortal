@@ -6,17 +6,17 @@ namespace ChatPortal.Models.Entities;
 public class PinnedChart
 {
     [Key]
-    public int Id { get; set; }
+    public Guid Id { get; set; } = Guid.NewGuid();
 
-    public int UserId { get; set; }
+    public Guid UserId { get; set; }
     [ForeignKey("UserId")]
     public virtual User User { get; set; } = null!;
 
-    public int QueryHistoryId { get; set; }
+    public Guid QueryHistoryId { get; set; }
     [ForeignKey("QueryHistoryId")]
     public virtual QueryHistory QueryHistory { get; set; } = null!;
 
-    public int? DashboardId { get; set; }
+    public Guid? DashboardId { get; set; }
     [ForeignKey("DashboardId")]
     public virtual Dashboard? Dashboard { get; set; }
 

@@ -7,13 +7,12 @@ namespace ChatPortal.Services;
 
 public interface IDataChatService
 {
-    Task<StructuredAIResponse> QueryDataSourceAsync(int userId, int dataSourceId, string userQuestion);
+    Task<StructuredAIResponse> QueryDataSourceAsync(Guid userId, Guid dataSourceId, string userQuestion);
 }
 
 public class DataChatService : IDataChatService
 {
     private readonly IDataConnectionService _dataConnection;
-    private readonly ICreditService _creditService;
     private readonly HttpClient _httpClient;
     private readonly IConfiguration _configuration;
     private readonly ILogger<DataChatService> _logger;
@@ -28,30 +27,21 @@ public class DataChatService : IDataChatService
         "rgba(176, 224, 230, 0.7)"   // powder blue
     };
 
-    public DataChatService(IDataConnectionService dataConnection, ICreditService creditService,
+    public DataChatService(IDataConnectionService dataConnection,
         HttpClient httpClient, IConfiguration configuration, ILogger<DataChatService> logger)
     {
         _dataConnection = dataConnection;
-        _creditService = creditService;
         _httpClient = httpClient;
         _configuration = configuration;
         _logger = logger;
     }
 
-    public async Task<StructuredAIResponse> QueryDataSourceAsync(int userId, int dataSourceId, string userQuestion)
+    public async Task<StructuredAIResponse> QueryDataSourceAsync(Guid userId, Guid dataSourceId, string userQuestion)
     {
-        const int creditCost = 5;
-
         // Ownership check happens inside GetDataSourceAsync
         var ds = await _dataConnection.GetDataSourceAsync(dataSourceId, userId);
         if (ds == null)
             return new StructuredAIResponse { Success = false, Error = "Data source not found or access denied." };
-
-        // Credit check
-        var canDeduct = await _creditService.DeductCreditsAsync(userId, creditCost,
-            $"AI query on data source '{ds.Name}'", dataSourceId);
-        if (!canDeduct)
-            return new StructuredAIResponse { Success = false, Error = "Insufficient credits. Please purchase more credits to continue." };
 
         try
         {
@@ -71,7 +61,6 @@ public class DataChatService : IDataChatService
 
             var sampleJson = JsonSerializer.Serialize(sampleData.Take(20));
             var response = await CallAIForStructuredResponseAsync(userQuestion, ds.SourceType, ds.SchemaSnapshot, sampleJson, null, ds.Name);
-            response.CreditsUsed = creditCost;
             return response;
         }
         catch (Exception ex)
@@ -80,8 +69,7 @@ public class DataChatService : IDataChatService
             return new StructuredAIResponse
             {
                 Success = false,
-                Error = "An error occurred while processing your query.",
-                CreditsUsed = creditCost
+                Error = "An error occurred while processing your query."
             };
         }
     }

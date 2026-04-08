@@ -18,28 +18,24 @@ public class ChatController : Controller
 {
     private readonly IAIChatService _aiChatService;
     private readonly IDataConnectionService _dataConnection;
-    private readonly IDataChatService _dataChatService;
-    private readonly ICreditService _creditService;
-    private readonly AppDbContext _context;
+    private readonly IDataChatService _dataChatService;    private readonly AppDbContext _context;
     private readonly ILogger<ChatController> _logger;
 
     /// <summary>
     /// Initialises a new instance of <see cref="ChatController"/>.
     /// </summary>
     public ChatController(IAIChatService aiChatService, IDataConnectionService dataConnection,
-        IDataChatService dataChatService, ICreditService creditService, AppDbContext context,
+        IDataChatService dataChatService, AppDbContext context,
         ILogger<ChatController> logger)
     {
         _aiChatService = aiChatService;
         _dataConnection = dataConnection;
-        _dataChatService = dataChatService;
-        _creditService = creditService;
-        _context = context;
+        _dataChatService = dataChatService;        _context = context;
         _logger = logger;
     }
 
-    private int? GetUserId() =>
-        int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : null;
+    private Guid? GetUserId() =>
+        Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : null;
 
     /// <summary>
     /// Renders the main chat page, populating the view model with the list of
@@ -115,11 +111,11 @@ public class ChatController : Controller
         {
             try
             {
-                vm.CreditBalance = await _creditService.GetBalanceAsync(userId.Value);
+                // Credit balance removed — plan-based billing
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Failed to load credit balance for user {UserId}", userId.Value);
+                _logger.LogWarning(ex, "Failed to load data for user {UserId}", userId.Value);
             }
         }
 
@@ -155,7 +151,7 @@ public class ChatController : Controller
         if (!userId.HasValue)
             return Unauthorized();
 
-        if (request.DataSourceId <= 0)
+        if (request.DataSourceId == Guid.Empty)
             return BadRequest(new { error = "A datasource with AI Insights is required to start a chat." });
 
         // Verify the datasource belongs to this user
@@ -223,8 +219,8 @@ public class SendMessageRequest
 {
     public string? Message { get; set; }
     public string? Model { get; set; }
-    public int? SessionId { get; set; }
-    public int? DataSourceId { get; set; }
+    public Guid? SessionId { get; set; }
+    public Guid? DataSourceId { get; set; }
 }
 
 /// <summary>
@@ -232,6 +228,6 @@ public class SendMessageRequest
 /// </summary>
 public class CreateSessionRequest
 {
-    public int DataSourceId { get; set; }
+    public Guid DataSourceId { get; set; }
     public string? Title { get; set; }
 }

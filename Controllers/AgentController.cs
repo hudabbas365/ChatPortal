@@ -21,13 +21,14 @@ public class AgentController : Controller
         _aiChatService = aiChatService;
     }
 
-    private int GetUserId() =>
-        int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : 0;
+    private Guid GetUserId() =>
+        Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : Guid.Empty;
 
-    private async Task<int?> GetActiveOrganizationIdAsync()
+    private async Task<Guid?> GetActiveOrganizationIdAsync()
     {
-        var orgId = HttpContext.Session.GetInt32("ActiveOrganizationId");
-        if (orgId.HasValue) return orgId.Value;
+        var orgIdStr = HttpContext.Session.GetString("ActiveOrganizationId");
+        if (Guid.TryParse(orgIdStr, out var parsedOrgId))
+            return parsedOrgId;
 
         var userId = GetUserId();
         var org = await _context.Organizations
@@ -37,7 +38,7 @@ public class AgentController : Controller
 
         if (org != null)
         {
-            HttpContext.Session.SetInt32("ActiveOrganizationId", org.Id);
+            HttpContext.Session.SetString("ActiveOrganizationId", org.Id.ToString());
             return org.Id;
         }
 
@@ -47,7 +48,7 @@ public class AgentController : Controller
     // POST: Agent/Create
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create(int workspaceId, string name, string? description, 
+    public async Task<IActionResult> Create(Guid workspaceId, string name, string? description, 
         string agentType = "general", string? systemPrompt = null, string? modelName = "GPT-3.5 Turbo",
         decimal temperature = 0.7m, int maxTokens = 2000)
     {
@@ -109,7 +110,7 @@ public class AgentController : Controller
 
     // GET: Agent/GetWorkspaceAgents
     [HttpGet]
-    public async Task<IActionResult> GetWorkspaceAgents(int workspaceId)
+    public async Task<IActionResult> GetWorkspaceAgents(Guid workspaceId)
     {
         try
         {
@@ -173,7 +174,7 @@ public class AgentController : Controller
     // POST: Agent/Update
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Update(int id, string? name, string? description,
+    public async Task<IActionResult> Update(Guid id, string? name, string? description,
         string? agentType, string? systemPrompt, string? modelName,
         decimal? temperature, int? maxTokens, bool? isActive)
     {
@@ -219,7 +220,7 @@ public class AgentController : Controller
     // POST: Agent/Delete
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Delete(int id)
+    public async Task<IActionResult> Delete(Guid id)
     {
         try
         {
@@ -253,7 +254,7 @@ public class AgentController : Controller
     // POST: Agent/ToggleActive
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> ToggleActive(int id)
+    public async Task<IActionResult> ToggleActive(Guid id)
     {
         try
         {
@@ -293,7 +294,7 @@ public class AgentController : Controller
     // POST: Agent/BindDataSource
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> BindDataSource(int agentId, int dataSourceId)
+    public async Task<IActionResult> BindDataSource(Guid agentId, Guid dataSourceId)
     {
         try
         {
@@ -346,7 +347,7 @@ public class AgentController : Controller
     // POST: Agent/UnbindDataSource
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> UnbindDataSource(int agentId)
+    public async Task<IActionResult> UnbindDataSource(Guid agentId)
     {
         try
         {
@@ -381,7 +382,7 @@ public class AgentController : Controller
 
     // GET: Agent/Chat/{id}
     [HttpGet]
-    public async Task<IActionResult> Chat(int id)
+    public async Task<IActionResult> Chat(Guid id)
     {
         try
         {
@@ -410,7 +411,7 @@ public class AgentController : Controller
                 .FirstOrDefaultAsync();
 
             var history = new List<ChatMessageDto>();
-            int? sessionId = null;
+            Guid? sessionId = null;
 
             if (session != null)
             {
@@ -548,7 +549,7 @@ public class AgentController : Controller
 
 public class AgentChatRequest
 {
-    public int AgentId { get; set; }
+    public Guid AgentId { get; set; }
     public string Message { get; set; } = string.Empty;
-    public int? SessionId { get; set; }
+    public Guid? SessionId { get; set; }
 }

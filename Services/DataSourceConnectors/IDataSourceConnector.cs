@@ -7,9 +7,9 @@ namespace ChatPortal.Services.DataSourceConnectors
     {
         Task<ConnectionResult> TestConnectionAsync(DataSourceConnection connection);
         Task<ConnectionResult> ConnectAsync(DataSourceConnection connection);
-        Task<bool> DisconnectAsync(int connectionId);
-        Task<SyncResult> SyncDataAsync(int connectionId);
-        Task<HealthStatus> GetHealthAsync(int connectionId);
+        Task<bool> DisconnectAsync(Guid connectionId);
+        Task<SyncResult> SyncDataAsync(Guid connectionId);
+        Task<HealthStatus> GetHealthAsync(Guid connectionId);
         string GetConfigurationSchema();
 
         // New methods for query execution

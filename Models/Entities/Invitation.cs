@@ -6,7 +6,7 @@ namespace ChatPortal.Models.Entities;
 public class Invitation
 {
     [Key]
-    public int Id { get; set; }
+    public Guid Id { get; set; } = Guid.NewGuid();
 
     [Required, EmailAddress, MaxLength(255)]
     public string Email { get; set; } = string.Empty;
@@ -14,18 +14,18 @@ public class Invitation
     [Required, MaxLength(255)]
     public string Token { get; set; } = string.Empty;
 
-    public int? OrganizationId { get; set; }
+    public Guid? OrganizationId { get; set; }
     [ForeignKey("OrganizationId")]
     public virtual Organization? Organization { get; set; }
 
-    public int? TeamId { get; set; }
+    public Guid? TeamId { get; set; }
     [ForeignKey("TeamId")]
     public virtual Team? Team { get; set; }
 
     [MaxLength(50)]
     public string Role { get; set; } = "Member"; // Member, Admin, Viewer
 
-    public int InvitedBy { get; set; }
+    public Guid InvitedBy { get; set; }
     [ForeignKey("InvitedBy")]
     public virtual User Inviter { get; set; } = null!;
 

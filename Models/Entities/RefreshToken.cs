@@ -6,12 +6,12 @@ namespace ChatPortal.Models.Entities;
 public class RefreshToken
 {
     [Key]
-    public int Id { get; set; }
+    public Guid Id { get; set; } = Guid.NewGuid();
 
     [Required]
     public string Token { get; set; } = string.Empty;
 
-    public int UserId { get; set; }
+    public Guid UserId { get; set; }
 
     [ForeignKey("UserId")]
     public virtual User User { get; set; } = null!;

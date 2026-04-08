@@ -21,13 +21,13 @@ public class InvitationController : Controller
         _configuration = configuration;
     }
 
-    private int GetUserId() =>
-        int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : 0;
+    private Guid GetUserId() =>
+        Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : Guid.Empty;
 
     // POST: Invitation/SendOrganizationInvite
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> SendOrganizationInvite(int organizationId, string email, string role = "Member")
+    public async Task<IActionResult> SendOrganizationInvite(Guid organizationId, string email, string role = "Member")
     {
         try
         {
@@ -118,7 +118,7 @@ public class InvitationController : Controller
     // POST: Invitation/SendTeamInvite
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> SendTeamInvite(int teamId, string email, string role = "Member")
+    public async Task<IActionResult> SendTeamInvite(Guid teamId, string email, string role = "Member")
     {
         try
         {

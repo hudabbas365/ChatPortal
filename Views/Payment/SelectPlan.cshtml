@@ -1,6 +1,6 @@
 @model ChatPortal.ViewModels.PaymentViewModel
 @{
-    ViewData["Title"] = "Buy Credits";
+    ViewData["Title"] = "Select a Plan";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
@@ -100,9 +100,9 @@
 <div class="page-hero">
     <div class="container text-center">
         <h1 class="fw-bold mb-2" style="color:#1a1a2e;">
-            <i class="bi bi-coin me-2" style="color:#7c4dff;"></i>Buy Credits
+            <i class="bi bi-lightning me-2" style="color:#7c4dff;"></i>Select a Plan
         </h1>
-        <p class="text-muted mb-0">Credits are used for AI-powered queries on your private data</p>
+        <p class="text-muted mb-0">Choose a plan for AI-powered queries on your private data</p>
     </div>
 </div>
 
@@ -112,8 +112,8 @@
         <div class="col-md-6">
             <div class="balance-card d-flex align-items-center justify-content-between">
                 <div>
-                    <div class="text-muted small fw-semibold text-uppercase mb-1" style="letter-spacing:0.07em;">Current Balance</div>
-                    <div class="fw-bold fs-3" style="color:#1a1a2e;"><i class="bi bi-coin me-2 text-success"></i>@Model.CurrentBalance credits</div>
+                    <div class="text-muted small fw-semibold text-uppercase mb-1" style="letter-spacing:0.07em;">Subscription</div>
+                    <div class="fw-bold fs-3" style="color:#1a1a2e;"><i class="bi bi-lightning me-2 text-success"></i>Plan-based Billing</div>
                 </div>
                 <a asp-controller="DataConnection" asp-action="Index" class="btn btn-outline-primary btn-sm rounded-pill">
                     <i class="bi bi-database me-1"></i>My Data Sources
@@ -122,13 +122,13 @@
         </div>
     </div>
 
-    <!-- Packages -->
+    <!-- Plans -->
     <div class="row g-4 justify-content-center mb-5">
-        @if (Model.Packages.Any())
+        @if (Model.Plans.Any())
         {
-            @for (int i = 0; i < Model.Packages.Count; i++)
+            @for (int i = 0; i < Model.Plans.Count; i++)
             {
-                var pkg = Model.Packages[i];
+                var plan = Model.Plans[i];
                 var isFeatured = i == 1;
                 var iconBg = i == 0 ? "#E8F0FE" : i == 1 ? "#F3E8FF" : "#E6F9E8";
                 var iconColor = i == 0 ? "#1565c0" : i == 1 ? "#7c4dff" : "#2e7d32";
@@ -147,27 +147,25 @@
                             <i class="bi @iconName"></i>
                         </div>
 
-                        <h4 class="fw-bold mb-1">@pkg.Name</h4>
-                        <p class="text-muted small mb-3">@pkg.Description</p>
-
-                        <div class="credits-badge"><i class="bi bi-coin me-1"></i>@pkg.Credits credits</div>
+                        <h4 class="fw-bold mb-1">@plan.Name</h4>
+                        <p class="text-muted small mb-3">@plan.Description</p>
 
                         <div class="price-tag mb-3">
-                            <sup>$</sup>@pkg.Price.ToString("0.00")<small>/one-time</small>
+                            <sup>$</sup>@plan.MonthlyPrice.ToString("0.00")<small>/month</small>
                         </div>
 
                         <div class="d-flex flex-column gap-2">
                             <!-- Stripe Pay -->
                             <form asp-action="ProcessStripePayment" method="post">
                                 @Html.AntiForgeryToken()
-                                <input type="hidden" name="packageId" value="@pkg.Id" />
+                                <input type="hidden" name="packageId" value="@plan.Id" />
                                 <button type="submit" class="btn-pay btn-stripe">
                                     <i class="bi bi-credit-card me-2"></i>Pay with Card
                                 </button>
                             </form>
 
                             <!-- PayPal Pay -->
-                            <button class="btn-pay btn-paypal paypal-btn" data-package-id="@pkg.Id" data-price="@pkg.Price.ToString("0.00")">
+                            <button class="btn-pay btn-paypal paypal-btn" data-package-id="@plan.Id" data-price="@plan.MonthlyPrice.ToString("0.00")">
                                 <i class="bi bi-paypal me-2"></i>Pay with PayPal
                             </button>
                         </div>
@@ -179,8 +177,8 @@
         {
             <div class="col-12 text-center py-5 text-muted">
                 <i class="bi bi-bag-x fs-1 d-block mb-3 opacity-50"></i>
-                <h5>No credit packages available</h5>
-                <p class="small">Credit packages are not available at this time. Please check back later.</p>
+                <h5>No plans available</h5>
+                <p class="small">Plans are not available at this time. Please check back later.</p>
             </div>
         }
     </div>
@@ -199,9 +197,9 @@
                         <div>
                             <span class="provider-badge @provClass">@tx.Provider</span>
                             <span class="ms-2 fw-medium small">$@tx.Amount.ToString("0.00")</span>
-                            @if (tx.CreditsAwarded.HasValue)
+                            @if (!string.IsNullOrEmpty(tx.Description))
                             {
-                                <span class="text-muted small ms-1">· @tx.CreditsAwarded credits</span>
+                                <span class="text-muted small ms-1">· @tx.Description</span>
                             }
                         </div>
                         <div class="d-flex align-items-center gap-3">

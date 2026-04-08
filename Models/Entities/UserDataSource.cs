@@ -6,9 +6,9 @@ namespace ChatPortal.Models.Entities;
 public class UserDataSource
 {
     [Key]
-    public int Id { get; set; }
+    public Guid Id { get; set; } = Guid.NewGuid();
 
-    public int UserId { get; set; }
+    public Guid UserId { get; set; }
     [ForeignKey("UserId")]
     public virtual User User { get; set; } = null!;
 
@@ -34,7 +34,7 @@ public class UserDataSource
     public string? FilePath { get; set; }
 
     /// <summary>Organization that owns this data source.</summary>
-    public int? OrganizationId { get; set; }
+    public Guid? OrganizationId { get; set; }
     [ForeignKey("OrganizationId")]
     public virtual Organization? Organization { get; set; }
 

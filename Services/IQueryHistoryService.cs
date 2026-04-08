@@ -4,8 +4,8 @@ namespace ChatPortal.Services;
 
 public interface IQueryHistoryService
 {
-    Task<QueryHistory> SaveAsync(int userId, int dataSourceId, string query, string? resultJson, string? chartDataJson, string? narrative);
-    Task<List<QueryHistory>> GetHistoryAsync(int userId, int? dataSourceId = null, int page = 1, int pageSize = 20);
-    Task<QueryHistory?> GetByIdAsync(int id, int userId);
-    Task DeleteAsync(int id, int userId);
+    Task<QueryHistory> SaveAsync(Guid userId, Guid dataSourceId, string query, string? resultJson, string? chartDataJson, string? narrative);
+    Task<List<QueryHistory>> GetHistoryAsync(Guid userId, Guid? dataSourceId = null, int page = 1, int pageSize = 20);
+    Task<QueryHistory?> GetByIdAsync(Guid id, Guid userId);
+    Task DeleteAsync(Guid id, Guid userId);
 }

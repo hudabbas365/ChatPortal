@@ -13,7 +13,7 @@ public class DashboardService : IDashboardService
         _db = db;
     }
 
-    public async Task<List<Dashboard>> GetUserDashboardsAsync(int userId)
+    public async Task<List<Dashboard>> GetUserDashboardsAsync(Guid userId)
     {
         return await _db.Dashboards
             .Where(d => d.UserId == userId)
@@ -22,7 +22,7 @@ public class DashboardService : IDashboardService
             .ToListAsync();
     }
 
-    public async Task<Dashboard?> GetByIdAsync(int id, int userId)
+    public async Task<Dashboard?> GetByIdAsync(Guid id, Guid userId)
     {
         return await _db.Dashboards
             .Include(d => d.PinnedCharts)
@@ -36,7 +36,7 @@ public class DashboardService : IDashboardService
             .FirstOrDefaultAsync(d => d.PublicSlug == slug && d.IsPublic && !d.IsRevoked);
     }
 
-    public async Task<Dashboard> CreateAsync(int userId, string title, string? description)
+    public async Task<Dashboard> CreateAsync(Guid userId, string title, string? description)
     {
         var dashboard = new Dashboard
         {
@@ -52,7 +52,7 @@ public class DashboardService : IDashboardService
         return dashboard;
     }
 
-    public async Task<Dashboard> UpdateAsync(int id, int userId, string title, string? description, bool isPublic)
+    public async Task<Dashboard> UpdateAsync(Guid id, Guid userId, string title, string? description, bool isPublic)
     {
         var dashboard = await _db.Dashboards.FirstOrDefaultAsync(d => d.Id == id && d.UserId == userId)
             ?? throw new KeyNotFoundException("Dashboard not found.");
@@ -65,7 +65,7 @@ public class DashboardService : IDashboardService
         return dashboard;
     }
 
-    public async Task DeleteAsync(int id, int userId)
+    public async Task DeleteAsync(Guid id, Guid userId)
     {
         var dashboard = await _db.Dashboards.FirstOrDefaultAsync(d => d.Id == id && d.UserId == userId)
             ?? throw new KeyNotFoundException("Dashboard not found.");
@@ -73,7 +73,7 @@ public class DashboardService : IDashboardService
         await _db.SaveChangesAsync();
     }
 
-    public async Task<Dashboard> ShareAsync(int id, int userId)
+    public async Task<Dashboard> ShareAsync(Guid id, Guid userId)
     {
         var dashboard = await _db.Dashboards.FirstOrDefaultAsync(d => d.Id == id && d.UserId == userId)
             ?? throw new KeyNotFoundException("Dashboard not found.");
@@ -86,7 +86,7 @@ public class DashboardService : IDashboardService
         return dashboard;
     }
 
-    public async Task<PinnedChart> PinChartAsync(int userId, int queryHistoryId, int? dashboardId, string title, string chartDataJson, int position)
+    public async Task<PinnedChart> PinChartAsync(Guid userId, Guid queryHistoryId, Guid? dashboardId, string title, string chartDataJson, int position)
     {
         var pinned = new PinnedChart
         {
@@ -103,7 +103,7 @@ public class DashboardService : IDashboardService
         return pinned;
     }
 
-    public async Task<List<PinnedChart>> GetPinnedChartsAsync(int dashboardId, int userId)
+    public async Task<List<PinnedChart>> GetPinnedChartsAsync(Guid dashboardId, Guid userId)
     {
         var dashboard = await _db.Dashboards.FirstOrDefaultAsync(d => d.Id == dashboardId && d.UserId == userId)
             ?? throw new KeyNotFoundException("Dashboard not found.");
@@ -114,7 +114,7 @@ public class DashboardService : IDashboardService
             .ToListAsync();
     }
 
-    public async Task UnpinChartAsync(int pinnedChartId, int userId)
+    public async Task UnpinChartAsync(Guid pinnedChartId, Guid userId)
     {
         var pinned = await _db.PinnedCharts.FirstOrDefaultAsync(p => p.Id == pinnedChartId && p.UserId == userId)
             ?? throw new KeyNotFoundException("Pinned chart not found.");
@@ -131,7 +131,7 @@ public class DashboardService : IDashboardService
             .ToListAsync();
     }
 
-    public async Task RevokeShareAsync(int id)
+    public async Task RevokeShareAsync(Guid id)
     {
         var dashboard = await _db.Dashboards.FindAsync(id)
             ?? throw new KeyNotFoundException("Dashboard not found.");

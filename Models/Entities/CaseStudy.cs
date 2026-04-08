@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 namespace ChatPortal.Models.Entities;
 public class CaseStudy
 {
-    [Key] public int Id { get; set; }
+    [Key] public Guid Id { get; set; } = Guid.NewGuid();
     [Required, MaxLength(256)] public string Title { get; set; } = string.Empty;
     [Required, MaxLength(256)] public string Slug { get; set; } = string.Empty;
     [MaxLength(100)] public string? ClientName { get; set; }

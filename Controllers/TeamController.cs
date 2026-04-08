@@ -17,13 +17,14 @@ public class TeamController : Controller
         _context = context;
     }
 
-    private int GetUserId() =>
-        int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : 0;
+    private Guid GetUserId() =>
+        Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : Guid.Empty;
 
-    private async Task<int?> GetActiveOrganizationIdAsync()
+    private async Task<Guid?> GetActiveOrganizationIdAsync()
     {
-        var orgId = HttpContext.Session.GetInt32("ActiveOrganizationId");
-        if (orgId.HasValue) return orgId.Value;
+        var orgIdStr = HttpContext.Session.GetString("ActiveOrganizationId");
+        if (Guid.TryParse(orgIdStr, out var parsedOrgId))
+            return parsedOrgId;
 
         var userId = GetUserId();
         var org = await _context.Organizations
@@ -33,7 +34,7 @@ public class TeamController : Controller
 
         if (org != null)
         {
-            HttpContext.Session.SetInt32("ActiveOrganizationId", org.Id);
+            HttpContext.Session.SetString("ActiveOrganizationId", org.Id.ToString());
             return org.Id;
         }
 
@@ -129,7 +130,7 @@ public class TeamController : Controller
     // POST: Team/AddMember
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> AddMember(int teamId, string email, string role = "Member")
+    public async Task<IActionResult> AddMember(Guid teamId, string email, string role = "Member")
     {
         try
         {
@@ -170,7 +171,7 @@ public class TeamController : Controller
     // POST: Team/Delete
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Delete(int id)
+    public async Task<IActionResult> Delete(Guid id)
     {
         try
         {
@@ -195,7 +196,7 @@ public class TeamController : Controller
     // POST: Team/Update
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Update(int id, string name, string? description)
+    public async Task<IActionResult> Update(Guid id, string name, string? description)
     {
         try
         {
@@ -222,7 +223,7 @@ public class TeamController : Controller
     // POST: Team/GrantWorkspaceAccess
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> GrantWorkspaceAccess(int teamId, int workspaceId, string permission = "View")
+    public async Task<IActionResult> GrantWorkspaceAccess(Guid teamId, Guid workspaceId, string permission = "View")
     {
         try
         {
@@ -276,7 +277,7 @@ public class TeamController : Controller
     // POST: Team/RevokeWorkspaceAccess
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> RevokeWorkspaceAccess(int teamId, int workspaceId)
+    public async Task<IActionResult> RevokeWorkspaceAccess(Guid teamId, Guid workspaceId)
     {
         try
         {
@@ -308,7 +309,7 @@ public class TeamController : Controller
 
     // GET: Team/GetWorkspacePermissions
     [HttpGet]
-    public async Task<IActionResult> GetWorkspacePermissions(int teamId)
+    public async Task<IActionResult> GetWorkspacePermissions(Guid teamId)
     {
         var userId = GetUserId();
 
@@ -335,7 +336,7 @@ public class TeamController : Controller
 
     // GET: Team/GetMembers
     [HttpGet]
-    public async Task<IActionResult> GetMembers(int teamId)
+    public async Task<IActionResult> GetMembers(Guid teamId)
     {
         try
         {
@@ -377,7 +378,7 @@ public class TeamController : Controller
     // POST: Team/UpdateMemberRole
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> UpdateMemberRole(int teamId, int userId, string role)
+    public async Task<IActionResult> UpdateMemberRole(Guid teamId, Guid userId, string role)
     {
         try
         {
@@ -448,7 +449,7 @@ public class TeamController : Controller
     // POST: Team/RemoveMember
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> RemoveMember(int teamId, int userId)
+    public async Task<IActionResult> RemoveMember(Guid teamId, Guid userId)
     {
         try
         {

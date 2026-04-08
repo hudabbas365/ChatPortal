@@ -3,13 +3,13 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace ChatPortal.Models.Entities;
 public class Team
 {
-    [Key] public int Id { get; set; }
+    [Key] public Guid Id { get; set; } = Guid.NewGuid();
     [Required, MaxLength(100)] public string Name { get; set; } = string.Empty;
-    public int OwnerId { get; set; }
+    public Guid OwnerId { get; set; }
     [ForeignKey("OwnerId")] public virtual User Owner { get; set; } = null!;
 
     // Organization relationship
-    public int OrganizationId { get; set; }
+    public Guid OrganizationId { get; set; }
     [ForeignKey("OrganizationId")] public virtual Organization Organization { get; set; } = null!;
 
     [MaxLength(500)] public string? Description { get; set; }
