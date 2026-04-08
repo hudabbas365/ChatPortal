@@ -6,7 +6,7 @@ namespace ChatPortal.Models.Entities;
 public class User
 {
     [Key]
-    public int Id { get; set; }
+    public Guid Id { get; set; } = Guid.NewGuid();
 
     [Required, MaxLength(100)]
     public string FirstName { get; set; } = string.Empty;
@@ -29,7 +29,7 @@ public class User
     [MaxLength(256)]
     public string? TwoFactorSecret { get; set; }
 
-    public int RoleId { get; set; }
+    public Guid RoleId { get; set; }
 
     [ForeignKey("RoleId")]
     public virtual Role Role { get; set; } = null!;
@@ -43,7 +43,6 @@ public class User
     public virtual ICollection<ChatSession> ChatSessions { get; set; } = new List<ChatSession>();
     public virtual ICollection<Subscription> Subscriptions { get; set; } = new List<Subscription>();
     public virtual ICollection<Payment> Payments { get; set; } = new List<Payment>();
-    public virtual ICollection<Credit> Credits { get; set; } = new List<Credit>();
     public virtual ICollection<Notification> Notifications { get; set; } = new List<Notification>();
     public virtual ICollection<ActivityLog> ActivityLogs { get; set; } = new List<ActivityLog>();
     public virtual ICollection<ApiKey> ApiKeys { get; set; } = new List<ApiKey>();

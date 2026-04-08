@@ -5,7 +5,7 @@ namespace ChatPortal.Models.Entities;
 public class Role
 {
     [Key]
-    public int Id { get; set; }
+    public Guid Id { get; set; } = Guid.NewGuid();
 
     [Required, MaxLength(50)]
     public string Name { get; set; } = string.Empty;
