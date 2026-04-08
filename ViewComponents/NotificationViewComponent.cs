@@ -16,7 +16,7 @@ public class NotificationViewComponent : ViewComponent
     public async Task<IViewComponentResult> InvokeAsync()
     {
         var claim = UserClaimsPrincipal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (!int.TryParse(claim, out var userId))
+        if (!Guid.TryParse(claim, out var userId))
             return View(new NotificationViewComponentModel(0, new(), new()));
 
         var notifications = await _notificationService.GetUserNotificationsAsync(userId, includeRead: false);

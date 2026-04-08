@@ -6,8 +6,8 @@ public enum NotificationPriority { Informational, Warning, Urgent }
 
 public class Notification
 {
-    [Key] public int Id { get; set; }
-    public int UserId { get; set; }
+    [Key] public Guid Id { get; set; } = Guid.NewGuid();
+    public Guid UserId { get; set; }
     [ForeignKey("UserId")] public virtual User User { get; set; } = null!;
     [Required, MaxLength(256)] public string Title { get; set; } = string.Empty;
     [Required] public string Content { get; set; } = string.Empty;

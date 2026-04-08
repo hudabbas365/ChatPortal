@@ -6,20 +6,20 @@ namespace ChatPortal.Models.Entities
     public class ChartDefinition
     {
         [Key]
-        public int Id { get; set; }
+        public Guid Id { get; set; } = Guid.NewGuid();
 
         [Required]
-        public int UserId { get; set; }
+        public Guid UserId { get; set; }
 
         [ForeignKey("UserId")]
         public virtual User User { get; set; } = null!;
 
-        public int? OrganizationId { get; set; }
+        public Guid? OrganizationId { get; set; }
 
         [ForeignKey("OrganizationId")]
         public virtual Organization? Organization { get; set; }
 
-        public int? QueryHistoryId { get; set; }
+        public Guid? QueryHistoryId { get; set; }
 
         [ForeignKey("QueryHistoryId")]
         public virtual QueryHistory? QueryHistory { get; set; }

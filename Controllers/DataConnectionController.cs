@@ -10,16 +10,12 @@ namespace ChatPortal.Controllers;
 public class DataConnectionController : Controller
 {
     private readonly IDataConnectionService _dataConnection;
-    private readonly ICreditService _creditService;
-
-    public DataConnectionController(IDataConnectionService dataConnection, ICreditService creditService)
+    public DataConnectionController(IDataConnectionService dataConnection)
     {
-        _dataConnection = dataConnection;
-        _creditService = creditService;
-    }
+        _dataConnection = dataConnection;    }
 
-    private int GetUserId() =>
-        int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : 0;
+    private Guid GetUserId() =>
+        Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : Guid.Empty;
 
     public async Task<IActionResult> Index()
     {
@@ -27,7 +23,6 @@ public class DataConnectionController : Controller
         var vm = new DataConnectionViewModel
         {
             DataSources = await _dataConnection.GetUserDataSourcesAsync(userId),
-            CreditBalance = await _creditService.GetBalanceAsync(userId)
         };
         return View(vm);
     }
@@ -130,7 +125,7 @@ public class DataConnectionController : Controller
     }
 
     [HttpPost, ValidateAntiForgeryToken]
-    public async Task<IActionResult> UpdateTables(int id, [FromBody] List<string> selectedTables)
+    public async Task<IActionResult> UpdateTables(Guid id, [FromBody] List<string> selectedTables)
     {
         try
         {
@@ -145,7 +140,7 @@ public class DataConnectionController : Controller
     }
 
     [HttpPost, ValidateAntiForgeryToken]
-    public async Task<IActionResult> Delete(int id)
+    public async Task<IActionResult> Delete(Guid id)
     {
         try
         {

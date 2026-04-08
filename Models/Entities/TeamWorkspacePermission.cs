@@ -6,13 +6,13 @@ namespace ChatPortal.Models.Entities;
 public class TeamWorkspacePermission
 {
     [Key]
-    public int Id { get; set; }
+    public Guid Id { get; set; } = Guid.NewGuid();
 
-    public int TeamId { get; set; }
+    public Guid TeamId { get; set; }
     [ForeignKey("TeamId")]
     public virtual Team Team { get; set; } = null!;
 
-    public int WorkspaceId { get; set; }
+    public Guid WorkspaceId { get; set; }
     [ForeignKey("WorkspaceId")]
     public virtual Workspace Workspace { get; set; } = null!;
 
@@ -21,7 +21,7 @@ public class TeamWorkspacePermission
 
     public DateTime GrantedAt { get; set; } = DateTime.UtcNow;
 
-    public int GrantedBy { get; set; }
+    public Guid GrantedBy { get; set; }
     [ForeignKey("GrantedBy")]
     public virtual User Granter { get; set; } = null!;
 }

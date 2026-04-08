@@ -174,7 +174,7 @@
                     <div class="text-muted" style="font-size:0.7rem;">@Model.DataSource.SourceType</div>
                 </div>
             </div>
-            <div class="credit-pill"><i class="bi bi-coin me-1"></i>@Model.CreditBalance credits remaining</div>
+            <div class="credit-pill"><i class="bi bi-database me-1"></i>Data Insights</div>
         </div>
 
         <div class="p-3 flex-grow-1 overflow-auto">
@@ -258,7 +258,7 @@
                 </button>
             </div>
             <div class="d-flex justify-content-between align-items-center mt-2 px-1">
-                <small class="text-muted">5 credits per query · <span id="creditDisplay">@Model.CreditBalance remaining</span></small>
+                <small class="text-muted">AI-powered query · <span id="creditDisplay">Ready</span></small>
                 <small class="text-muted">Enter to send · Shift+Enter for new line</small>
             </div>
         </div>
@@ -494,7 +494,7 @@
         msgs.scrollTop = msgs.scrollHeight;
     }
 
-    let currentCredits = @Model.CreditBalance;
+    let currentCredits = 0; // Credits system removed — plan-based billing
     function updateCreditDisplay(used) {
         currentCredits = Math.max(0, currentCredits - used);
         const el = document.getElementById('creditDisplay');

@@ -3,8 +3,8 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace ChatPortal.Models.Entities;
 public class Feedback
 {
-    [Key] public int Id { get; set; }
-    public int? UserId { get; set; }
+    [Key] public Guid Id { get; set; } = Guid.NewGuid();
+    public Guid? UserId { get; set; }
     [ForeignKey("UserId")] public virtual User? User { get; set; }
     [MaxLength(100)] public string? Name { get; set; }
     [MaxLength(256)] public string? Email { get; set; }

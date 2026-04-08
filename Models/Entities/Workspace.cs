@@ -6,7 +6,7 @@ namespace ChatPortal.Models.Entities;
 public class Workspace
 {
     [Key]
-    public int Id { get; set; }
+    public Guid Id { get; set; } = Guid.NewGuid();
 
     [Required, MaxLength(100)]
     public string Name { get; set; } = string.Empty;
@@ -14,16 +14,16 @@ public class Workspace
     [MaxLength(500)]
     public string? Description { get; set; }
 
-    public int OwnerId { get; set; }
+    public Guid OwnerId { get; set; }
     [ForeignKey("OwnerId")]
     public virtual User Owner { get; set; } = null!;
 
     // Organization relationship - Required
-    public int OrganizationId { get; set; }
+    public Guid OrganizationId { get; set; }
     [ForeignKey("OrganizationId")]
     public virtual Organization Organization { get; set; } = null!;
 
-    public int? TeamId { get; set; }
+    public Guid? TeamId { get; set; }
     [ForeignKey("TeamId")]
     public virtual Team? Team { get; set; }
 

@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 namespace ChatPortal.Models.Entities;
 public class Partner
 {
-    [Key] public int Id { get; set; }
+    [Key] public Guid Id { get; set; } = Guid.NewGuid();
     [Required, MaxLength(100)] public string Name { get; set; } = string.Empty;
     [MaxLength(512)] public string? LogoUrl { get; set; }
     [MaxLength(512)] public string? WebsiteUrl { get; set; }

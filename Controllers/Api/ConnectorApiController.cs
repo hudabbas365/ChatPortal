@@ -19,15 +19,15 @@ public class ConnectorApiController : ControllerBase
         _logger = logger;
     }
 
-    private int? GetUserId()
+    private Guid? GetUserId()
     {
         var claim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        return int.TryParse(claim, out var id) ? id : null;
+        return Guid.TryParse(claim, out var id) ? id : null;
     }
 
     /// <summary>Returns schema/tables for a data source.</summary>
-    [HttpGet("{dataSourceId:int}/schema")]
-    public async Task<IActionResult> GetSchema(int dataSourceId)
+    [HttpGet("{dataSourceId:guid}/schema")]
+    public async Task<IActionResult> GetSchema(Guid dataSourceId)
     {
         var userId = GetUserId();
         if (userId == null) return Unauthorized();
@@ -49,8 +49,8 @@ public class ConnectorApiController : ControllerBase
     }
 
     /// <summary>Returns data from a specific table in a data source.</summary>
-    [HttpGet("{dataSourceId:int}/data")]
-    public async Task<IActionResult> GetData(int dataSourceId, [FromQuery] string table, [FromQuery] int limit = 100)
+    [HttpGet("{dataSourceId:guid}/data")]
+    public async Task<IActionResult> GetData(Guid dataSourceId, [FromQuery] string table, [FromQuery] int limit = 100)
     {
         var userId = GetUserId();
         if (userId == null) return Unauthorized();
@@ -99,8 +99,8 @@ public class ConnectorApiController : ControllerBase
     }
 
     /// <summary>Executes a query against a data source.</summary>
-    [HttpPost("{dataSourceId:int}/query")]
-    public async Task<IActionResult> ExecuteQuery(int dataSourceId, [FromBody] QueryRequest request)
+    [HttpPost("{dataSourceId:guid}/query")]
+    public async Task<IActionResult> ExecuteQuery(Guid dataSourceId, [FromBody] QueryRequest request)
     {
         var userId = GetUserId();
         if (userId == null) return Unauthorized();
@@ -129,8 +129,8 @@ public class ConnectorApiController : ControllerBase
     }
 
     /// <summary>Returns connection status for a data source.</summary>
-    [HttpGet("{dataSourceId:int}/status")]
-    public async Task<IActionResult> GetStatus(int dataSourceId)
+    [HttpGet("{dataSourceId:guid}/status")]
+    public async Task<IActionResult> GetStatus(Guid dataSourceId)
     {
         var userId = GetUserId();
         if (userId == null) return Unauthorized();

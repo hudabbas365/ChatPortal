@@ -46,7 +46,6 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IAIChatService, AIChatService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IDataConnectionService, DataConnectionService>();
-builder.Services.AddScoped<ICreditService, CreditService>();
 builder.Services.AddScoped<IPaymentService, PaymentService>();
 builder.Services.AddScoped<IDataChatService, DataChatService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();

@@ -20,10 +20,10 @@ public class AdminController : Controller
         _context = context;
     }
 
-    private int? GetUserId()
+    private Guid? GetUserId()
     {
         var claim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        return int.TryParse(claim, out var id) ? id : null;
+        return Guid.TryParse(claim, out var id) ? id : null;
     }
 
     public async Task<IActionResult> Index()
@@ -43,7 +43,7 @@ public class AdminController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> CreateAnnouncement(string title, string content, string priority, string? expiresAt, int? organizationId)
+    public async Task<IActionResult> CreateAnnouncement(string title, string content, string priority, string? expiresAt, Guid? organizationId)
     {
         var userId = GetUserId();
         if (userId == null) return Unauthorized();
@@ -60,7 +60,7 @@ public class AdminController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> EditAnnouncement(int id, string title, string content, string priority, bool isActive, string? expiresAt)
+    public async Task<IActionResult> EditAnnouncement(Guid id, string title, string content, string priority, bool isActive, string? expiresAt)
     {
         if (!Enum.TryParse<AnnouncementPriority>(priority, true, out var priorityEnum))
             priorityEnum = AnnouncementPriority.Informational;
@@ -74,7 +74,7 @@ public class AdminController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> DeleteAnnouncement(int id)
+    public async Task<IActionResult> DeleteAnnouncement(Guid id)
     {
         var deleted = await _notificationService.DeleteAnnouncementAsync(id);
         TempData[deleted ? "Success" : "Error"] = deleted ? "Announcement deleted." : "Announcement not found.";
@@ -85,7 +85,7 @@ public class AdminController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> PushAnnouncement(string title, string content, string priority, int? targetOrganizationId)
+    public async Task<IActionResult> PushAnnouncement(string title, string content, string priority, Guid? targetOrganizationId)
     {
         var userId = GetUserId();
         if (userId == null) return Unauthorized();
@@ -140,7 +140,7 @@ public class AdminController : Controller
     }
 
     [HttpGet]
-    public async Task<IActionResult> OrganizationActivity(int id)
+    public async Task<IActionResult> OrganizationActivity(Guid id)
     {
         var org = await _context.Organizations
             .Include(o => o.Owner)
@@ -169,7 +169,7 @@ public class AdminController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> RetentionAction(int organizationId, string action)
+    public async Task<IActionResult> RetentionAction(Guid organizationId, string action)
     {
         var org = await _context.Organizations.FindAsync(organizationId);
         if (org == null)
@@ -213,7 +213,7 @@ public class AdminController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> RevokeEmbed(int id, [FromServices] IDashboardService dashboardService)
+    public async Task<IActionResult> RevokeEmbed(Guid id, [FromServices] IDashboardService dashboardService)
     {
         try
         {

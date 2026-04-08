@@ -6,17 +6,21 @@ namespace ChatPortal.Models.Entities;
 public class Subscription
 {
     [Key]
-    public int Id { get; set; }
+    public Guid Id { get; set; } = Guid.NewGuid();
 
-    public int UserId { get; set; }
+    public Guid UserId { get; set; }
 
     [ForeignKey("UserId")]
     public virtual User User { get; set; } = null!;
 
-    public int PlanId { get; set; }
+    public Guid PlanId { get; set; }
 
     [ForeignKey("PlanId")]
     public virtual Plan Plan { get; set; } = null!;
+
+    public Guid? OrganizationId { get; set; }
+    [ForeignKey("OrganizationId")]
+    public virtual Organization? Organization { get; set; }
 
     [Required, MaxLength(50)]
     public string Status { get; set; } = "Active";

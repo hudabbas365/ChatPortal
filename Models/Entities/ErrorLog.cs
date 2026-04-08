@@ -1,11 +1,12 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ChatPortal.Models.Entities;
 
 public class ErrorLog
 {
     [Key]
-    public int Id { get; set; }
+    public Guid Id { get; set; } = Guid.NewGuid();
 
     [Required, MaxLength(36)]
     public string RequestId { get; set; } = string.Empty;
@@ -19,12 +20,16 @@ public class ErrorLog
     [MaxLength(100)]
     public string? OrganizationName { get; set; }
 
+    public Guid? OrganizationId { get; set; }
+    [ForeignKey("OrganizationId")]
+    public virtual Organization? Organization { get; set; }
+
     public string ErrorMessage { get; set; } = string.Empty;
 
     [MaxLength(500)]
     public string UserFriendlyMessage { get; set; } = string.Empty;
 
-    public int? UserId { get; set; }
+    public Guid? UserId { get; set; }
 
     public DateTime Timestamp { get; set; } = DateTime.UtcNow;
 

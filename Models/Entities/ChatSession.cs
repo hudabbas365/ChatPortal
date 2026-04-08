@@ -6,9 +6,9 @@ namespace ChatPortal.Models.Entities;
 public class ChatSession
 {
     [Key]
-    public int Id { get; set; }
+    public Guid Id { get; set; } = Guid.NewGuid();
 
-    public int UserId { get; set; }
+    public Guid UserId { get; set; }
 
     [ForeignKey("UserId")]
     public virtual User User { get; set; } = null!;
@@ -16,23 +16,23 @@ public class ChatSession
     [Required, MaxLength(256)]
     public string Title { get; set; } = "New Chat";
 
-    public int? ModelId { get; set; }
+    public Guid? ModelId { get; set; }
 
     [ForeignKey("ModelId")]
     public virtual AIModel? Model { get; set; }
 
-    public int? WorkspaceId { get; set; }
+    public Guid? WorkspaceId { get; set; }
 
     [ForeignKey("WorkspaceId")]
     public virtual Workspace? Workspace { get; set; }
 
-    public int? AgentId { get; set; }
+    public Guid? AgentId { get; set; }
 
     [ForeignKey("AgentId")]
     public virtual Agent? Agent { get; set; }
 
     // DataSourceConnection FK — required to enforce AI Insights binding
-    public int? DataSourceConnectionId { get; set; }
+    public Guid? DataSourceConnectionId { get; set; }
 
     [ForeignKey("DataSourceConnectionId")]
     public virtual DataSourceConnection? DataSourceConnection { get; set; }

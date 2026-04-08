@@ -11,15 +11,11 @@ public class AccountController : Controller
     private readonly IUserService _userService;
     private readonly IJwtService _jwtService;
     private readonly ILogger<AccountController> _logger;
-    private readonly ICreditService _creditService;
-
-    public AccountController(IUserService userService, IJwtService jwtService, ILogger<AccountController> logger, ICreditService creditService)
+    public AccountController(IUserService userService, IJwtService jwtService, ILogger<AccountController> logger)
     {
         _userService = userService;
         _jwtService = jwtService;
-        _logger = logger;
-        _creditService = creditService;
-    }
+        _logger = logger;    }
 
     [HttpGet]
     public IActionResult Login(string? returnUrl = null)
@@ -135,7 +131,7 @@ public class AccountController : Controller
         var email = User.FindFirstValue(ClaimTypes.Email) ?? string.Empty;
         var role = User.FindFirstValue(ClaimTypes.Role) ?? "User";
 
-        if (!int.TryParse(userIdStr, out var userId))
+        if (!Guid.TryParse(userIdStr, out var userId))
             return BadRequest(new { success = false, error = "Invalid user identity." });
 
         try
@@ -150,29 +146,5 @@ public class AccountController : Controller
         }
     }
 
-    // GET: Account/GetCreditsBalance
-    [HttpGet]
-    [Authorize]
-    public async Task<IActionResult> GetCreditsBalance()
-    {
-        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (!int.TryParse(userIdStr, out var userId))
-            return Json(new { balance = 0 });
-
-        var balance = await _creditService.GetBalanceAsync(userId);
-        return Json(new { balance });
-    }
-
-    // GET: Account/Credits
-    [Authorize]
-    public async Task<IActionResult> Credits()
-    {
-        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (!int.TryParse(userIdStr, out var userId))
-            return RedirectToAction("Login");
-
-        var balance = await _creditService.GetBalanceAsync(userId);
-        ViewBag.CreditsBalance = balance;
-        return View();
-    }
+    // Credits-based endpoints removed — now using plan-based billing
 }

@@ -6,9 +6,9 @@ namespace ChatPortal.Models.Entities;
 public class Dashboard
 {
     [Key]
-    public int Id { get; set; }
+    public Guid Id { get; set; } = Guid.NewGuid();
 
-    public int UserId { get; set; }
+    public Guid UserId { get; set; }
     [ForeignKey("UserId")]
     public virtual User User { get; set; } = null!;
 
@@ -31,6 +31,15 @@ public class Dashboard
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+    // Lock/unlock fields (Section 14)
+    public bool IsLocked { get; set; } = false;
+    [MaxLength(500)]
+    public string? LockReason { get; set; }
+    public DateTime? LockedAt { get; set; }
+    public Guid? LockedByUserId { get; set; }
+    [ForeignKey("LockedByUserId")]
+    public virtual User? LockedByUser { get; set; }
 
     public virtual ICollection<PinnedChart> PinnedCharts { get; set; } = new List<PinnedChart>();
 }

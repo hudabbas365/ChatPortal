@@ -6,7 +6,7 @@ namespace ChatPortal.Models.Entities;
 public class FeatureToggle
 {
     [Key]
-    public int Id { get; set; }
+    public Guid Id { get; set; } = Guid.NewGuid();
 
     [Required, MaxLength(100)]
     public string Name { get; set; } = string.Empty;
@@ -21,11 +21,11 @@ public class FeatureToggle
     public string? AllowedRoles { get; set; }
 
     /// <summary>Optional team scope — null means tenant-wide.</summary>
-    public int? TeamId { get; set; }
+    public Guid? TeamId { get; set; }
     [ForeignKey("TeamId")]
     public virtual Team? Team { get; set; }
 
-    public int CreatedByAdminId { get; set; }
+    public Guid CreatedByAdminId { get; set; }
     [ForeignKey("CreatedByAdminId")]
     public virtual User CreatedByAdmin { get; set; } = null!;
 

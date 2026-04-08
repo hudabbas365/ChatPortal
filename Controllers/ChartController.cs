@@ -20,8 +20,8 @@ public class ChartController : Controller
         _dashboardService = dashboardService;
     }
 
-    private int GetUserId() =>
-        int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : 0;
+    private Guid GetUserId() =>
+        Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : Guid.Empty;
 
     // GET: Chart/Index
     public async Task<IActionResult> Index()
@@ -197,7 +197,7 @@ h3{{font-family:sans-serif;margin:0 0 8px;font-size:14px;color:#333;}}
     // POST: Chart/Pin
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Pin(int queryHistoryId, int? dashboardId, string title, string chartDataJson, int position = 0)
+    public async Task<IActionResult> Pin(Guid queryHistoryId, Guid? dashboardId, string title, string chartDataJson, int position = 0)
     {
         try
         {
@@ -214,7 +214,7 @@ h3{{font-family:sans-serif;margin:0 0 8px;font-size:14px;color:#333;}}
     // POST: Chart/Unpin
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Unpin(int pinnedChartId)
+    public async Task<IActionResult> Unpin(Guid pinnedChartId)
     {
         try
         {
@@ -266,7 +266,7 @@ h3{{font-family:sans-serif;margin:0 0 8px;font-size:14px;color:#333;}}
     // POST: Chart/Share
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Share(int dashboardId)
+    public async Task<IActionResult> Share(Guid dashboardId)
     {
         try
         {
@@ -288,7 +288,7 @@ h3{{font-family:sans-serif;margin:0 0 8px;font-size:14px;color:#333;}}
     // POST: Chart/DeleteShareLink
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> DeleteShareLink(int dashboardId)
+    public async Task<IActionResult> DeleteShareLink(Guid dashboardId)
     {
         try
         {

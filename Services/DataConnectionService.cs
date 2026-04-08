@@ -35,7 +35,7 @@ public class DataConnectionService : IDataConnectionService
         _encryption = encryption;
     }
 
-    public async Task<List<UserDataSource>> GetUserDataSourcesAsync(int userId)
+    public async Task<List<UserDataSource>> GetUserDataSourcesAsync(Guid userId)
     {
         return await _db.UserDataSources
             .Where(d => d.UserId == userId)
@@ -43,13 +43,13 @@ public class DataConnectionService : IDataConnectionService
             .ToListAsync();
     }
 
-    public async Task<UserDataSource?> GetDataSourceAsync(int id, int userId)
+    public async Task<UserDataSource?> GetDataSourceAsync(Guid id, Guid userId)
     {
         return await _db.UserDataSources
             .FirstOrDefaultAsync(d => d.Id == id && d.UserId == userId);
     }
 
-    public async Task<UserDataSource> CreateFileDataSourceAsync(int userId, string name, string sourceType, IFormFile file)
+    public async Task<UserDataSource> CreateFileDataSourceAsync(Guid userId, string name, string sourceType, IFormFile file)
     {
         var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
         if (!AllowedExtensions.Contains(ext))
@@ -87,7 +87,7 @@ public class DataConnectionService : IDataConnectionService
         return ds;
     }
 
-    public async Task<UserDataSource> CreateDatabaseDataSourceAsync(int userId, string name, string sourceType, string connectionString)
+    public async Task<UserDataSource> CreateDatabaseDataSourceAsync(Guid userId, string name, string sourceType, string connectionString)
     {
         var tables = await GetAvailableTablesAsync(sourceType, connectionString);
 
@@ -258,7 +258,7 @@ public class DataConnectionService : IDataConnectionService
         return tables;
     }
 
-    public async Task<Dictionary<string, List<string>>> GetSchemaAsync(int dataSourceId, int userId)
+    public async Task<Dictionary<string, List<string>>> GetSchemaAsync(Guid dataSourceId, Guid userId)
     {
         var ds = await _db.UserDataSources.FirstOrDefaultAsync(d => d.Id == dataSourceId && d.UserId == userId)
             ?? throw new KeyNotFoundException("Data source not found.");
@@ -284,7 +284,7 @@ public class DataConnectionService : IDataConnectionService
         return schema;
     }
 
-    public async Task<List<Dictionary<string, object?>>> ExecuteQueryAsync(int dataSourceId, int userId, string query)
+    public async Task<List<Dictionary<string, object?>>> ExecuteQueryAsync(Guid dataSourceId, Guid userId, string query)
     {
         return await QueryDataSourceAsync(dataSourceId, userId, query);
     }
@@ -304,7 +304,7 @@ public class DataConnectionService : IDataConnectionService
             throw new ArgumentException("Connection string is too long.");
     }
 
-    public async Task<UserDataSource> UpdateSelectedTablesAsync(int id, int userId, List<string> selectedTables)
+    public async Task<UserDataSource> UpdateSelectedTablesAsync(Guid id, Guid userId, List<string> selectedTables)
     {
         var ds = await _db.UserDataSources.FirstOrDefaultAsync(d => d.Id == id && d.UserId == userId)
             ?? throw new KeyNotFoundException("Data source not found.");
@@ -315,7 +315,7 @@ public class DataConnectionService : IDataConnectionService
         return ds;
     }
 
-    public async Task DeleteDataSourceAsync(int id, int userId)
+    public async Task DeleteDataSourceAsync(Guid id, Guid userId)
     {
         var ds = await _db.UserDataSources.FirstOrDefaultAsync(d => d.Id == id && d.UserId == userId)
             ?? throw new KeyNotFoundException("Data source not found.");
@@ -331,7 +331,7 @@ public class DataConnectionService : IDataConnectionService
         await _db.SaveChangesAsync();
     }
 
-    public async Task<List<Dictionary<string, object?>>> QueryDataSourceAsync(int dataSourceId, int userId, string query)
+    public async Task<List<Dictionary<string, object?>>> QueryDataSourceAsync(Guid dataSourceId, Guid userId, string query)
     {
         var ds = await _db.UserDataSources.FirstOrDefaultAsync(d => d.Id == dataSourceId && d.UserId == userId)
             ?? throw new KeyNotFoundException("Data source not found or access denied.");

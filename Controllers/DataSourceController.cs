@@ -23,16 +23,16 @@ namespace ChatPortal.Controllers
             _encryption = encryption;
         }
 
-        private int GetUserId()
+        private Guid GetUserId()
         {
-            return int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+            return Guid.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var id) ? id : Guid.Empty;
         }
 
-        private async Task<int?> GetActiveOrganizationIdAsync()
+        private async Task<Guid?> GetActiveOrganizationIdAsync()
         {
             var orgIdString = HttpContext.Session.GetString("ActiveOrganizationId");
-            if (string.IsNullOrEmpty(orgIdString)) return null;
-            return int.Parse(orgIdString);
+            if (Guid.TryParse(orgIdString, out var orgId)) return orgId;
+            return null;
         }
 
         [HttpGet]
@@ -68,7 +68,7 @@ namespace ChatPortal.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> TestConnection([FromForm] int connectionId)
+        public async Task<IActionResult> TestConnection([FromForm] Guid connectionId)
         {
             try
             {
@@ -175,7 +175,7 @@ namespace ChatPortal.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Disconnect([FromForm] int connectionId)
+        public async Task<IActionResult> Disconnect([FromForm] Guid connectionId)
         {
             try
             {
@@ -237,7 +237,7 @@ namespace ChatPortal.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetConnectionStatus(int connectionId)
+        public async Task<IActionResult> GetConnectionStatus(Guid connectionId)
         {
             try
             {
@@ -280,7 +280,7 @@ namespace ChatPortal.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Sync([FromForm] int connectionId)
+        public async Task<IActionResult> Sync([FromForm] Guid connectionId)
         {
             try
             {

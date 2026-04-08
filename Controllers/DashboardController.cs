@@ -12,16 +12,12 @@ namespace ChatPortal.Controllers;
 public class DashboardController : Controller
 {
     private readonly AppDbContext _context;
-    private readonly ICreditService _creditService;
-
-    public DashboardController(AppDbContext context, ICreditService creditService)
+    public DashboardController(AppDbContext context)
     {
-        _context = context;
-        _creditService = creditService;
-    }
+        _context = context;    }
 
-    private int GetUserId() =>
-        int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : 0;
+    private Guid GetUserId() =>
+        Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : Guid.Empty;
 
     public async Task<IActionResult> Index()
     {
@@ -31,7 +27,6 @@ public class DashboardController : Controller
         var userName = user != null ? $"{user.FirstName} {user.LastName}".Trim() : "User";
 
         var totalChats = await _context.ChatSessions.CountAsync(c => c.UserId == userId);
-        var creditsBalance = await _creditService.GetBalanceAsync(userId);
 
         var subscription = await _context.Subscriptions
             .Include(s => s.Plan)
@@ -40,8 +35,6 @@ public class DashboardController : Controller
             .FirstOrDefaultAsync();
 
         var planName = subscription?.Plan.Name ?? "Free";
-        var maxCredits = subscription?.Plan.MaxCredits ?? 100;
-        var creditsUsed = Math.Max(0, maxCredits - creditsBalance);
 
         var apiCallCount = await _context.QueryHistories.CountAsync(q => q.UserId == userId);
 
@@ -73,13 +66,11 @@ public class DashboardController : Controller
         {
             UserName = userName,
             TotalChats = totalChats,
-            CreditsUsed = creditsUsed,
-            CreditsRemaining = creditsBalance,
             PlanName = planName,
             Stats = new List<QuickStatItem>
             {
                 new() { Label = "Total Chats", Value = totalChats.ToString("N0"), Icon = "bi-chat-dots", Color = "primary" },
-                new() { Label = "Credits Balance", Value = creditsBalance.ToString("N0"), Icon = "bi-lightning", Color = "warning" },
+                new() { Label = "Plan", Value = planName, Icon = "bi-lightning", Color = "warning" },
                 new() { Label = "API Calls", Value = apiCallCount.ToString("N0"), Icon = "bi-code-square", Color = "info" },
                 new() { Label = "Saved Sessions", Value = savedSessions.ToString("N0"), Icon = "bi-bookmark", Color = "success" }
             },

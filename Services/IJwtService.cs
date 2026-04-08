@@ -15,7 +15,7 @@ public interface IJwtService
     /// <param name="email">The email address of the user, embedded as a claim.</param>
     /// <param name="role">The role of the user (e.g. <c>"Admin"</c> or <c>"User"</c>), embedded as a claim.</param>
     /// <returns>A signed JWT string that can be used as a Bearer token.</returns>
-    string GenerateAccessToken(int userId, string email, string role);
+    string GenerateAccessToken(Guid userId, string email, string role);
 
     /// <summary>
     /// Generates a cryptographically random opaque refresh token.

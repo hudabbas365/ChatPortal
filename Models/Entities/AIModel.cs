@@ -6,7 +6,7 @@ namespace ChatPortal.Models.Entities;
 public class AIModel
 {
     [Key]
-    public int Id { get; set; }
+    public Guid Id { get; set; } = Guid.NewGuid();
 
     [Required, MaxLength(100)]
     public string Name { get; set; } = string.Empty;
@@ -29,5 +29,4 @@ public class AIModel
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public virtual ICollection<ChatSession> ChatSessions { get; set; } = new List<ChatSession>();
-    public virtual ICollection<TrainingJob> TrainingJobs { get; set; } = new List<TrainingJob>();
 }

@@ -49,15 +49,15 @@
                     <div class="card border-0 shadow-sm rounded-4">
                         <div class="card-body p-4">
                             <div class="d-flex justify-content-between align-items-center mb-3">
-                                <h6 class="fw-bold mb-0">Credit Usage</h6>
+                                <h6 class="fw-bold mb-0">Subscription</h6>
                                 <span class="badge bg-primary">@Model.PlanName Plan</span>
                             </div>
                             <div class="progress mb-2" style="height:10px;">
-                                <div class="progress-bar bg-primary rounded-pill" style="width:@(Model.CreditsUsed * 100 / (Model.CreditsUsed + Model.CreditsRemaining))%"></div>
+                                <div class="progress-bar bg-primary rounded-pill" style="width:100%"></div>
                             </div>
                             <div class="d-flex justify-content-between small text-muted">
-                                <span>@Model.CreditsUsed used</span>
-                                <span>@Model.CreditsRemaining remaining</span>
+                                <span>Active</span>
+                                <span>Plan-based billing</span>
                             </div>
                         </div>
                     </div>

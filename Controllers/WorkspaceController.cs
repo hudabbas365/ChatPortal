@@ -17,14 +17,14 @@ public class WorkspaceController : Controller
         _context = context;
     }
 
-    private int GetUserId() =>
-        int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : 0;
+    private Guid GetUserId() =>
+        Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : Guid.Empty;
 
-    private async Task<int?> GetActiveOrganizationIdAsync()
+    private async Task<Guid?> GetActiveOrganizationIdAsync()
     {
-        var orgId = HttpContext.Session.GetInt32("ActiveOrganizationId");
-        if (orgId.HasValue)
-            return orgId.Value;
+        var orgIdStr = HttpContext.Session.GetString("ActiveOrganizationId");
+        if (Guid.TryParse(orgIdStr, out var parsedOrgId))
+            return parsedOrgId;
 
         // Get user's first organization
         var userId = GetUserId();
@@ -33,9 +33,9 @@ public class WorkspaceController : Controller
             .Select(o => o.Id)
             .FirstOrDefaultAsync();
 
-        if (firstOrg > 0)
+        if (firstOrg != Guid.Empty)
         {
-            HttpContext.Session.SetInt32("ActiveOrganizationId", firstOrg);
+            HttpContext.Session.SetString("ActiveOrganizationId", firstOrg.ToString());
             return firstOrg;
         }
 
@@ -67,7 +67,7 @@ public class WorkspaceController : Controller
     // POST: Workspace/Create
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create(string name, string? description, string context = "general", int? teamId = null)
+    public async Task<IActionResult> Create(string name, string? description, string context = "general", Guid? teamId = null)
     {
         try
         {
@@ -167,14 +167,14 @@ public class WorkspaceController : Controller
     // POST: Workspace/Update
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Update(int id, string name, string? description, string context, bool isActive)
+    public async Task<IActionResult> Update(Guid id, string name, string? description, string context, bool isActive)
     {
         // Edit Workspace feature is coming soon
         return Json(new { success = false, error = "Coming Soon - Edit Workspace feature is under development" });
     }
 
     // POST: Workspace/UpdateInternal (internal implementation, not exposed to users)
-    private async Task<IActionResult> UpdateInternal(int id, string name, string? description, string context, bool isActive)
+    private async Task<IActionResult> UpdateInternal(Guid id, string name, string? description, string context, bool isActive)
     {
         try
         {
@@ -229,7 +229,7 @@ public class WorkspaceController : Controller
     // POST: Workspace/Delete
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Delete(int id)
+    public async Task<IActionResult> Delete(Guid id)
     {
         try
         {
@@ -269,7 +269,7 @@ public class WorkspaceController : Controller
     // POST: Workspace/SetActive
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> SetActive(int id)
+    public async Task<IActionResult> SetActive(Guid id)
     {
         try
         {
@@ -286,7 +286,7 @@ public class WorkspaceController : Controller
                 return Json(new { success = false, error = "Workspace not found" });
 
             // Store in session
-            HttpContext.Session.SetInt32("ActiveWorkspaceId", id);
+            HttpContext.Session.SetString("ActiveWorkspaceId", id.ToString());
 
             return Json(new { success = true, workspaceName = workspace.Name, context = workspace.ChatAgentContext });
         }

@@ -13,10 +13,10 @@ public class NotificationsController : Controller
         _notificationService = notificationService;
     }
 
-    private int? GetUserId()
+    private Guid? GetUserId()
     {
         var claim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        return int.TryParse(claim, out var id) ? id : null;
+        return Guid.TryParse(claim, out var id) ? id : null;
     }
 
     public async Task<IActionResult> Index()
@@ -34,7 +34,7 @@ public class NotificationsController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> MarkAsRead(int id)
+    public async Task<IActionResult> MarkAsRead(Guid id)
     {
         var userId = GetUserId();
         if (userId == null) return Unauthorized();
@@ -55,7 +55,7 @@ public class NotificationsController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Dismiss(int id)
+    public async Task<IActionResult> Dismiss(Guid id)
     {
         var userId = GetUserId();
         if (userId == null) return Unauthorized();
@@ -65,7 +65,7 @@ public class NotificationsController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> DismissAnnouncement(int id)
+    public async Task<IActionResult> DismissAnnouncement(Guid id)
     {
         var userId = GetUserId();
         if (userId == null) return Unauthorized();
@@ -75,7 +75,7 @@ public class NotificationsController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> MarkAnnouncementAsRead(int id)
+    public async Task<IActionResult> MarkAnnouncementAsRead(Guid id)
     {
         var userId = GetUserId();
         if (userId == null) return Unauthorized();

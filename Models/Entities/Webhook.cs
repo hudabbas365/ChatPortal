@@ -3,8 +3,8 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace ChatPortal.Models.Entities;
 public class Webhook
 {
-    [Key] public int Id { get; set; }
-    public int UserId { get; set; }
+    [Key] public Guid Id { get; set; } = Guid.NewGuid();
+    public Guid UserId { get; set; }
     [ForeignKey("UserId")] public virtual User User { get; set; } = null!;
     [Required, MaxLength(512)] public string Url { get; set; } = string.Empty;
     public string? Events { get; set; }
